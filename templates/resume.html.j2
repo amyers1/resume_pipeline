@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{ name }} – {{ target_title }}</title>
+        <link rel="stylesheet" href="resume.css" />
+    </head>
+    <body>
+        <div class="page">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 class="name">{{ name }}</h1>
+                    <div class="title">{{ target_title }}</div>
+                </div>
+                <div class="header-right">
+                    <div class="contact-line">
+                        <span>{{ location }}</span> · <span>{{ phone }}</span> ·
+                        <span>{{ email }}</span> · <span>{{ linkedin }}</span> ·
+                        <span>{{ github }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Summary -->
+            {% if summary %}
+            <section class="section">
+                <h2 class="section-title">Summary</h2>
+                <p class="summary-text">{{ summary }}</p>
+            </section>
+            {% endif %}
+
+            <!-- Skills -->
+            {% if skills %}
+            <section class="section">
+                <h2 class="section-title">Skills</h2>
+                <div class="skills-grid">
+                    {% for group in skills %}
+                    <div class="skills-group">
+                        <div class="skills-label">{{ group.label }}</div>
+                        <div class="skills-items">
+                            {{ group.items | join(', ') }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Experience -->
+            {% if experience %}
+            <section class="section">
+                <h2 class="section-title">Experience</h2>
+                {% for role in experience %}
+                <div class="entry">
+                    <div class="entry-header">
+                        <div class="entry-left">
+                            <span class="entry-position">{{ role.title }}</span>
+                            <span class="entry-company">
+                                · {{ role.company }}</span
+                            >
+                        </div>
+                        <div class="entry-right">
+                            <span class="entry-location"
+                                >{{ role.location }}</span
+                            >
+                            <span class="entry-dates"
+                                >{{ role.start_date }} – {{ role.end_date
+                                }}</span
+                            >
+                        </div>
+                    </div>
+                    {% if role.summary %}
+                    <div class="entry-summary">{{ role.summary }}</div>
+                    {% endif %} {% if role.bullets %}
+                    <ul class="entry-bullets">
+                        {% for bullet in role.bullets %}
+                        <li>{{ bullet }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <!-- Projects -->
+            {% if projects %}
+            <section class="section">
+                <h2 class="section-title">Projects</h2>
+                {% for project in projects %}
+                <div class="entry">
+                    <div class="entry-header">
+                        <div class="entry-left">
+                            <span class="entry-position"
+                                >{{ project.name }}</span
+                            >
+                            {% if project.link %}
+                            <span class="entry-company">
+                                · {{ project.link }}</span
+                            >
+                            {% endif %}
+                        </div>
+                        <div class="entry-right">
+                            <span class="entry-dates">{{ project.date }}</span>
+                        </div>
+                    </div>
+                    {% if project.summary %}
+                    <div class="entry-summary">{{ project.summary }}</div>
+                    {% endif %} {% if project.bullets %}
+                    <ul class="entry-bullets">
+                        {% for bullet in project.bullets %}
+                        <li>{{ bullet }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <!-- Education -->
+            {% if education %}
+            <section class="section">
+                <h2 class="section-title">Education</h2>
+                {% for edu in education %}
+                <div class="entry">
+                    <div class="entry-header">
+                        <div class="entry-left">
+                            <span class="entry-position">{{ edu.degree }}</span>
+                            <span class="entry-company">
+                                · {{ edu.institution }}</span
+                            >
+                        </div>
+                        <div class="entry-right">
+                            <span class="entry-location"
+                                >{{ edu.location }}</span
+                            >
+                            <span class="entry-dates">{{ edu.grad_date }}</span>
+                        </div>
+                    </div>
+                    {% if edu.details %}
+                    <div class="entry-summary">{{ edu.details }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+        </div>
+    </body>
+</html>

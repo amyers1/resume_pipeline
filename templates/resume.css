@@ -1,0 +1,192 @@
+/* Base layout */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    font-size: 11px;
+    line-height: 1.35;
+    color: #111827;
+    -webkit-print-color-adjust: exact;
+}
+
+.page {
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0.6in 0.7in;
+}
+
+/* Print settings */
+@page {
+    size: Letter;
+    margin: 0.5in 0.5in 0.5in 0.5in;
+}
+
+@media print {
+    body {
+        background: #ffffff;
+    }
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+}
+
+.header-left {
+    max-width: 60%;
+}
+
+.name {
+    font-size: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 2px 0;
+}
+
+.title {
+    font-size: 11px;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.header-right {
+    text-align: right;
+    font-size: 9.5px;
+    color: #4b5563;
+}
+
+.contact-line span + span::before {
+    content: "•";
+    margin: 0 4px;
+    color: #9ca3af;
+}
+
+/* Sections */
+.section {
+    margin-top: 8px;
+    page-break-inside: avoid;
+}
+
+.section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #374151;
+    margin: 0 0 4px 0;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 2px;
+}
+
+/* Summary */
+.summary-text {
+    margin: 2px 0 0 0;
+}
+
+/* Skills */
+.skills-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.skills-group {
+    display: flex;
+    gap: 6px;
+}
+
+.skills-label {
+    min-width: 90px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.skills-items {
+    flex: 1;
+}
+
+/* Entries (Experience, Projects, Education) */
+.entry {
+    margin-top: 5px;
+    page-break-inside: avoid;
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.entry-left {
+    font-size: 11px;
+}
+
+.entry-right {
+    font-size: 9.5px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.entry-position {
+    font-weight: 600;
+    color: #111827;
+}
+
+.entry-company {
+    font-weight: 500;
+    color: #374151;
+}
+
+.entry-location {
+    margin-right: 6px;
+}
+
+.entry-summary {
+    margin-top: 1px;
+}
+
+/* Bullets – indented, compact */
+.entry-bullets {
+    margin: 2px 0 0 0;
+    padding-left: 14px;
+}
+
+.entry-bullets li {
+    margin: 0 0 1px 0;
+}
+
+/* Accent */
+.section-title {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.name {
+    color: #111827;
+}
+
+a {
+    color: #111827;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}

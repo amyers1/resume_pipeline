@@ -3,6 +3,7 @@ Main resume generation pipeline orchestrator.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Tuple, Optional
 from langchain_openai import ChatOpenAI
@@ -15,7 +16,7 @@ from .matchers.achievement_matcher import AchievementMatcher
 from .generators.draft_generator import DraftGenerator
 from .generators.latex_generator import LaTeXGenerator, StructuredResumeParser
 from .critics.resume_critic import ResumeCritic
-from .compilers.latex_compiler import LaTeXCompiler
+from .compilers import COMPILERS
 from .uploaders.gdrive_uploader import GoogleDriveUploader
 
 
@@ -37,10 +38,31 @@ class ResumePipeline:
         self.critic = ResumeCritic(self.base_llm, config)
         self.parser = StructuredResumeParser(self.base_llm)
         self.latex_gen = LaTeXGenerator(config.template)
-        self.compiler = LaTeXCompiler(
-            template_dir=config.template_files_dir,
-            fonts_dir=config.fonts_dir
-        )
+
+        # Backend selection from environment
+        self.output_backend = os.getenv("OUTPUT_BACKEND", "latex").lower()
+        self.template_name = os.getenv("TEMPLATE_NAME", "resume.html.j2")
+        self.css_file = os.getenv("CSS_FILE", "resume.css")
+        # Optional override; otherwise use config.get_output_filename()
+        self.output_path_env = os.getenv("OUTPUT_PATH", "")
+
+        # Instantiate appropriate compiler
+        CompilerCls = COMPILERS.get(self.output_backend)
+        if not CompilerCls:
+            raise ValueError(f"Unsupported OUTPUT_BACKEND: {self.output_backend}")
+
+        if self.output_backend == "latex":
+            # Match existing LaTeXCompiler signature
+            self.compiler = CompilerCls(
+                template_dir=config.template_files_dir,
+                fonts_dir=config.fonts_dir,
+            )
+        else:
+            # WeasyPrintCompiler(template_dir, css_file)
+            self.compiler = CompilerCls(
+                template_dir=config.template_files_dir,
+                css_file=self.css_file,
+            )
 
         # Initialize uploader if enabled
         self.uploader = None
@@ -55,7 +77,11 @@ class ResumePipeline:
         Execute the full resume generation pipeline.
 
         Returns:
-            Tuple of (structured_resume, latex_output, pdf_path)
+            Tuple of (structured_resume, raw_output, pdf_path)
+
+            raw_output:
+                - LaTeX source if backend == 'latex'
+                - Final refined resume text (or JSON) if backend == 'weasyprint'
         """
         print("=" * 80)
         print("RESUME GENERATION PIPELINE")
@@ -123,31 +149,96 @@ class ResumePipeline:
         self._save_checkpoint("final_resume", final_resume)
         self._save_checkpoint("critique", critique)
 
-        # Step 6: Generate structured output and LaTeX
-        print("[6/7] Generating LaTeX output...")
+        # Step 6: Generate structured output and source artifact
+        print("[6/7] Generating structured output...")
         structured_resume = self.parser.parse(final_resume)
         self._save_checkpoint("structured_resume", structured_resume.model_dump())
 
-        latex_output = self.latex_gen.generate(structured_resume)
-        latex_filename = self.config.get_output_filename("tex")
-        latex_path = self.config.output_dir / latex_filename
-        latex_path.write_text(latex_output, encoding="utf-8")
+        pdf_path: Optional[Path] = None
 
-        # Step 7: Compile to PDF and upload
-        print("[7/7] Post-processing...")
-        pdf_path = None
+        if self.output_backend == "latex":
+            # Existing behavior: generate LaTeX, then compile
+            print("  Using LaTeX backend...")
+            latex_output = self.latex_gen.generate(structured_resume)
+            latex_filename = self.config.get_output_filename("tex")
+            latex_path = self.config.output_dir / latex_filename
+            latex_path.write_text(latex_output, encoding="utf-8")
 
-        if self.config.compile_pdf:
-            engine = self.compiler.get_recommended_engine(self.config.template)
-            pdf_path = self.compiler.compile(latex_path, engine=engine)
+            # Step 7: Compile to PDF and upload
+            print("[7/7] Post-processing (LaTeX)...")
+            if self.config.compile_pdf:
+                engine = self.compiler.get_recommended_engine(self.config.template)
+                pdf_path = self.compiler.compile(latex_path, engine=engine)
 
-        # Upload to Google Drive
-        if self.uploader and self.uploader.enabled:
-            self._upload_files(latex_path, pdf_path)
+            # Upload to Google Drive
+            if self.uploader and self.uploader.enabled:
+                self._upload_files(latex_path, pdf_path)
 
-        self._print_summary(critique, latex_filename, pdf_path)
+            self._print_summary(critique, latex_filename, pdf_path)
 
-        return structured_resume, latex_output, pdf_path
+            return structured_resume, latex_output, pdf_path
+
+        else:
+            # New behavior: HTML/Jinja + WeasyPrint
+            print("  Using WeasyPrint backend...")
+            # Decide output path
+            if self.output_path_env:
+                output_pdf = Path(self.output_path_env)
+            else:
+                pdf_filename = self.config.get_output_filename("pdf")
+                output_pdf = self.config.output_dir / pdf_filename
+
+            # Template name / CSS are read in __init__ via env
+            template_name = self.template_name
+
+            # Compile directly to PDF from structured_resume
+            print("[7/7] Post-processing (WeasyPrint)...")
+
+            # Convert structured_resume to a plain dict for Jinja context
+            context = structured_resume.model_dump()
+
+            # The WeasyPrintCompiler.compile API:
+            # compile(output_pdf: Path, template_name: str, context: Dict[str, Any], clean: bool = False)
+            pdf_path = self.compiler.compile(
+                output_pdf=output_pdf,
+                template_name=template_name,
+                context=context,
+            )
+
+            # There is no LaTeX file in this branch
+            latex_filename = "(none – WeasyPrint)"
+            latex_output = final_resume  # return the refined text as "raw output"
+
+            # Upload to Google Drive (PDF only)
+            if self.uploader and self.uploader.enabled and pdf_path:
+                self._upload_files_for_weasyprint(pdf_path)
+
+            self._print_summary(critique, latex_filename, pdf_path)
+
+            return structured_resume, latex_output, pdf_path
+
+    # Optional helper specialized for WeasyPrint branch
+    def _upload_files_for_weasyprint(self, pdf_path: Optional[Path]):
+        """Upload PDF-only output to Google Drive for WeasyPrint backend."""
+        if not self.uploader or not self.uploader.enabled or not pdf_path:
+            return
+
+        print("\n  Uploading to Google Drive...")
+
+        folder_id = None
+        if self.config.gdrive_folder:
+            base_folder = self.uploader.get_or_create_folder(
+                self.config.gdrive_folder
+            )
+            if base_folder:
+                date_folder = self.uploader.get_or_create_folder(
+                    self.config.date_stamp,
+                    parent_id=base_folder
+                )
+                folder_id = date_folder
+
+        if pdf_path.exists():
+            self.uploader.upload_file(pdf_path, folder_id=folder_id)
 
     def _upload_files(self, latex_path: Path, pdf_path: Optional[Path]):
         """Upload files to Google Drive."""

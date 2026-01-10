@@ -12,6 +12,10 @@ RUN apt-get update && apt-get install -y \
     fonts-roboto \
     fonts-font-awesome \
     fontconfig \
+    libpango-1.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -fv
 
