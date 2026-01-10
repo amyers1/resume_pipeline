@@ -10,7 +10,7 @@ groupadd -g $GROUP_ID appgroup 2>/dev/null || true
 useradd -u $USER_ID -g $GROUP_ID -m appuser 2>/dev/null || true
 
 # Make sure font cache sees mounted fonts (e.g., /usr/share/fonts/custom)
-fc-cache -f -v || true
+fc-cache -f -v 2>/dev/null || true
 
 # Change ownership of output directory to match host user
 chown -R $USER_ID:$GROUP_ID /app/output 2>/dev/null || true
