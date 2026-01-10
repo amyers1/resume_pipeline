@@ -217,6 +217,35 @@ class ResumePipeline:
 
             return structured_resume, latex_output, pdf_path
 
+    def compile_existing_json(self, json_path: Path) -> Optional[Path]:
+        """Compiles an existing structured_resume.json to PDF without running AI steps."""
+        print(f"\n[Offline Mode] Compiling PDF from: {json_path}")
+
+        if not json_path.exists():
+            print(f"  ✗ Error: File not found at {json_path}")
+            return None
+
+        # Load the existing structured data
+        with open(json_path, 'r', encoding='utf-8') as f:
+            context = json.load(f)
+
+        # Determine output path (matches your existing run logic)
+        if self.output_path_env:
+            output_pdf = Path(self.output_path_env)
+        else:
+            # Use the filename from config but ensure it's in the same dir as the JSON
+            pdf_filename = self.config.get_output_filename("pdf")
+            output_pdf = json_path.parent / pdf_filename
+
+        # Compile via WeasyPrint
+        pdf_path = self.compiler.compile(
+            output_pdf=output_pdf,
+            template_name=self.template_name,
+            context=context,
+        )
+
+        return pdf_path
+
     # Optional helper specialized for WeasyPrint branch
     def _upload_files_for_weasyprint(self, pdf_path: Optional[Path]):
         """Upload PDF-only output to Google Drive for WeasyPrint backend."""

@@ -85,6 +85,10 @@ Examples:
         action="version",
         version="%(prog)s 2.0.0"
     )
+    parser.add_argument(
+        "--from-json",
+        help="Path to an existing structured_resume.json to compile (skips AI pipeline)"
+    )
 
     args = parser.parse_args()
 
@@ -106,9 +110,14 @@ Examples:
 
     # Run pipeline
     pipeline = ResumePipeline(config)
-    structured_resume, latex_output, pdf_path = pipeline.run()
-
-    print(f"\n✓ Success! Resume generated for {structured_resume.full_name}")
+    if args.from_json:
+        json_path = Path(args.from_json)
+        pdf_path = pipeline.compile_existing_json(json_path)
+        if pdf_path:
+            print(f"\n✓ PDF generated successfully at {pdf_path}")
+    else:
+        structured_resume, latex_output, pdf_path = pipeline.run()
+        print(f"\n✓ Success! Resume generated for {structured_resume.full_name}")
 
 
 if __name__ == "__main__":
