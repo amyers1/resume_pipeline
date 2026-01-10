@@ -1,0 +1,20 @@
+services:
+    resume-generator:
+        build: .
+        container_name: resume-pipeline
+        environment:
+            - USER_ID=${USER_ID:-1000}
+            - GROUP_ID=${GROUP_ID:-1000}
+        volumes:
+            # Mount career profile and environment
+            - ./career_profile.json:/app/career_profile.json:ro
+            - ./credentials.json:/app/credentials.json:ro
+            - ./.env:/app/.env:ro
+            # Mount output directory with read/write
+            - ./output:/app/output:rw
+            # Mount jobs directory (read-only)
+            - ./jobs:/app/jobs:ro
+            - ./fonts:/app/fonts:ro
+            - ~/latex/fonts/fonts-main/ofl:/usr/share/fonts/custom:ro
+        # Command will be provided at runtime via docker-compose run
+        # or override in docker run
