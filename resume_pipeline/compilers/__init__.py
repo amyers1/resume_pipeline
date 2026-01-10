@@ -1,7 +1,7 @@
 """compilation utilities."""
 
 from .latex_compiler import LaTeXCompiler
-from .weayprint_compiler import WeazyPrintCompiler
+from .weasyprint_compiler import WeasyPrintCompiler
 
-__all__ = ["LaTeXCompiler", "WeazyPrintCompiler"]
+__all__ = ["LaTeXCompiler", "WeasyPrintCompiler"]
 COMPILERS = {"latex": LaTeXCompiler, "weasyprint": WeasyPrintCompiler}
