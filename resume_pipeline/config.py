@@ -47,11 +47,19 @@ class PipelineConfig:
 
         # API Configuration
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.base_model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
-        self.strong_model = "gpt-5"
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
 
-        if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment")
+        self.base_model = os.getenv("MODEL", "gemini-1.5-flash")
+        self.strong_model = os.getenv("STRONG_MODEL", "gemini-1.5-pro")
+
+        # Conditional validation
+        if "gemini" in self.base_model or "gemini" in self.strong_model:
+            if not self.google_api_key:
+                raise ValueError("GOOGLE_API_KEY not found in environment")
+
+        if "gpt" in self.base_model or "gpt" in self.strong_model:
+            if not self.openai_api_key:
+                raise ValueError("OPENAI_API_KEY not found in environment")
 
         # Timestamp for directory organization
         est = pytz.timezone('America/New_York')
@@ -100,11 +108,22 @@ class PipelineConfig:
         self.template_files_dir = Path("templates")  # Directory with .cls files
         self.fonts_dir = Path("fonts")  # Optional custom fonts directory
 
-        # Google Drive upload
+        # Uploaders
         self.enable_gdrive_upload = enable_gdrive_upload
         self.gdrive_folder = gdrive_folder
         self.gdrive_credentials = gdrive_credentials
         self.gdrive_token = gdrive_token
+
+        self.enable_minio = os.getenv("ENABLE_MINIO", "false").lower() == "true"
+        self.minio_endpoint = os.getenv("MINIO_ENDPOINT")
+        self.minio_access_key = os.getenv("MINIO_ACCESS_KEY")
+        self.minio_secret_key = os.getenv("MINIO_SECRET_KEY")
+        self.minio_bucket = os.getenv("MINIO_BUCKET", "resumes")
+
+        self.enable_nextcloud = os.getenv("ENABLE_NEXTCLOUD", "false").lower() == "true"
+        self.nextcloud_endpoint = os.getenv("NEXTCLOUD_ENDPOINT")
+        self.nextcloud_user = os.getenv("NEXTCLOUD_USER")
+        self.nextcloud_password = os.getenv("NEXTCLOUD_PASSWORD")
 
     def get_company_abbreviation(self, company: str) -> str:
         """Get company abbreviation for filename."""

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import Tuple, Optional
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from .models import CareerProfile, StructuredResume, CachedPipelineState
 from .config import PipelineConfig
@@ -18,6 +19,8 @@ from .generators.latex_generator import LaTeXGenerator, StructuredResumeParser
 from .critics.resume_critic import ResumeCritic
 from .compilers import COMPILERS
 from .uploaders.gdrive_uploader import GoogleDriveUploader
+from .uploaders.minio_uploader import MinioUploader
+# from .uploaders.nextcloud_uploader import NextcloudUploader
 
 
 class ResumePipeline:
@@ -26,9 +29,24 @@ class ResumePipeline:
     def __init__(self, config: PipelineConfig):
         self.config = config
 
+        # Helper to initialize the correct provider
+        def get_model(model_name: str, temperature: float):
+            if "gemini" in model_name.lower():
+                return ChatGoogleGenerativeAI(
+                    model=model_name,
+                    google_api_key=config.google_api_key,
+                    temperature=temperature
+                )
+            else:
+                return ChatOpenAI(
+                    model=model_name,
+                    api_key=config.openai_api_key,
+                    temperature=temperature
+                )
+
         # Initialize LLMs
-        self.base_llm = ChatOpenAI(model=config.base_model, temperature=0.1)
-        self.strong_llm = ChatOpenAI(model=config.strong_model, temperature=0.1)
+        self.base_llm = get_model(config.base_model, 0.1)
+        self.strong_llm = get_model(config.strong_model, 0.1)
 
         # Initialize components
         self.cache = CacheManager(config.cache_dir)
@@ -71,6 +89,14 @@ class ResumePipeline:
                 credentials_file=config.gdrive_credentials,
                 token_file=config.gdrive_token
             )
+
+        if config.enable_minio:
+            self.minio = MinioUploader(config.minio_endpoint, config.minio_access_key,
+                                       config.minio_secret_key, config.minio_bucket)
+
+        if config.enable_nextcloud:
+            self.nextcloud = NextcloudUploader(config.nextcloud_endpoint, config.nextcloud_user,
+                                               config.nextcloud_password)
 
     def run(self) -> Tuple[StructuredResume, str, Optional[Path]]:
         """
@@ -269,23 +295,20 @@ class ResumePipeline:
         if pdf_path.exists():
             self.uploader.upload_file(pdf_path, folder_id=folder_id)
 
-    def _upload_files(self, latex_path: Path, pdf_path: Optional[Path]):
-        """Upload files to Google Drive."""
-        print("\n  Uploading to Google Drive...")
+    def _upload_to_all_destinations(self, pdf_path: Path):
+        # Google Drive (Existing)
+        if self.uploader and self.uploader.enabled:
+            self._upload_files_for_weasyprint(pdf_path)
 
-        # Get or create resume folder structure
-        folder_id = None
-        if self.config.gdrive_folder:
-            # Create date-based subfolder: Resumes/{date}
-            base_folder = self.uploader.get_or_create_folder(
-                self.config.gdrive_folder
-            )
-            if base_folder:
-                date_folder = self.uploader.get_or_create_folder(
-                    self.config.date_stamp,
-                    parent_id=base_folder
-                )
-                folder_id = date_folder
+        # MinIO
+        if hasattr(self, 'minio') and self.minio.enabled:
+            remote_name = f"{self.config.date_stamp}/{pdf_path.name}"
+            self.minio.upload_file(pdf_path, remote_name)
+
+        # Nextcloud
+        if hasattr(self, 'nextcloud') and self.nextcloud.enabled:
+            remote_dir = f"Resumes/{self.config.date_stamp}"
+            self.nextcloud.upload_file(pdf_path, remote_dir)
 
         # Upload LaTeX file
         self.uploader.upload_file(latex_path, folder_id=folder_id)

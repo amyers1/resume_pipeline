@@ -14,8 +14,11 @@ python-dotenv
 pydantic
 mistralai
 langchain-mistralai
+langchain-google-genai
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
 weasyprint
+minio
+webdav4

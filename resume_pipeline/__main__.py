@@ -5,6 +5,7 @@ CLI entry point for resume generation pipeline.
 import argparse
 from .pipeline import ResumePipeline
 from .config import PipelineConfig
+from pathlib import Path
 
 
 def main():
@@ -89,6 +90,17 @@ Examples:
         "--from-json",
         help="Path to an existing structured_resume.json to compile (skips AI pipeline)"
     )
+    parser.add_argument(
+        "--upload-minio",
+        action="store_true",
+        help="Upload to MinIO"
+    )
+    parser.add_argument(
+        "--upload-nextcloud",
+        action="store_true",
+        help="Upload to Nextcloud"
+    )
+
 
     args = parser.parse_args()
 
@@ -107,6 +119,8 @@ Examples:
     )
     config.base_model = args.model
     config.strong_model = args.strong_model
+    if args.upload_minio: config.enable_minio = True
+    if args.upload_nextcloud: config.enable_nextcloud = True
 
     # Run pipeline
     pipeline = ResumePipeline(config)
