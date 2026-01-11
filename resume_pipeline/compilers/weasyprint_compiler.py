@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML, CSS  # type: ignore
+from weasyprint import CSS, HTML  # type: ignore
 
 
 class WeasyPrintCompiler:
@@ -33,7 +33,9 @@ class WeasyPrintCompiler:
         # Optional: sanity check for WeasyPrint import (installed via pip)
         weasyprint_path = shutil.which("weasyprint")
         if not weasyprint_path:
-            print("  ⚠ WeasyPrint CLI not found (Python API will still work if package is installed)")
+            print(
+                "  ⚠ WeasyPrint CLI not found (Python API will still work if package is installed)"
+            )
 
         # Prepare Jinja2 environment
         self.env = Environment(
@@ -63,7 +65,9 @@ class WeasyPrintCompiler:
             Path to PDF file if successful, None otherwise
         """
         try:
-            print(f"  Rendering HTML with template {template_name}...")
+            print(
+                f"  Rendering HTML with template {template_name}, css file {self.css_file}..."
+            )
 
             template = self.env.get_template(template_name)
             html_str = template.render(**context)

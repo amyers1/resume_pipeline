@@ -16,5 +16,6 @@ services:
             - ./jobs:/app/jobs:ro
             - ./fonts:/app/fonts:ro
             - ~/latex/fonts/fonts-main/ofl:/usr/share/fonts/custom:ro
+            - ./templates:/app/templates:ro
         # Command will be provided at runtime via docker-compose run
         # or override in docker run

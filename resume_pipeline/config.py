@@ -40,6 +40,7 @@ class PipelineConfig:
         use_cache: bool = True,
         compile_pdf: bool = False,
         enable_gdrive_upload: bool = False,
+        gdrive_credentials: str = "credentials.json",
         gdrive_folder: str = "Resumes",
         gdrive_token: str = "token.json",
     ):
@@ -118,7 +119,7 @@ class PipelineConfig:
         # Uploaders
         self.enable_gdrive_upload = enable_gdrive_upload
         self.gdrive_folder = gdrive_folder
-        self.gdrive_credentials = gdrive_credentials
+        self.gdrive_credentials = ""  # gdrive_credentials
         self.gdrive_token = gdrive_token
 
         self.enable_minio = os.getenv("ENABLE_MINIO", "false").lower() == "true"
@@ -176,7 +177,7 @@ class PipelineConfig:
         }
         words = [w for w in re.findall(r"\w+", title.lower()) if w not in stop_words]
         return "_".join(words[:max_words]) if words else "position"
-        return '_'.join(words[:max_words]) if words else "position"
+        return "_".join(words[:max_words]) if words else "position"
 
     def get_output_filename(self, extension: str = "tex") -> str:
         """Generate clean filename (lowercase, no timestamp)."""
