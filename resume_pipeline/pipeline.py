@@ -5,23 +5,23 @@ Main resume generation pipeline orchestrator.
 import json
 import os
 from pathlib import Path
-from typing import Tuple, Optional
-from langchain_openai import ChatOpenAI
-from langchain_openai import ChatOpenAI
-from langchain_google_genai import ChatGoogleGenerativeAI # Add this
-from .uploaders.minio_uploader import MinioUploader      # Add this
-from .uploaders.nextcloud_uploader import NextcloudUploader # Add this
-from .uploaders.gdrive_uploader import GoogleDriveUploader
+from typing import Optional, Tuple
 
-from .models import CareerProfile, StructuredResume, CachedPipelineState
-from .config import PipelineConfig
-from .cache import CacheManager
+from langchain_google_genai import ChatGoogleGenerativeAI  # Add this
+from langchain_openai import ChatOpenAI
+
 from .analyzers.job_analyzer import JobAnalyzer
-from .matchers.achievement_matcher import AchievementMatcher
+from .cache import CacheManager
+from .compilers import COMPILERS
+from .config import PipelineConfig
+from .critics.resume_critic import ResumeCritic
 from .generators.draft_generator import DraftGenerator
 from .generators.latex_generator import LaTeXGenerator, StructuredResumeParser
-from .critics.resume_critic import ResumeCritic
-from .compilers import COMPILERS
+from .matchers.achievement_matcher import AchievementMatcher
+from .models import CachedPipelineState, CareerProfile, StructuredResume
+from .uploaders.gdrive_uploader import GoogleDriveUploader
+from .uploaders.minio_uploader import MinioUploader  # Add this
+from .uploaders.nextcloud_uploader import NextcloudUploader  # Add this
 
 
 class ResumePipeline:
@@ -36,12 +36,10 @@ class ResumePipeline:
                 return ChatGoogleGenerativeAI(
                     model=model_name,
                     google_api_key=config.google_api_key,
-                    temperature=temperature
+                    temperature=temperature,
                 )
             return ChatOpenAI(
-                model=model_name,
-                api_key=config.openai_api_key,
-                temperature=temperature
+                model=model_name, api_key=config.openai_api_key, temperature=temperature
             )
 
         # Initialize LLMs (Now Gemini compatible)
@@ -57,12 +55,11 @@ class ResumePipeline:
         self.parser = StructuredResumeParser(self.base_llm)
         self.latex_gen = LaTeXGenerator(config.template)
 
-        # Backend selection from environment
-        self.output_backend = os.getenv("OUTPUT_BACKEND", "latex").lower()
-        self.template_name = os.getenv("TEMPLATE_NAME", "resume.html.j2")
-        self.css_file = os.getenv("CSS_FILE", "resume.css")
-        # Optional override; otherwise use config.get_output_filename()
-        self.output_path_env = os.getenv("OUTPUT_PATH", "")
+        # Backend selection from config
+        self.output_backend = self.config.output_backend
+        self.template_name = self.config.template_name
+        self.css_file = self.config.css_file
+        self.output_path_env = self.config.output_path_env
 
         # Instantiate appropriate compiler
         CompilerCls = COMPILERS.get(self.output_backend)
@@ -90,14 +87,21 @@ class ResumePipeline:
 
         self.minio = None
         if config.enable_minio:
-            self.minio = MinioUploader(config.minio_endpoint, config.minio_access_key,
-                                        config.minio_secret_key, config.minio_bucket)
+            self.minio = MinioUploader(
+                config.minio_endpoint,
+                config.minio_access_key,
+                config.minio_secret_key,
+                config.minio_bucket,
+            )
 
         self.nextcloud = None
         if config.enable_nextcloud:
             # Note: Fixed the 'base_url' keyword from previous error
-            self.nextcloud = NextcloudUploader(config.nextcloud_endpoint, config.nextcloud_user,
-                                                config.nextcloud_password)
+            self.nextcloud = NextcloudUploader(
+                config.nextcloud_endpoint,
+                config.nextcloud_user,
+                config.nextcloud_password,
+            )
 
     def run(self) -> Tuple[StructuredResume, str, Optional[Path]]:
         """
@@ -146,8 +150,7 @@ class ResumePipeline:
             print("[3/7] Matching achievements to job requirements...")
             matched_achievements = self.matcher.match(jd_requirements, career_profile)
             self._save_checkpoint(
-                "matched_achievements",
-                [a.model_dump() for a in matched_achievements]
+                "matched_achievements", [a.model_dump() for a in matched_achievements]
             )
 
             # Step 4: Generate draft
@@ -159,14 +162,17 @@ class ResumePipeline:
 
             # Save to cache
             if self.config.use_cache:
-                self.cache.save(cache_key, CachedPipelineState(
-                    job_hash=job_hash,
-                    career_hash=career_hash,
-                    jd_requirements=jd_requirements,
-                    matched_achievements=matched_achievements,
-                    draft_resume=draft_resume,
-                    timestamp=self.config.full_timestamp
-                ))
+                self.cache.save(
+                    cache_key,
+                    CachedPipelineState(
+                        job_hash=job_hash,
+                        career_hash=career_hash,
+                        jd_requirements=jd_requirements,
+                        matched_achievements=matched_achievements,
+                        draft_resume=draft_resume,
+                        timestamp=self.config.full_timestamp,
+                    ),
+                )
 
         # Step 5: Critique and refine (always run for iteration)
         print("[5/7] Critiquing and refining resume...")
@@ -249,7 +255,7 @@ class ResumePipeline:
             return None
 
         # Load the existing structured data
-        with open(json_path, 'r', encoding='utf-8') as f:
+        with open(json_path, "r", encoding="utf-8") as f:
             context = json.load(f)
 
         # Determine output path (matches your existing run logic)
@@ -267,6 +273,8 @@ class ResumePipeline:
             context=context,
         )
 
+        self._handle_all_uploads(pdf_path)
+
         return pdf_path
 
     # Optional helper specialized for WeasyPrint branch
@@ -279,20 +287,19 @@ class ResumePipeline:
 
         folder_id = None
         if self.config.gdrive_folder:
-            base_folder = self.uploader.get_or_create_folder(
-                self.config.gdrive_folder
-            )
+            base_folder = self.uploader.get_or_create_folder(self.config.gdrive_folder)
             if base_folder:
                 date_folder = self.uploader.get_or_create_folder(
-                    self.config.date_stamp,
-                    parent_id=base_folder
+                    self.config.date_stamp, parent_id=base_folder
                 )
                 folder_id = date_folder
 
         if pdf_path.exists():
             self.uploader.upload_file(pdf_path, folder_id=folder_id)
 
-    def _handle_all_uploads(self, pdf_path: Optional[Path], latex_path: Optional[Path] = None):
+    def _handle_all_uploads(
+        self, pdf_path: Optional[Path], latex_path: Optional[Path] = None
+    ):
         """Unified handler for all cloud/network uploads."""
         if not pdf_path or not pdf_path.exists():
             return
@@ -325,14 +332,13 @@ class ResumePipeline:
         filename = self.config.get_checkpoint_filename(name)
         path = self.config.output_dir / filename
         if isinstance(data, str):
-            path.write_text(
-                json.dumps({"content": data}, indent=2),
-                encoding="utf-8"
-            )
+            path.write_text(json.dumps({"content": data}, indent=2), encoding="utf-8")
         else:
             path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
-    def _print_summary(self, critique: dict, latex_filename: str, pdf_path: Optional[Path]):
+    def _print_summary(
+        self, critique: dict, latex_filename: str, pdf_path: Optional[Path]
+    ):
         """Print pipeline completion summary."""
         print(f"\n✓ Pipeline complete!")
         print(f"  Final score: {critique.get('score', 'N/A')}")

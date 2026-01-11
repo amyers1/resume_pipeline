@@ -1,0 +1,258 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Calibri", "Arial", sans-serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #333;
+    background: #fff;
+}
+
+.container {
+    max-width: 8.5in;
+    margin: 0 auto;
+    padding: 0.5in 0.6in;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 0.25in;
+    padding-bottom: 0.15in;
+    border-bottom: 2px solid #2c3e50;
+}
+
+h1 {
+    font-size: 24pt;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.05in;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.role-title {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.08in;
+}
+
+.contact-info {
+    font-size: 10pt;
+    color: #666;
+}
+
+.contact-info span {
+    margin: 0 0.08in;
+}
+
+.contact-info a {
+    color: #2c3e50;
+    text-decoration: none;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+/* Section Styles */
+section {
+    margin-bottom: 0.2in;
+}
+
+h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.08in;
+    padding-bottom: 0.04in;
+    border-bottom: 1.5px solid #2c3e50;
+}
+
+.section-content {
+    margin-top: 0.08in;
+}
+
+/* Professional Summary */
+#summary p {
+    text-align: justify;
+    font-size: 11pt;
+    line-height: 1.5;
+}
+
+/* Core Competencies */
+.competency-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.05in 0.15in;
+}
+
+.competency-grid li {
+    font-size: 10.5pt;
+    position: relative;
+    padding-left: 0.12in;
+}
+
+.competency-grid li:before {
+    content: "▪";
+    position: absolute;
+    left: 0;
+    color: #2c3e50;
+    font-weight: bold;
+}
+
+/* Experience Section */
+.experience-item {
+    margin-bottom: 0.18in;
+}
+
+.experience-item:last-child {
+    margin-bottom: 0;
+}
+
+.exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.02in;
+}
+
+.job-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.dates {
+    font-size: 10pt;
+    color: #666;
+    font-style: italic;
+}
+
+.exp-sub-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5pt;
+    margin-bottom: 0.06in;
+    color: #555;
+}
+
+.org {
+    font-weight: 600;
+}
+
+.location {
+    font-style: italic;
+    color: #666;
+}
+
+.bullets {
+    list-style: none;
+    margin-left: 0.15in;
+}
+
+.bullets li {
+    position: relative;
+    margin-bottom: 0.04in;
+    padding-left: 0.12in;
+    font-size: 10.5pt;
+    line-height: 1.45;
+}
+
+.bullets li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #2c3e50;
+    font-weight: bold;
+}
+
+.bullets li:last-child {
+    margin-bottom: 0;
+}
+
+/* Other Experience Styling */
+.other-experience .job-title {
+    font-size: 11.5pt;
+}
+
+/* Education Section */
+.edu-item {
+    margin-bottom: 0.12in;
+}
+
+.edu-item:last-child {
+    margin-bottom: 0;
+}
+
+.institution {
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.degree {
+    font-size: 10.5pt;
+    color: #555;
+    margin-top: 0.02in;
+}
+
+/* Certifications and Awards */
+.simple-list {
+    list-style: none;
+    margin-left: 0.15in;
+}
+
+.simple-list li {
+    position: relative;
+    padding-left: 0.12in;
+    margin-bottom: 0.04in;
+    font-size: 10.5pt;
+}
+
+.simple-list li:before {
+    content: "▪";
+    position: absolute;
+    left: 0;
+    color: #2c3e50;
+    font-weight: bold;
+}
+
+.simple-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Print Optimization */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        padding: 0.4in 0.5in;
+    }
+
+    section {
+        page-break-inside: avoid;
+    }
+
+    .experience-item {
+        page-break-inside: avoid;
+    }
+}
+
+/* Page break control for PDF generation */
+@page {
+    margin: 0;
+    size: letter;
+}

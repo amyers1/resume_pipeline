@@ -4,7 +4,7 @@ Resume critique and iterative refinement.
 
 from langchain_core.language_models.chat_models import BaseChatModel # Changed
 from langchain_core.prompts import ChatPromptTemplate
-from ..models import CritiqueResult
+from ..models import CritiqueResult, JDRequirements
 from ..config import PipelineConfig
 
 

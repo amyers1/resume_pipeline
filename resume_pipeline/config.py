@@ -2,14 +2,15 @@
 Configuration management for resume pipeline.
 """
 
+import hashlib
 import json
 import os
-import hashlib
 import re
-from pathlib import Path
 from datetime import datetime
-from dotenv import load_dotenv
+from pathlib import Path
+
 import pytz
+from dotenv import load_dotenv
 
 
 class PipelineConfig:
@@ -40,8 +41,7 @@ class PipelineConfig:
         compile_pdf: bool = False,
         enable_gdrive_upload: bool = False,
         gdrive_folder: str = "Resumes",
-        gdrive_credentials: str = "credentials.json",
-        gdrive_token: str = "token.json"
+        gdrive_token: str = "token.json",
     ):
         load_dotenv()
 
@@ -62,10 +62,10 @@ class PipelineConfig:
                 raise ValueError("OPENAI_API_KEY not found in environment")
 
         # Timestamp for directory organization
-        est = pytz.timezone('America/New_York')
+        est = pytz.timezone("America/New_York")
         now = datetime.now(est)
-        self.date_stamp = now.strftime('%Y%m%d')
-        self.full_timestamp = now.strftime('%Y%m%d_%H%M%S')
+        self.date_stamp = now.strftime("%Y%m%d")
+        self.full_timestamp = now.strftime("%Y%m%d_%H%M%S")
 
         # Load job JSON
         self.job_json_path = Path(job_json_path)
@@ -108,6 +108,13 @@ class PipelineConfig:
         self.template_files_dir = Path("templates")  # Directory with .cls files
         self.fonts_dir = Path("fonts")  # Optional custom fonts directory
 
+        # Backend selection from environment
+        self.output_backend = os.getenv("OUTPUT_BACKEND", "latex").lower()
+        self.template_name = os.getenv("TEMPLATE_NAME", "resume.html.j2")
+        self.css_file = os.getenv("CSS_FILE", "resume.css")
+        # Optional override; otherwise use config.get_output_filename()
+        self.output_path_env = os.getenv("OUTPUT_PATH", "")
+
         # Uploaders
         self.enable_gdrive_upload = enable_gdrive_upload
         self.gdrive_folder = gdrive_folder
@@ -128,7 +135,16 @@ class PipelineConfig:
     def get_company_abbreviation(self, company: str) -> str:
         """Get company abbreviation for filename."""
         # Clean company name
-        for suffix in [", Inc.", " Inc.", ", LLC", " LLC", " Corporation", " Corp.", " Ltd.", " Co."]:
+        for suffix in [
+            ", Inc.",
+            " Inc.",
+            ", LLC",
+            " LLC",
+            " Corporation",
+            " Corp.",
+            " Ltd.",
+            " Co.",
+        ]:
             company = company.replace(suffix, "")
 
         # Check known abbreviations
@@ -139,14 +155,27 @@ class PipelineConfig:
         # Create abbreviation from first letters or first word
         words = company.split()
         if len(words) > 1:
-            return ''.join([w[0] for w in words if w]).lower()
+            return "".join([w[0] for w in words if w]).lower()
         else:
             return words[0].lower() if words else "company"
 
     def get_title_keywords(self, title: str, max_words: int = 4) -> str:
         """Extract key words from job title."""
-        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'of', 'in', 'to', 'for', 'with'}
-        words = [w for w in re.findall(r'\w+', title.lower()) if w not in stop_words]
+        stop_words = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "of",
+            "in",
+            "to",
+            "for",
+            "with",
+        }
+        words = [w for w in re.findall(r"\w+", title.lower()) if w not in stop_words]
+        return "_".join(words[:max_words]) if words else "position"
         return '_'.join(words[:max_words]) if words else "position"
 
     def get_output_filename(self, extension: str = "tex") -> str:
