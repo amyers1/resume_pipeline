@@ -206,7 +206,7 @@ Use this checklist to migrate from your current implementation to the refactored
 
 - [ ] Test config loading
   ```bash
-  docker-compose run --rm resume-generator python -c "
+  docker compose run --rm resume-generator python -c "
   from resume_pipeline.config import PipelineConfig
   config = PipelineConfig()
   print('✓ Config loaded successfully')
