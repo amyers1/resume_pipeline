@@ -20,7 +20,7 @@ from .critics.resume_critic import ResumeCritic
 from .compilers import COMPILERS
 from .uploaders.gdrive_uploader import GoogleDriveUploader
 from .uploaders.minio_uploader import MinioUploader
-# from .uploaders.nextcloud_uploader import NextcloudUploader
+from .uploaders.nextcloud_uploader import NextcloudUploader
 
 
 class ResumePipeline:

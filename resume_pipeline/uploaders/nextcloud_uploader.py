@@ -4,7 +4,8 @@ from webdav4.client import Client
 
 class NextcloudUploader:
     def __init__(self, endpoint: str, username: str, password: str):
-        self.client = Client(host=endpoint, auth=(username, password))
+        # Change 'host' to 'base_url'
+        self.client = Client(base_url=endpoint, auth=(username, password))
         self.enabled = self.client.exists("/") # Simple health check
 
     def upload_file(self, file_path: Path, remote_dir: str) -> bool:
