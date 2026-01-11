@@ -3,34 +3,31 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies including gosu, LaTeX, and fonts
+# Install system dependencies for WeasyPrint
+# - gosu: for user permission management
+# - Pango & HarfBuzz: required for WeasyPrint text rendering
+# - fontconfig: font management
 RUN apt-get update && apt-get install -y \
     gosu \
-    texlive-xetex \
-    texlive-latex-extra \
-    texlive-fonts-recommended \
-    fonts-roboto \
-    fonts-font-awesome \
-    fontconfig \
     libpango-1.0-0 \
-    libharfbuzz0b \
     libpangoft2-1.0-0 \
+    libharfbuzz0b \
     libharfbuzz-subset0 \
+    fontconfig \
+    fonts-liberation \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -fv
 
-# Copy requirements first for better caching
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy resume_pipeline package
+# Copy application code
 COPY resume_pipeline/ /app/resume_pipeline/
 
-# Copy templates directory
+# Copy templates directory (HTML, CSS, and LaTeX templates)
 COPY templates/ /app/templates/
-
-# Copy fonts directory if it exists (optional)
-COPY fonts* /app/fonts/
 
 # Create output directory
 RUN mkdir -p /app/output

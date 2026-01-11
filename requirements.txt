@@ -1,24 +1,19 @@
-jinja2
-pytz
-langchain
-langgraph
-mcp
-openai
-anthropic
-mistralai
-google-genai
-google-cloud-aiplatform
-langchain-openai
-langgraph
+# Core dependencies
 python-dotenv
 pydantic
-mistralai
-langchain-mistralai
+pytz
+jinja2
+
+# LLM libraries
+openai
+langchain
+langchain-openai
 langchain-google-genai
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-google-api-python-client
+google-genai
+
+# PDF generation
 weasyprint
+
+# Cloud storage (optional)
 minio
 webdav4

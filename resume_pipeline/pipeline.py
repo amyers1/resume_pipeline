@@ -1,13 +1,13 @@
 """
 Main resume generation pipeline orchestrator.
+Simplified version without Google Drive integration.
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Optional, Tuple
 
-from langchain_google_genai import ChatGoogleGenerativeAI  # Add this
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
 from .analyzers.job_analyzer import JobAnalyzer
@@ -19,9 +19,8 @@ from .generators.draft_generator import DraftGenerator
 from .generators.latex_generator import LaTeXGenerator, StructuredResumeParser
 from .matchers.achievement_matcher import AchievementMatcher
 from .models import CachedPipelineState, CareerProfile, StructuredResume
-from .uploaders.gdrive_uploader import GoogleDriveUploader
-from .uploaders.minio_uploader import MinioUploader  # Add this
-from .uploaders.nextcloud_uploader import NextcloudUploader  # Add this
+from .uploaders.minio_uploader import MinioUploader
+from .uploaders.nextcloud_uploader import NextcloudUploader
 
 
 class ResumePipeline:
@@ -30,7 +29,7 @@ class ResumePipeline:
     def __init__(self, config: PipelineConfig):
         self.config = config
 
-        # Helper to initialize the correct provider
+        # Helper to initialize the correct LLM provider
         def get_model(model_name: str, temperature: float):
             if "gemini" in model_name.lower():
                 return ChatGoogleGenerativeAI(
@@ -39,10 +38,12 @@ class ResumePipeline:
                     temperature=temperature,
                 )
             return ChatOpenAI(
-                model=model_name, api_key=config.openai_api_key, temperature=temperature
+                model=model_name,
+                api_key=config.openai_api_key,
+                temperature=temperature,
             )
 
-        # Initialize LLMs (Now Gemini compatible)
+        # Initialize LLMs
         self.base_llm = get_model(config.base_model, 0.1)
         self.strong_llm = get_model(config.strong_model, 0.1)
 
@@ -53,13 +54,10 @@ class ResumePipeline:
         self.draft_gen = DraftGenerator(self.strong_llm, config)
         self.critic = ResumeCritic(self.base_llm, config)
         self.parser = StructuredResumeParser(self.base_llm)
-        self.latex_gen = LaTeXGenerator(config.template)
+        self.latex_gen = LaTeXGenerator(config.latex_template)
 
         # Backend selection from config
-        self.output_backend = self.config.output_backend
-        self.template_name = self.config.template_name
-        self.css_file = self.config.css_file
-        self.output_path_env = self.config.output_path_env
+        self.output_backend = config.output_backend
 
         # Instantiate appropriate compiler
         CompilerCls = COMPILERS.get(self.output_backend)
@@ -67,24 +65,19 @@ class ResumePipeline:
             raise ValueError(f"Unsupported OUTPUT_BACKEND: {self.output_backend}")
 
         if self.output_backend == "latex":
-            # Match existing LaTeXCompiler signature
+            # LaTeX compiler (for .tex generation only, no compilation)
             self.compiler = CompilerCls(
                 template_dir=config.template_files_dir,
-                fonts_dir=config.fonts_dir,
+                fonts_dir=None,  # Not needed since we won't compile
             )
         else:
-            # WeasyPrintCompiler(template_dir, css_file)
+            # WeasyPrint compiler
             self.compiler = CompilerCls(
                 template_dir=config.template_files_dir,
-                css_file=self.css_file,
+                css_file=config.css_file,
             )
 
-        # Initialize Uploaders
-        self.uploader = None
-        if config.enable_gdrive_upload:
-            pass
-            # self.uploader = GoogleDriveUploader(...)
-
+        # Initialize uploaders (no Google Drive)
         self.minio = None
         if config.enable_minio:
             self.minio = MinioUploader(
@@ -96,7 +89,6 @@ class ResumePipeline:
 
         self.nextcloud = None
         if config.enable_nextcloud:
-            # Note: Fixed the 'base_url' keyword from previous error
             self.nextcloud = NextcloudUploader(
                 config.nextcloud_endpoint,
                 config.nextcloud_user,
@@ -109,10 +101,6 @@ class ResumePipeline:
 
         Returns:
             Tuple of (structured_resume, raw_output, pdf_path)
-
-            raw_output:
-                - LaTeX source if backend == 'latex'
-                - Final refined resume text (or JSON) if backend == 'weasyprint'
         """
         print("=" * 80)
         print("RESUME GENERATION PIPELINE")
@@ -174,7 +162,7 @@ class ResumePipeline:
                     ),
                 )
 
-        # Step 5: Critique and refine (always run for iteration)
+        # Step 5: Critique and refine
         print("[5/7] Critiquing and refining resume...")
         final_resume, critique = self.critic.critique_and_refine(
             draft_resume, jd_requirements
@@ -182,72 +170,70 @@ class ResumePipeline:
         self._save_checkpoint("final_resume", final_resume)
         self._save_checkpoint("critique", critique)
 
-        # Step 6: Generate structured output and source artifact
+        # Step 6: Generate structured output
         print("[6/7] Generating structured output...")
         structured_resume = self.parser.parse(final_resume)
         self._save_checkpoint("structured_resume", structured_resume.model_dump())
 
+        # Step 7: Generate outputs and upload
+        print("[7/7] Post-processing and file generation...")
         pdf_path: Optional[Path] = None
+        latex_output = ""
 
         if self.output_backend == "latex":
-            # Existing behavior: generate LaTeX, then compile
-            print("  Using LaTeX backend...")
+            # Generate LaTeX file
+            print("  Generating LaTeX (.tex) file...")
             latex_output = self.latex_gen.generate(structured_resume)
             latex_filename = self.config.get_output_filename("tex")
             latex_path = self.config.output_dir / latex_filename
             latex_path.write_text(latex_output, encoding="utf-8")
+            print(f"  ✓ LaTeX file created: {latex_filename}")
 
-            # Step 7: Compile to PDF and upload
-            print("[7/7] Post-processing (LaTeX)...")
-            if self.config.compile_pdf:
-                engine = self.compiler.get_recommended_engine(self.config.template)
-                pdf_path = self.compiler.compile(latex_path, engine=engine)
+            # Note: We no longer compile LaTeX to PDF automatically
+            # Users can upload .tex to Overleaf or compile manually
+            print("  ℹ️  LaTeX compilation skipped (generate .tex only)")
+            print("     Upload .tex file to Overleaf or compile manually with:")
+            print(f"     xelatex {latex_filename}")
 
-            self._handle_all_uploads(pdf_path, latex_path=latex_path)
+            # Upload .tex file
+            self._handle_uploads(latex_path)
 
-            self._print_summary(critique, latex_filename, pdf_path)
-
-            return structured_resume, latex_output, pdf_path
+            self._print_summary(critique, latex_filename, None)
+            return structured_resume, latex_output, None
 
         else:
-            # New behavior: HTML/Jinja + WeasyPrint
-            print("  Using WeasyPrint backend...")
-            # Decide output path
-            if self.output_path_env:
-                output_pdf = Path(self.output_path_env)
-            else:
-                pdf_filename = self.config.get_output_filename("pdf")
-                output_pdf = self.config.output_dir / pdf_filename
+            # WeasyPrint backend - generate both PDF and .tex
+            print("  Using WeasyPrint for PDF generation...")
 
-            # Template name / CSS are read in __init__ via env
-            template_name = self.template_name
-
-            # Compile directly to PDF from structured_resume
-            print("[7/7] Post-processing (WeasyPrint)...")
-
-            # Convert structured_resume to a plain dict for Jinja context
+            # Generate PDF
+            pdf_filename = self.config.get_output_filename("pdf")
+            output_pdf = self.config.output_dir / pdf_filename
             context = structured_resume.model_dump()
 
-            # The WeasyPrintCompiler.compile API:
-            # compile(output_pdf: Path, template_name: str, context: Dict[str, Any], clean: bool = False)
             pdf_path = self.compiler.compile(
                 output_pdf=output_pdf,
-                template_name=template_name,
+                template_name=self.config.template_name,
                 context=context,
             )
 
-            # There is no LaTeX file in this branch
-            latex_filename = "(none – WeasyPrint)"
-            latex_output = final_resume  # return the refined text as "raw output"
+            # Also generate .tex file for archival/manual compilation
+            print("  Also generating LaTeX (.tex) file for archival...")
+            latex_output = self.latex_gen.generate(structured_resume)
+            latex_filename = self.config.get_output_filename("tex")
+            latex_path = self.config.output_dir / latex_filename
+            latex_path.write_text(latex_output, encoding="utf-8")
+            print(f"  ✓ LaTeX file created: {latex_filename}")
 
-            self._handle_all_uploads(pdf_path)
+            # Upload both PDF and .tex
+            if pdf_path:
+                self._handle_uploads(pdf_path)
+            self._handle_uploads(latex_path)
 
             self._print_summary(critique, latex_filename, pdf_path)
-
             return structured_resume, latex_output, pdf_path
 
     def compile_existing_json(self, json_path: Path) -> Optional[Path]:
-        """Compiles an existing structured_resume.json to PDF without running AI steps."""
+        """Compile an existing structured_resume.json to PDF without running AI."""
         print(f"\n[Offline Mode] Compiling PDF from: {json_path}")
 
         if not json_path.exists():
@@ -258,70 +244,38 @@ class ResumePipeline:
         with open(json_path, "r", encoding="utf-8") as f:
             context = json.load(f)
 
-        # Determine output path (matches your existing run logic)
-        if self.output_path_env:
-            output_pdf = Path(self.output_path_env)
-        else:
-            # Use the filename from config but ensure it's in the same dir as the JSON
-            pdf_filename = self.config.get_output_filename("pdf")
-            output_pdf = json_path.parent / pdf_filename
+        # Determine output path
+        pdf_filename = self.config.get_output_filename("pdf")
+        output_pdf = json_path.parent / pdf_filename
 
         # Compile via WeasyPrint
         pdf_path = self.compiler.compile(
             output_pdf=output_pdf,
-            template_name=self.template_name,
+            template_name=self.config.template_name,
             context=context,
         )
 
-        self._handle_all_uploads(pdf_path)
+        if pdf_path:
+            self._handle_uploads(pdf_path)
 
         return pdf_path
 
-    # Optional helper specialized for WeasyPrint branch
-    def _upload_files_for_weasyprint(self, pdf_path: Optional[Path]):
-        """Upload PDF-only output to Google Drive for WeasyPrint backend."""
-        if not self.uploader or not self.uploader.enabled or not pdf_path:
+    def _handle_uploads(self, file_path: Path):
+        """Handle cloud storage uploads."""
+        if not file_path or not file_path.exists():
             return
 
-        print("\n  Uploading to Google Drive...")
+        print(f"\n  [Upload] Processing {file_path.name}...")
 
-        folder_id = None
-        if self.config.gdrive_folder:
-            base_folder = self.uploader.get_or_create_folder(self.config.gdrive_folder)
-            if base_folder:
-                date_folder = self.uploader.get_or_create_folder(
-                    self.config.date_stamp, parent_id=base_folder
-                )
-                folder_id = date_folder
-
-        if pdf_path.exists():
-            self.uploader.upload_file(pdf_path, folder_id=folder_id)
-
-    def _handle_all_uploads(
-        self, pdf_path: Optional[Path], latex_path: Optional[Path] = None
-    ):
-        """Unified handler for all cloud/network uploads."""
-        if not pdf_path or not pdf_path.exists():
-            return
-
-        print(f"\n  [Post-Processing] Handling uploads for {pdf_path.name}...")
-
-        # 1. Google Drive
-        if self.uploader and self.uploader.enabled:
-            if latex_path:
-                self._upload_files(latex_path, pdf_path)
-            else:
-                self._upload_files_for_weasyprint(pdf_path)
-
-        # 2. MinIO
+        # MinIO upload
         if self.minio and self.minio.enabled:
-            remote_path = f"{self.config.date_stamp}/{pdf_path.name}"
-            self.minio.upload_file(pdf_path, remote_path)
+            remote_path = f"{self.config.date_stamp}/{file_path.name}"
+            self.minio.upload_file(file_path, remote_path)
 
-        # 3. Nextcloud
+        # Nextcloud upload
         if self.nextcloud and self.nextcloud.enabled:
             remote_dir = f"Resumes/{self.config.date_stamp}"
-            self.nextcloud.upload_file(pdf_path, remote_dir)
+            self.nextcloud.upload_file(file_path, remote_dir)
 
     def _load_json(self, path: Path) -> dict:
         """Load JSON file."""
@@ -340,13 +294,16 @@ class ResumePipeline:
         self, critique: dict, latex_filename: str, pdf_path: Optional[Path]
     ):
         """Print pipeline completion summary."""
-        print(f"\n✓ Pipeline complete!")
-        print(f"  Final score: {critique.get('score', 'N/A')}")
-        print(f"  Company: {self.config.company}")
-        print(f"  Position: {self.config.job_title}")
-        print(f"  Template: {self.config.template}")
-        print(f"  Output directory: {self.config.output_dir}")
-        print(f"  LaTeX file: {latex_filename}")
+        print(f"\n{'=' * 80}")
+        print("✅ PIPELINE COMPLETE")
+        print(f"{'=' * 80}")
+        print(f"Final Score: {critique.get('score', 'N/A')}")
+        print(f"Company: {self.config.company}")
+        print(f"Position: {self.config.job_title}")
+        print(f"Template: {self.config.latex_template}")
+        print(f"Output Directory: {self.config.output_dir}")
+        print(f"\nGenerated Files:")
+        print(f"  • LaTeX: {latex_filename}")
         if pdf_path:
-            print(f"  PDF file: {pdf_path.name}")
-        print("=" * 80)
+            print(f"  • PDF: {pdf_path.name}")
+        print(f"{'=' * 80}\n")
