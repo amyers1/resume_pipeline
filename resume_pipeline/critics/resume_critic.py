@@ -2,19 +2,19 @@
 Resume critique and iterative refinement.
 """
 
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel # Changed
 from langchain_core.prompts import ChatPromptTemplate
-from ..models import JDRequirements, CritiqueResult
+from ..models import CritiqueResult
 from ..config import PipelineConfig
 
 
 class ResumeCritic:
     """Critiques resumes and performs iterative refinement."""
 
-    def __init__(self, llm: ChatOpenAI, config: PipelineConfig):
-        self.llm = llm
-        self.config = config
-        self._setup_prompts()
+    def __init__(self, llm: BaseChatModel, config: PipelineConfig): # Changed type hint
+            self.llm = llm
+            self.config = config
+            self._setup_prompts()
 
     def _setup_prompts(self):
         """Initialize critique and refinement prompts."""
