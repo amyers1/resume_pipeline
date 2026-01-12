@@ -258,6 +258,20 @@ class ResumePipeline:
         if pdf_path:
             self._handle_uploads(pdf_path)
 
+        # Also generate .tex file for archival/manual compilation
+        print("  Also generating LaTeX (.tex) file for archival...")
+        try:
+            structured_resume = StructuredResume(**context)
+            latex_output = self.latex_gen.generate(structured_resume)
+            latex_filename = self.config.get_output_filename("tex")
+            latex_path = self.config.output_dir / latex_filename
+            latex_path.write_text(latex_output, encoding="utf-8")
+            print(f"  ✓ LaTeX file created: {latex_filename}")
+            if latex_path:
+                self._handle_uploads(latex_path)
+        except TypeError as e:
+            print(f"Error generating latex file...unable to parse {json_path}")
+
         return pdf_path
 
     def _handle_uploads(self, file_path: Path):
