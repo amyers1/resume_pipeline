@@ -56,12 +56,8 @@ class AwesomeCVTemplate(BaseTemplate):
 \end{cvskills}
 
 \cvsection{Experience}
-\BLOCK{set grouped_section = namespace(started=false)}
 \BLOCK{for exp in experience}
-\BLOCK{if exp.is_grouped and not grouped_section.started}
-\cvsubsection{Other Relevant Experience}
-\BLOCK{set grouped_section.started = true}
-\BLOCK{endif}
+\BLOCK{if not exp.is_grouped}
 \begin{cventries}
   \cventry
     {\VAR{exp.title | latex_escape}}
@@ -75,8 +71,26 @@ class AwesomeCVTemplate(BaseTemplate):
 \BLOCK{endfor}
       \end{cvitems}
     }
-\end{cventries}
 \BLOCK{endfor}
+    \cventry
+    {Other Relevant Experience}
+    {Multiple}
+    {Various Locations}
+    {2006--2016}
+    {
+        \begin{cvitems}
+\BLOCK{for exp in experience}
+\BLOCK{if exp.is_grouped}
+    \BLOCK{for bullet in exp.bullets}
+        \item {\VAR{bullet | latex_escape}}
+    \BLOCK{endfor}
+\BLOCK{endif}
+\BLOCK{endfor}
+        \end{cvitems}
+    }
+
+\end{cventries}
+
 
 \cvsection{Education}
 \begin{cventries}

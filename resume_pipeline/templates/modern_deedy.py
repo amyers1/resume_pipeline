@@ -50,11 +50,10 @@ class ModernDeedyTemplate(BaseTemplate):
 \BLOCK{set grouped_section = namespace(started=false)}
 \BLOCK{for exp in experience}
 \BLOCK{if exp.is_grouped and not grouped_section.started}
-\subsection{Other Relevant Experience}
 \BLOCK{set grouped_section.started = true}
+\resumeHeading{Other Relevant Experience}}{}}{Various Locations}}{2006--2016}
 \BLOCK{endif}
 \BLOCK{if exp.is_grouped}
-\resumeHeading{\VAR{exp.organization | latex_escape}} | \VAR{exp.title | latex_escape} | \VAR{exp.location | latex_escape} | \VAR{exp.start_date | latex_escape}--\VAR{exp.end_date | latex_escape}
 \begin{bullets}
 \BLOCK{for bullet in exp.bullets}
     \item \VAR{bullet | latex_escape}
