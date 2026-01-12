@@ -269,12 +269,14 @@ class ResumePipeline:
 
         # MinIO upload
         if self.minio and self.minio.enabled:
-            remote_path = f"{self.config.date_stamp}/{file_path.name}"
+            # NEW: Include run timestamp in MinIO path
+            remote_path = f"{self.config.date_stamp}/run_{self.config.time_stamp}/{file_path.name}"
             self.minio.upload_file(file_path, remote_path)
 
         # Nextcloud upload
         if self.nextcloud and self.nextcloud.enabled:
-            remote_dir = f"Resumes/{self.config.date_stamp}"
+            # NEW: Include run timestamp in Nextcloud path
+            remote_dir = f"Resumes/{self.config.date_stamp}/run_{self.config.time_stamp}"
             self.nextcloud.upload_file(file_path, remote_dir)
 
     def _load_json(self, path: Path) -> dict:

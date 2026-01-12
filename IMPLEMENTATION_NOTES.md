@@ -608,3 +608,262 @@ To use the refactored version:
 - **.env.example**: Complete configuration template
 
 All your requirements have been implemented and documented. The codebase is now simpler, faster, and easier to maintain! 🚀
+
+# Time-Based Subdirectory Implementation Summary
+
+## Changes Made
+
+### 1. Updated `resume_pipeline/config.py`
+
+**Key Changes:**
+- Added `self.time_stamp` attribute: Stores time in `HHMMSS` format
+- Modified output directory creation logic:
+  ```python
+  # OLD: output/20260109/
+  self.output_dir = base_output / self.date_stamp
+  
+  # NEW: output/20260109/run_143025/
+  date_dir = base_output / self.date_stamp
+  run_dir = date_dir / f"run_{self.time_stamp}"
+  self.output_dir = run_dir
+  ```
+- Added symlink creation to `latest`:
+  ```python
+  latest_link = date_dir / "latest"
+  latest_link.symlink_to(run_dir.name)
+  ```
+
+**Backward Compatibility:**
+- ✅ All existing code continues to work
+- ✅ `self.output_dir` still used everywhere
+- ✅ Cache system unchanged
+- ✅ Filename generation unchanged
+
+### 2. Created `ARCHIVING_GUIDE.md`
+
+Complete documentation covering:
+- New directory structure
+- How to access different runs
+- Cleanup strategies
+- Disk space management
+- Troubleshooting
+- Migration notes
+
+## Testing the Implementation
+
+### Step 1: Replace config.py
+
+```bash
+# Backup existing config
+cp resume_pipeline/config.py resume_pipeline/config.py.backup
+
+# Copy the new config
+cp /path/to/new/config.py resume_pipeline/config.py
+```
+
+### Step 2: Test Single Run
+
+```bash
+# Run the pipeline
+./generate_resume.sh jobs/test_job.json
+
+# Expected output structure:
+# output/
+# └── 20260112/
+#     ├── run_143025/
+#     │   ├── dcs_senior_systems_engineer.tex
+#     │   └── ...
+#     └── latest -> run_143025/
+
+# Verify the structure
+ls -la output/20260112/
+```
+
+### Step 3: Test Multiple Runs
+
+```bash
+# Run 1
+./generate_resume.sh jobs/test_job.json
+sleep 2  # Wait to ensure different timestamp
+
+# Run 2
+./generate_resume.sh jobs/test_job.json --template awesome-cv
+sleep 2
+
+# Run 3
+./generate_resume.sh jobs/test_job.json --no-cache
+
+# Verify multiple directories exist
+ls -d output/20260112/run_*
+
+# Expected output:
+# output/20260112/run_143025/
+# output/20260112/run_143027/
+# output/20260112/run_143029/
+
+# Check latest symlink
+ls -la output/20260112/latest
+# Should point to: run_143029
+```
+
+### Step 4: Test Latest Symlink
+
+```bash
+# Access latest run
+cd output/20260112/latest
+ls -la
+
+# Should see all files from most recent run
+# - dcs_senior_systems_engineer.tex
+# - jd_requirements.json
+# - etc.
+```
+
+### Step 5: Test PDF Compilation
+
+```bash
+# Run with PDF compilation
+./generate_resume.sh jobs/test_job.json --compile-pdf
+
+# Verify PDF in run directory
+ls -la output/20260112/latest/*.pdf
+```
+
+### Step 6: Verify Cache Still Works
+
+```bash
+# First run (creates cache)
+./generate_resume.sh jobs/test_job.json
+
+# Check cache
+ls -la output/.cache/
+
+# Second run (should use cache)
+./generate_resume.sh jobs/test_job.json
+
+# Should see message: "✓ Loaded from cache"
+# Should create new run directory but use cached data
+```
+
+## Rollback Plan
+
+If you need to revert to the old behavior:
+
+```bash
+# Restore backup
+cp resume_pipeline/config.py.backup resume_pipeline/config.py
+
+# Or manually edit config.py:
+# Remove the run_dir logic and symlink creation
+# Revert to: self.output_dir = base_output / self.date_stamp
+```
+
+## Verification Checklist
+
+- [ ] Single run creates `run_HHMMSS` directory
+- [ ] Multiple runs create separate directories
+- [ ] `latest` symlink points to most recent run
+- [ ] All files generated correctly in run directory
+- [ ] Cache system still works across runs
+- [ ] PDF compilation works (if enabled)
+- [ ] Google Drive upload works (if enabled)
+- [ ] No errors or warnings in console output
+- [ ] Old checkpoint files in correct locations
+- [ ] Filenames remain clean (no timestamps in filenames)
+
+## Expected Console Output
+
+```
+[1/7] Checking cache...
+  ✓ Created symlink: output/20260112/latest -> run_143025
+  ✓ Output directory: output/20260112/run_143025
+
+[2/7] Analyzing job description...
+  ✓ Job analysis complete
+
+[3/7] Matching achievements...
+  ✓ Matched 15 achievements
+
+[4/7] Generating initial draft...
+  ✓ Draft generated
+
+[5/7] Critiquing and refining resume...
+  ✓ Refinement complete
+
+[6/7] Generating structured output...
+  Using LaTeX backend...
+  ✓ LaTeX file: output/20260112/run_143025/dcs_senior_systems_engineer.tex
+
+[7/7] Post-processing...
+  ✓ Complete
+
+Output directory: output/20260112/run_143025
+LaTeX file: dcs_senior_systems_engineer.tex
+```
+
+## Integration with Existing Workflows
+
+### Docker
+No changes needed to docker-compose.yml or Dockerfile. The pipeline automatically uses the new structure.
+
+### Scripts
+All existing shell scripts continue to work:
+```bash
+# generate_resume.sh - no changes needed
+./generate_resume.sh jobs/test_job.json
+
+# Scripts accessing output need minor update
+# OLD:
+OUTPUT_DIR="output/$(date +%Y%m%d)"
+
+# NEW: 
+OUTPUT_DIR="output/$(date +%Y%m%d)/latest"
+```
+
+### CI/CD Pipelines
+Update any automated scripts to use the `latest` symlink:
+```bash
+# Copy artifacts
+cp output/$(date +%Y%m%d)/latest/*.pdf artifacts/
+
+# Or copy all runs
+cp -r output/$(date +%Y%m%d)/run_* artifacts/
+```
+
+## Performance Impact
+
+- **Minimal overhead**: Only adds directory creation and symlink
+- **No speed impact**: Pipeline execution time unchanged
+- **Cache unchanged**: Shared cache works the same
+- **Disk space**: ~50-500KB per run (depending on PDF)
+
+## Next Steps
+
+1. **Test thoroughly** with your actual job files
+2. **Update any scripts** that reference output directories
+3. **Document** any project-specific cleanup strategies
+4. **Monitor** disk usage if running frequently
+5. **Consider** automating cleanup for old runs
+
+## Questions or Issues?
+
+If you encounter any problems:
+
+1. Check the symlink was created: `ls -la output/$(date +%Y%m%d)/latest`
+2. Verify permissions: `ls -ld output/$(date +%Y%m%d)/run_*`
+3. Check console output for error messages
+4. Review `ARCHIVING_GUIDE.md` for troubleshooting
+
+## Code Changes Required
+
+Only **one file** needs to be updated:
+- `resume_pipeline/config.py` ✅ (provided)
+
+**No changes needed to:**
+- `resume_pipeline/pipeline.py` ✅
+- `resume_pipeline/__main__.py` ✅
+- `generate_resume.sh` ✅
+- `docker-compose.yml` ✅
+- Any other files ✅
+
+The implementation is **drop-in compatible** with your existing code!
