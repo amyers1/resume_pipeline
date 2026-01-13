@@ -27,7 +27,7 @@ class AwesomeCVTemplate(BaseTemplate):
 
 \mobile{\VAR{phone}}
 \email{\VAR{email}}
-\linkedin{\VAR{linkedin.replace('linkedin.com/in/', '')}}
+\linkedin{\VAR{linkedin.replace('www.linkedin.com/in/', '')}}
 
 %\makecvfooter
 %  {\today}
@@ -69,9 +69,9 @@ class AwesomeCVTemplate(BaseTemplate):
     {\VAR{exp.start_date | latex_escape}--\VAR{exp.end_date | latex_escape}}
     {
       \begin{cvitems}
-        \BLOCK{for bullet in exp.bullets}
+\BLOCK{for bullet in exp.bullets}
         \item {\VAR{bullet | latex_escape}}
-        \BLOCK{endfor}
+\BLOCK{endfor}
       \end{cvitems}
     }
 \BLOCK{endif}
@@ -83,13 +83,13 @@ class AwesomeCVTemplate(BaseTemplate):
     {2006--2016}
     {
       \begin{cvitems}
-        \BLOCK{for exp in experience}
-        \BLOCK{if exp.is_grouped}
-        \BLOCK{for bullet in exp.bullets}
+\BLOCK{for exp in experience}
+\BLOCK{if exp.is_grouped}
+\BLOCK{for bullet in exp.bullets}
         \item {\VAR{bullet | latex_escape}}
-        \BLOCK{endfor}
-        \BLOCK{endif}
-        \BLOCK{endfor}
+\BLOCK{endfor}
+\BLOCK{endif}
+\BLOCK{endfor}
       \end{cvitems}
     }
 
