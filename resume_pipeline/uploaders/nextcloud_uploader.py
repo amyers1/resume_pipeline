@@ -8,9 +8,11 @@ class NextcloudUploader:
         self.client = Client(base_url=endpoint, auth=(username, password))
         self.enabled = self.client.exists("/") # Simple health check
 
-    def upload_file(self, file_path: Path, remote_dir: str) -> bool:
+    def upload_file(self, file_path: Path, remote_parent: str, remote_dir: str) -> bool:
         if not self.enabled: return False
         try:
+            if not self.client.exists(remote_parent):
+                self.client.mkdir(remote_parent)
             if not self.client.exists(remote_dir):
                 self.client.mkdir(remote_dir)
 

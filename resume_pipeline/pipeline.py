@@ -290,8 +290,9 @@ class ResumePipeline:
         # Nextcloud upload
         if self.nextcloud and self.nextcloud.enabled:
             # NEW: Include run timestamp in Nextcloud path
+            remote_parent = f"Resumes/{self.config.date_stamp}"
             remote_dir = f"Resumes/{self.config.date_stamp}/run_{self.config.time_stamp}"
-            self.nextcloud.upload_file(file_path, remote_dir)
+            self.nextcloud.upload_file(file_path, remote_parent, remote_dir)
 
     def _load_json(self, path: Path) -> dict:
         """Load JSON file."""

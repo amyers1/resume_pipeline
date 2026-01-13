@@ -19,7 +19,7 @@ class AwesomeCVTemplate(BaseTemplate):
 
 \fontdir[fonts/]
 
-\colorlet{awesome}{awesome-red}
+\colorlet{awesome}{awesome-darknight}
 
 \name{\VAR{full_name.split()[0]}}{\VAR{' '.join(full_name.split()[1:])}}
 \position{\VAR{role_title | latex_escape}}
@@ -29,36 +29,39 @@ class AwesomeCVTemplate(BaseTemplate):
 \email{\VAR{email}}
 \linkedin{\VAR{linkedin.replace('linkedin.com/in/', '')}}
 
-\makecvfooter
-  {\today}
-  {\VAR{full_name}~~~·~~~Résumé}
-  {\thepage}
+%\makecvfooter
+%  {\today}
+%  {\VAR{full_name}~~~·~~~Résumé}
+%  {\thepage}
 
 \begin{document}
 
 \makecvheader[C]
 
+% --- 1. SUMMARY ---
 \cvsection{Summary}
+
 \begin{cvparagraph}
 \BLOCK{for line in professional_summary}
-\VAR{line | latex_escape}\BLOCK{if not loop.last} \BLOCK{endif}
+\VAR{line | latex_escape}
 \BLOCK{endfor}
 \end{cvparagraph}
 
-\cvsection{Skills}
-\begin{cvskills}
-\BLOCK{set skills_per_row = 3}
-\BLOCK{for i in range(0, core_competencies|length, skills_per_row)}
-  \cvskill
-    {}
-    {\BLOCK{for comp in core_competencies[i:i+skills_per_row]}\VAR{comp | latex_escape}\BLOCK{if not loop.last}, \BLOCK{endif}\BLOCK{endfor}}
-\BLOCK{endfor}
-\end{cvskills}
+% --- 2. CORE COMPETENCIES ---
+\cvsection{Core Competencies}
 
+\begin{cvcompetencies}
+\BLOCK{for line in core_competencies}
+  \item \VAR{line | latex_escape}
+\BLOCK{endfor}
+\end{cvcompetencies}
+
+% --- 3. EXPERIENCE ---
 \cvsection{Experience}
+
+\begin{cventries}
 \BLOCK{for exp in experience}
 \BLOCK{if not exp.is_grouped}
-\begin{cventries}
   \cventry
     {\VAR{exp.title | latex_escape}}
     {\VAR{exp.organization | latex_escape}}
@@ -66,32 +69,33 @@ class AwesomeCVTemplate(BaseTemplate):
     {\VAR{exp.start_date | latex_escape}--\VAR{exp.end_date | latex_escape}}
     {
       \begin{cvitems}
-\BLOCK{for bullet in exp.bullets}
+        \BLOCK{for bullet in exp.bullets}
         \item {\VAR{bullet | latex_escape}}
-\BLOCK{endfor}
+        \BLOCK{endfor}
       \end{cvitems}
     }
+\BLOCK{endif}
 \BLOCK{endfor}
-    \cventry
+  \cventry
     {Other Relevant Experience}
     {Multiple}
     {Various Locations}
     {2006--2016}
     {
-        \begin{cvitems}
-\BLOCK{for exp in experience}
-\BLOCK{if exp.is_grouped}
-    \BLOCK{for bullet in exp.bullets}
+      \begin{cvitems}
+        \BLOCK{for exp in experience}
+        \BLOCK{if exp.is_grouped}
+        \BLOCK{for bullet in exp.bullets}
         \item {\VAR{bullet | latex_escape}}
-    \BLOCK{endfor}
-\BLOCK{endif}
-\BLOCK{endfor}
-        \end{cvitems}
+        \BLOCK{endfor}
+        \BLOCK{endif}
+        \BLOCK{endfor}
+      \end{cvitems}
     }
 
 \end{cventries}
 
-
+% --- 4. EDUCATION ---
 \cvsection{Education}
 \begin{cventries}
 \BLOCK{for edu in education}
@@ -104,26 +108,44 @@ class AwesomeCVTemplate(BaseTemplate):
 \BLOCK{endfor}
 \end{cventries}
 
+% --- 5. CERTIFICATIONS ---
 \cvsection{Certifications}
 \begin{cvhonors}
-\BLOCK{for cert in certifications}
   \cvhonor
+    {Project Management Professional (PMP)}
+    {Project Management Institute (PMI)}
     {}
-    {\VAR{cert | latex_escape}}
+    {2025}
+  \cvhonor
+    {Engineering \& Technical Management Practitioner}
+    {DAWIA}
     {}
+    {2022}
+  \cvhonor
+    {Test \& Evaluation Practitioner (Level III)}
+    {DAWIA}
     {}
-\BLOCK{endfor}
+    {2013}
 \end{cvhonors}
 
-\cvsection{Awards \& Honors}
+% --- 6. AWARDS ---
+\cvsection{Awards}
 \begin{cvhonors}
-\BLOCK{for award in awards}
   \cvhonor
-    {}
-    {\VAR{award | latex_escape}}
-    {}
-    {}
-\BLOCK{endfor}
+    {Winner}
+    {Dept. of the Air Force Outstanding Senior Military Scientist/Engineer}
+    {Washington D.C}
+    {2023}
+  \cvhonor
+    {MAJCOM Winner}
+    {Arthur S. Flemming Award}
+    {Washington D.C.}
+    {2018}
+  \cvhonor
+    {Winner}
+    {SMC Production Corps Field Grade Officer of the Year (2019)}
+    {Los Angeles, CA}
+    {2019}
 \end{cvhonors}
 
 \end{document}"""
