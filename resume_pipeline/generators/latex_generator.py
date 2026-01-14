@@ -55,7 +55,7 @@ class StructuredResumeParser:
              "You convert markdown resumes to structured JSON. "
              "Extract: full_name, email, phone, location, linkedin, role_title, "
              "professional_summary (list), core_competencies (list), "
-             "experience (list of entries with title, organization, location, dates, bullets, is_grouped flag), "
+             "experience (list of entries with title, organization, location, dates (in 'Mmm YYYY' format), bullets, is_grouped flag), "
              "education (list), certifications (list), awards (list). "
              "For experience entries under 'Other Relevant Experience' heading, set is_grouped=true. "
              "Preserve all content accurately. Return StructuredResume JSON only."),

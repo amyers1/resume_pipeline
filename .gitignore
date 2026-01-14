@@ -4,5 +4,6 @@ token.json
 fonts/
 jobs/
 output/
+references/
 resume_pipeline_v1.py
 resume_pipeline_v2.py
