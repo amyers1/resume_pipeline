@@ -1,6 +1,3 @@
-Here is the updated `README.md` file content, incorporating the new RabbitMQ worker scripts and CLI tools into the documentation.
-
-```markdown
 # AI Resume Pipeline
 
 A robust, containerized pipeline that generates tailored resumes using LLMs (OpenAI or Google Gemini). This system analyzes job descriptions, matches them against your career profile, generates tailored content, and renders professional PDFs using WeasyPrint or LaTeX.
@@ -194,7 +191,3 @@ export GROUP_ID=$(id -g)
 ## 📄 License
 
 MIT License - customize as needed.
-
-```
-
-```
