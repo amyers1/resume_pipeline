@@ -2,8 +2,11 @@
 credentials.json
 token.json
 fonts/
-jobs/
+jobs/*
 output/
 references/
 resume_pipeline_v1.py
 resume_pipeline_v2.py
+
+# ignore all job files except the schema
+!jobs/schema.json
