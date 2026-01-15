@@ -14,12 +14,14 @@ import argparse
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from resume_pipeline_rabbitmq import publish_job_request
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Submit resume generation job to RabbitMQ',
+        description="Submit resume generation job to RabbitMQ",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -39,45 +41,40 @@ Examples:
   for job in jobs/*.json; do
     python submit_job.py "$job"
   done
-        """
+        """,
+    )
+
+    parser.add_argument("job_json", help="Path to job description JSON file")
+
+    parser.add_argument(
+        "--profile",
+        default="career_profile.json",
+        help="Path to career profile JSON (default: career_profile.json)",
     )
 
     parser.add_argument(
-        'job_json',
-        help='Path to job description JSON file'
+        "--template",
+        default="awesome-cv",
+        choices=["modern-deedy", "awesome-cv"],
+        help="LaTeX template to use (default: awesome-cv)",
     )
 
     parser.add_argument(
-        '--profile',
-        default='career_profile.json',
-        help='Path to career profile JSON (default: career_profile.json)'
+        "--backend",
+        default="weasyprint",
+        choices=["weasyprint", "latex"],
+        help="Output backend (default: weasyprint)",
     )
 
     parser.add_argument(
-        '--template',
-        default='modern-deedy',
-        choices=['modern-deedy', 'awesome-cv'],
-        help='LaTeX template to use (default: modern-deedy)'
-    )
-
-    parser.add_argument(
-        '--backend',
-        default='weasyprint',
-        choices=['weasyprint', 'latex'],
-        help='Output backend (default: weasyprint)'
-    )
-
-    parser.add_argument(
-        '--priority',
+        "--priority",
         type=int,
         default=0,
-        help='Job priority (0-10, higher = more urgent, default: 0)'
+        help="Job priority (0-10, higher = more urgent, default: 0)",
     )
 
     parser.add_argument(
-        '--no-upload',
-        action='store_true',
-        help='Disable cloud uploads for this job'
+        "--no-upload", action="store_true", help="Disable cloud uploads for this job"
     )
 
     args = parser.parse_args()
@@ -106,7 +103,7 @@ Examples:
             career_profile_path=str(profile_path),
             template=args.template,
             output_backend=args.backend,
-            priority=args.priority
+            priority=args.priority,
         )
 
         print(f"✓ Job submitted successfully")
@@ -124,5 +121,6 @@ Examples:
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    load_dotenv()
     main()

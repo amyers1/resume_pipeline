@@ -1,5 +1,8 @@
 FROM python:3.14-slim
 
+# Install uv from the official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 # Set working directory
 WORKDIR /app
 
@@ -21,10 +24,14 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Use uv to install dependencies into the system environment
+RUN uv pip install --system --no-cache -r requirements.txt
 
 # Copy application code
 COPY resume_pipeline/ /app/resume_pipeline/
+
+# Copy root Python scripts (monitor_jobs.py, submit_job.py, etc.)
+COPY *.py /app/
 
 # Copy templates directory (HTML, CSS, and LaTeX templates)
 COPY templates/ /app/templates/

@@ -4,9 +4,9 @@ RabbitMQ Worker for Resume Pipeline
 This worker consumes job requests from RabbitMQ and executes the resume generation pipeline.
 """
 
+import logging
 import os
 import sys
-import logging
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -16,19 +16,18 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent))
 
 from resume_pipeline_rabbitmq import (
+    JobRequest,
+    JobStatus,
+    MessageType,
+    PipelineProgressTracker,
+    PipelineStage,
     RabbitMQClient,
     RabbitMQConfig,
-    JobRequest,
-    PipelineStage,
-    PipelineProgressTracker,
-    MessageType,
-    JobStatus
 )
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,9 @@ class ResumePipelineWorker:
         if enable_rabbitmq:
             self.rabbitmq_client = RabbitMQClient()
             if not self.rabbitmq_client.connect():
-                logger.warning("Failed to connect to RabbitMQ - running in standalone mode")
+                logger.warning(
+                    "Failed to connect to RabbitMQ - running in standalone mode"
+                )
                 self.enable_rabbitmq = False
 
     def process_job(self, job_request: JobRequest):
@@ -67,7 +68,7 @@ class ResumePipelineWorker:
                 job_id=job_request.job_id,
                 status=MessageType.JOB_STARTED,
                 message="Job started",
-                started_at=started_at
+                started_at=started_at,
             )
             self.rabbitmq_client.publish_job_status(status)
 
@@ -93,7 +94,7 @@ class ResumePipelineWorker:
             pipeline = self._create_pipeline_with_tracking(config, tracker)
 
             # Run the pipeline
-            structured_resume, latex_output = pipeline.run()
+            structured_resume, latex_output, pdf_path = pipeline.run()
 
             # Collect output files
             output_files = self._collect_output_files(config, structured_resume)
@@ -104,7 +105,7 @@ class ResumePipelineWorker:
                     job_request.job_id,
                     output_files,
                     started_at,
-                    f"Resume generated successfully for {structured_resume.full_name}"
+                    f"Resume generated successfully for {structured_resume.full_name}",
                 )
 
             logger.info(f"Job {job_request.job_id} completed successfully")
@@ -120,28 +121,27 @@ class ResumePipelineWorker:
             if self.enable_rabbitmq:
                 stage = tracker.current_stage if tracker else None
                 self.rabbitmq_client.publish_error(
-                    job_request.job_id,
-                    error_msg,
-                    started_at,
-                    stage
+                    job_request.job_id, error_msg, started_at, stage
                 )
 
     def _update_env(self, job_request: JobRequest):
         """Update environment variables based on job request."""
-        os.environ['JOB_JSON_PATH'] = job_request.job_json_path
-        os.environ['CAREER_PROFILE_PATH'] = job_request.career_profile_path
+        os.environ["JOB_JSON_PATH"] = job_request.job_json_path
+        os.environ["CAREER_PROFILE_PATH"] = job_request.career_profile_path
 
         if job_request.template:
-            if job_request.output_backend == 'latex':
-                os.environ['LATEX_TEMPLATE'] = job_request.template
+            if job_request.output_backend == "latex":
+                os.environ["LATEX_TEMPLATE"] = job_request.template
             # For weasyprint, template might map to CSS file
 
-        os.environ['OUTPUT_BACKEND'] = job_request.output_backend
+        os.environ["OUTPUT_BACKEND"] = job_request.output_backend
 
         # Disable/enable uploads based on job request
-        enable_uploads = 'true' if job_request.enable_uploads else 'false'
-        os.environ['ENABLE_NEXTCLOUD'] = os.environ.get('ENABLE_NEXTCLOUD', enable_uploads)
-        os.environ['ENABLE_MINIO'] = os.environ.get('ENABLE_MINIO', enable_uploads)
+        enable_uploads = "true" if job_request.enable_uploads else "false"
+        os.environ["ENABLE_NEXTCLOUD"] = os.environ.get(
+            "ENABLE_NEXTCLOUD", enable_uploads
+        )
+        os.environ["ENABLE_MINIO"] = os.environ.get("ENABLE_MINIO", enable_uploads)
 
     def _create_pipeline_with_tracking(self, config, tracker):
         """Create pipeline instance with RabbitMQ progress tracking."""
@@ -177,29 +177,37 @@ class ResumePipelineWorker:
     def _collect_output_files(self, config, structured_resume) -> dict:
         """Collect paths to generated output files."""
         output_dir = config.output_dir
-        company = structured_resume.experience[0].company if structured_resume.experience else "unknown"
-        position = structured_resume.experience[0].position if structured_resume.experience else "position"
+        company = (
+            structured_resume.experience[0].company
+            if structured_resume.experience
+            else "unknown"
+        )
+        position = (
+            structured_resume.experience[0].position
+            if structured_resume.experience
+            else "position"
+        )
 
         # Sanitize filename
-        filename_base = f"{company}_{position}".lower().replace(' ', '_')
+        filename_base = f"{company}_{position}".lower().replace(" ", "_")
 
         output_files = {
-            'output_dir': str(output_dir),
-            'structured_resume': str(output_dir / 'structured_resume.json')
+            "output_dir": str(output_dir),
+            "structured_resume": str(output_dir / "structured_resume.json"),
         }
 
         # Check for LaTeX file
         tex_file = output_dir / f"{filename_base}.tex"
         if tex_file.exists():
-            output_files['latex'] = str(tex_file)
+            output_files["latex"] = str(tex_file)
 
         # Check for PDF file
         pdf_file = output_dir / f"{filename_base}.pdf"
         if pdf_file.exists():
-            output_files['pdf'] = str(pdf_file)
+            output_files["pdf"] = str(pdf_file)
 
         # Add checkpoint files
-        for checkpoint in ['jd_requirements', 'matched_achievements', 'critique']:
+        for checkpoint in ["jd_requirements", "matched_achievements", "critique"]:
             checkpoint_file = output_dir / f"{checkpoint}.json"
             if checkpoint_file.exists():
                 output_files[checkpoint] = str(checkpoint_file)
@@ -232,7 +240,7 @@ class ResumePipelineWorker:
 def main():
     """Main entry point for the worker."""
     # Check if RabbitMQ should be enabled
-    enable_rabbitmq = os.getenv('ENABLE_RABBITMQ', 'true').lower() == 'true'
+    enable_rabbitmq = os.getenv("ENABLE_RABBITMQ", "true").lower() == "true"
 
     if not enable_rabbitmq:
         logger.info("RabbitMQ integration disabled (ENABLE_RABBITMQ=false)")
