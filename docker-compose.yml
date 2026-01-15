@@ -1,35 +1,38 @@
 services:
-    resume-generator:
+    api:
         build: .
-        container_name: resume-pipeline
-        environment:
-            - USER_ID=${USER_ID:-1000}
-            - GROUP_ID=${GROUP_ID:-1000}
-        volumes:
-            # Core application files (read-only)
-            - ./career_profile.json:/app/career_profile.json:ro
-            - ./.env:/app/.env:ro
-
-            # Output directory (read-write)
-            - ./output:/app/output:rw
-
-            # Jobs directory (read-only)
-            - ./jobs:/app/jobs:ro
-
-            # Templates directory (read-only)
-            # Mounted so you can update templates without rebuilding
-            - ./templates:/app/templates:ro
-
-        # Default command can be overridden
-        # Example: docker-compose run --rm resume-generator
-        #
-    resume-worker:
-        build: .
-        container_name: resume-worker
+        container_name: resume-api
+        ports:
+            - "8000:8000"
         environment:
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}
             - ENABLE_RABBITMQ=true
+            - RABBITMQ_HOST=rabbitmq
+            - RABBITMQ_PORT=5672
+        env_file:
+            - .env
+        volumes:
+            - ./career_profile.json:/app/career_profile.json:ro
+            - ./.env:/app/.env:ro
+            - ./output:/app/output:rw
+            - ./jobs:/app/jobs:rw
+            - ./templates:/app/templates:ro
+        command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+        restart: unless-stopped
+
+        # Worker Pool (scalable)
+    worker:
+        build: .
+        environment:
+            - USER_ID=${USER_ID:-1000}
+            - GROUP_ID=${GROUP_ID:-1000}
+            - ENABLE_RABBITMQ=true
+            - RABBITMQ_HOST=rabbitmq
+            - RABBITMQ_PORT=5672
         env_file:
             - .env
         volumes:
@@ -39,4 +42,9 @@ services:
             - ./jobs:/app/jobs:ro
             - ./templates:/app/templates:ro
         command: python resume_worker.py
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
         restart: unless-stopped
+        deploy:
+            replicas: 2

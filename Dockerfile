@@ -19,25 +19,32 @@ RUN apt-get update && apt-get install -y \
     fontconfig \
     fonts-liberation \
     fonts-dejavu-core \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -fv
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-# Use uv to install dependencies into the system environment
 RUN uv pip install --system --no-cache -r requirements.txt
 
 # Copy application code
 COPY resume_pipeline/ /app/resume_pipeline/
 
-# Copy root Python scripts (monitor_jobs.py, submit_job.py, etc.)
+# Copy root Python scripts (monitor_jobs.py, submit_job.py, api.py, etc.)
 COPY *.py /app/
 
 # Copy templates directory (HTML, CSS, and LaTeX templates)
 COPY templates/ /app/templates/
 
-# Create output directory
-RUN mkdir -p /app/output
+# Create output and jobs directories
+RUN mkdir -p /app/output /app/jobs
+
+# Expose API port
+EXPOSE 8000
+
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Set entrypoint to handle user/group permissions
 COPY docker-entrypoint.sh /usr/local/bin/
