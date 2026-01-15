@@ -428,6 +428,8 @@ def publish_job_request(
     template: str = "modern-deedy",
     output_backend: str = "weasyprint",
     priority: int = 0,
+    enable_uploads: bool = True,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
     Publish a job request to RabbitMQ.
@@ -443,6 +445,8 @@ def publish_job_request(
         template=template,
         output_backend=output_backend,
         priority=priority,
+        enable_uploads=enable_uploads,
+        metadata=metadata,
     )
 
     with RabbitMQClient() as client:

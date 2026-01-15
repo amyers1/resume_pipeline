@@ -4,6 +4,9 @@ pydantic
 pytz
 jinja2
 pika>=1.3.0
+fastapi
+uvicorn
+sse-starlette
 
 # LLM libraries
 langchain>=1.2.3
