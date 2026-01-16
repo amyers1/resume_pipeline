@@ -1,7 +1,7 @@
 services:
     api:
         build: .
-        container_name: resume-api
+        container_name: resume-pipeline-api
         ports:
             - "8000:8000"
         environment:
@@ -15,9 +15,11 @@ services:
         volumes:
             - ./career_profile.json:/app/career_profile.json:ro
             - ./.env:/app/.env:ro
-            - ./output:/app/output:rw
-            - ./jobs:/app/jobs:rw
-            - ./templates:/app/templates:ro
+            - ./jobs:/app/jobs
+            - ./output:/app/output
+            - ./profiles:/app/profiles
+            - ./api.py:/app/api.py
+            - ./resume_pipeline_rabbitmq.py:/app/resume_pipeline_rabbitmq.py
         command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
         # depends_on:
         #     rabbitmq:
@@ -27,6 +29,7 @@ services:
         # Worker Pool (scalable)
     worker:
         build: .
+        user: "${UID:-1000}:${GID:-1000}"
         environment:
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}
@@ -36,11 +39,13 @@ services:
         env_file:
             - .env
         volumes:
-            - ./career_profile.json:/app/career_profile.json:ro
             - ./.env:/app/.env:ro
-            - ./output:/app/output:rw
-            - ./jobs:/app/jobs:ro
-            - ./templates:/app/templates:ro
+            - ./career_profile.json:/app/career_profile.json:ro
+            - ./jobs:/app/jobs
+            - ./output:/app/output
+            - ./profiles:/app/profiles
+            - ./resume_worker.py:/app/resume_worker.py
+            - ./resume_pipeline_rabbitmq.py:/app/resume_pipeline_rabbitmq.py
         command: python resume_worker.py
         # depends_on:
         #     rabbitmq:

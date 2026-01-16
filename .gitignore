@@ -7,6 +7,8 @@ output/
 references/
 resume_pipeline_v1.py
 resume_pipeline_v2.py
+fix_permissions.sh
+generate_resume.sh.old
 
 # ignore all job files except the schema
 !jobs/schema.json
