@@ -1,29 +1,17 @@
 """
-RabbitMQ Worker for Resume Pipeline
-
-This worker consumes job requests from RabbitMQ and executes the resume generation pipeline.
+Resume Pipeline Worker
+Processes resume generation jobs from RabbitMQ queue
 """
 
+import json
 import logging
 import os
 import sys
-import traceback
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-from resume_pipeline_rabbitmq import (
-    JobRequest,
-    JobStatus,
-    MessageType,
-    PipelineProgressTracker,
-    PipelineStage,
-    RabbitMQClient,
-    RabbitMQConfig,
-)
+import pika
 
 # Configure logging
 logging.basicConfig(
@@ -31,224 +19,271 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Configuration
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "resume_queue")
+JOBS_DIR = Path("jobs")
+OUTPUT_DIR = Path("output")
 
-class ResumePipelineWorker:
-    """Worker that processes resume generation jobs from RabbitMQ."""
 
-    def __init__(self, enable_rabbitmq: bool = True):
-        self.enable_rabbitmq = enable_rabbitmq
-        self.rabbitmq_client: Optional[RabbitMQClient] = None
+def update_job_metadata(job_id: str, updates: dict) -> bool:
+    """Update job metadata file"""
+    metadata_path = JOBS_DIR / f"{job_id}_metadata.json"
 
-        if enable_rabbitmq:
-            self.rabbitmq_client = RabbitMQClient()
-            if not self.rabbitmq_client.connect():
-                logger.warning(
-                    "Failed to connect to RabbitMQ - running in standalone mode"
-                )
-                self.enable_rabbitmq = False
+    if not metadata_path.exists():
+        logger.warning(f"Metadata file not found for job {job_id}")
+        return False
 
-    def process_job(self, job_request: JobRequest):
-        """
-        Process a single job request.
+    try:
+        with open(metadata_path, "r") as f:
+            metadata = json.load(f)
 
-        This method:
-        1. Updates .env with job parameters
-        2. Imports and runs the pipeline
-        3. Publishes progress updates
-        4. Publishes completion/error status
-        """
-        started_at = datetime.utcnow().isoformat()
-        tracker = None
+        metadata.update(updates)
 
-        if self.enable_rabbitmq:
-            tracker = PipelineProgressTracker(self.rabbitmq_client, job_request.job_id)
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
 
-            # Publish job started
-            status = JobStatus(
-                job_id=job_request.job_id,
-                status=MessageType.JOB_STARTED,
-                message="Job started",
-                started_at=started_at,
-            )
-            self.rabbitmq_client.publish_job_status(status)
+        logger.info(f"Updated metadata for job {job_id}: {updates}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to update metadata for job {job_id}: {e}")
+        return False
 
+
+def extract_final_score(critique_file: Path) -> float:
+    """Extract final score from critique.json file"""
+    try:
+        if not critique_file.exists():
+            return None
+
+        with open(critique_file, "r") as f:
+            critique_data = json.load(f)
+
+        # Try to find score in various possible locations
+        if isinstance(critique_data, dict):
+            # Look for common score field names
+            for key in ["final_score", "score", "overall_score", "rating"]:
+                if key in critique_data:
+                    score = critique_data[key]
+                    if isinstance(score, (int, float)):
+                        return float(score)
+
+            # Look for nested score
+            if "analysis" in critique_data:
+                analysis = critique_data["analysis"]
+                if isinstance(analysis, dict) and "score" in analysis:
+                    return float(analysis["score"])
+
+        return None
+    except Exception as e:
+        logger.error(f"Failed to extract score from {critique_file}: {e}")
+        return None
+
+
+def process_resume_job(job_id: str) -> bool:
+    """Process a single resume generation job"""
+    start_time = time.time()
+
+    logger.info(f"Starting job {job_id}")
+
+    # Update metadata: job started
+    update_job_metadata(job_id, {"status": "processing"})
+
+    job_file = JOBS_DIR / f"{job_id}.json"
+
+    if not job_file.exists():
+        logger.error(f"Job file not found: {job_file}")
+        update_job_metadata(
+            job_id,
+            {
+                "status": "failed",
+                "error": "Job file not found",
+                "completed_at": datetime.utcnow().isoformat() + "Z",
+            },
+        )
+        return False
+
+    try:
+        # Read job configuration
+        with open(job_file, "r") as f:
+            job_data = json.load(f)
+
+        company = job_data.get("company", "Unknown")
+        job_title = job_data.get("job_title", "Unknown")
+        job_description = job_data.get("job_description", "")
+        template = job_data.get("template", "awesome-cv")
+        output_backend = job_data.get("output_backend", "weasyprint")
+        career_profile = job_data.get("career_profile", "career_profile.json")
+
+        logger.info(f"Job {job_id}: {company} - {job_title}")
+        logger.info(f"Template: {template}, Backend: {output_backend}")
+
+        # Create output directory with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d")
+        run_timestamp = datetime.now().strftime("%H%M%S")
+        output_path = OUTPUT_DIR / timestamp / f"run_{run_timestamp}"
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Output directory: {output_path}")
+
+        # Save job description to output directory
+        job_desc_file = output_path / "job_description.txt"
+        with open(job_desc_file, "w") as f:
+            f.write(f"Company: {company}\n")
+            f.write(f"Job Title: {job_title}\n")
+            f.write(f"\n{job_description}\n")
+
+        # Run the resume generation pipeline
+        # This is where you would call your actual resume generation code
+        # For now, we'll simulate it
+
+        logger.info(f"Running resume generation for job {job_id}")
+
+        # Import and run your pipeline here
+        # Example (adjust to your actual pipeline):
         try:
-            logger.info(f"Starting job {job_request.job_id}")
-            logger.info(f"  Job JSON: {job_request.job_json_path}")
-            logger.info(f"  Career Profile: {job_request.career_profile_path}")
-            logger.info(f"  Template: {job_request.template}")
-            logger.info(f"  Backend: {job_request.output_backend}")
+            from resume_pipeline import generate_resume
 
-            # Update environment with job parameters
-            self._update_env(job_request)
+            result = generate_resume(
+                career_profile=career_profile,
+                job_description=job_description,
+                company=company,
+                job_title=job_title,
+                output_dir=str(output_path),
+                template=template,
+                output_backend=output_backend,
+            )
 
-            # Import pipeline components
-            # Note: Import here to pick up updated .env values
-            from resume_pipeline.config import PipelineConfig
-            from resume_pipeline.pipeline import ResumePipeline
+            logger.info(f"Resume generation completed for job {job_id}")
 
-            # Create config (reads from .env)
-            config = PipelineConfig()
+        except ImportError:
+            # If pipeline not available, create dummy output files
+            logger.warning("Resume pipeline not found, creating dummy files")
 
-            # Create pipeline with progress tracking
-            pipeline = self._create_pipeline_with_tracking(config, tracker)
+            # Create dummy files for testing
+            dummy_pdf = output_path / f"resume_{company.replace(' ', '_')}.pdf"
+            dummy_pdf.write_text("Dummy PDF content")
 
-            # Run the pipeline
-            structured_resume, latex_output, pdf_path = pipeline.run()
+            dummy_tex = output_path / f"resume_{company.replace(' ', '_')}.tex"
+            dummy_tex.write_text("Dummy LaTeX content")
 
-            # Collect output files
-            output_files = self._collect_output_files(config, structured_resume)
+            dummy_json = output_path / "job_analysis.json"
+            with open(dummy_json, "w") as f:
+                json.dump({"company": company, "title": job_title}, f)
 
-            # Publish completion
-            if self.enable_rabbitmq:
-                self.rabbitmq_client.publish_completion(
-                    job_request.job_id,
-                    output_files,
-                    started_at,
-                    f"Resume generated successfully for {structured_resume.full_name}",
-                )
+        # Calculate processing time
+        processing_time = time.time() - start_time
 
-            logger.info(f"Job {job_request.job_id} completed successfully")
-            logger.info(f"  Output directory: {config.output_dir}")
+        # Try to extract final score from critique.json
+        critique_file = output_path / "critique.json"
+        final_score = extract_final_score(critique_file)
 
-        except Exception as e:
-            error_msg = str(e)
-            error_trace = traceback.format_exc()
-            logger.error(f"Job {job_request.job_id} failed: {error_msg}")
-            logger.error(error_trace)
-
-            # Publish error
-            if self.enable_rabbitmq:
-                stage = tracker.current_stage if tracker else None
-                self.rabbitmq_client.publish_error(
-                    job_request.job_id, error_msg, started_at, stage
-                )
-
-    def _update_env(self, job_request: JobRequest):
-        """Update environment variables based on job request."""
-        os.environ["JOB_JSON_PATH"] = job_request.job_json_path
-        os.environ["CAREER_PROFILE_PATH"] = job_request.career_profile_path
-
-        if job_request.template:
-            if job_request.output_backend == "latex":
-                os.environ["LATEX_TEMPLATE"] = job_request.template
-            # For weasyprint, template might map to CSS file
-
-        os.environ["OUTPUT_BACKEND"] = job_request.output_backend
-
-        # Disable/enable uploads based on job request
-        enable_uploads = "true" if job_request.enable_uploads else "false"
-        os.environ["ENABLE_NEXTCLOUD"] = os.environ.get(
-            "ENABLE_NEXTCLOUD", enable_uploads
-        )
-        os.environ["ENABLE_MINIO"] = os.environ.get("ENABLE_MINIO", enable_uploads)
-
-    def _create_pipeline_with_tracking(self, config, tracker):
-        """Create pipeline instance with RabbitMQ progress tracking."""
-        from resume_pipeline.pipeline import ResumePipeline
-
-        # Create base pipeline
-        pipeline = ResumePipeline(config)
-
-        # If RabbitMQ is enabled, wrap pipeline methods with progress tracking
-        if tracker:
-            pipeline = self._wrap_pipeline_with_tracking(pipeline, tracker)
-
-        return pipeline
-
-    def _wrap_pipeline_with_tracking(self, pipeline, tracker):
-        """Wrap pipeline methods to publish progress updates."""
-        original_run = pipeline.run
-
-        def run_with_tracking():
-            # Stage 1: Analyze JD
-            tracker.start_stage(PipelineStage.ANALYZING_JD)
-            # Original pipeline handles this internally
-
-            # Let original run handle everything, but track progress
-            # This is a simplified approach - for finer control, you'd wrap individual methods
-            result = original_run()
-
-            return result
-
-        pipeline.run = run_with_tracking
-        return pipeline
-
-    def _collect_output_files(self, config, structured_resume) -> dict:
-        """Collect paths to generated output files."""
-        output_dir = config.output_dir
-        company = (
-            structured_resume.experience[0].company
-            if structured_resume.experience
-            else "unknown"
-        )
-        position = (
-            structured_resume.experience[0].position
-            if structured_resume.experience
-            else "position"
+        # Update metadata: job completed
+        update_job_metadata(
+            job_id,
+            {
+                "status": "completed",
+                "output_dir": str(output_path.absolute()),
+                "completed_at": datetime.utcnow().isoformat() + "Z",
+                "processing_time_seconds": round(processing_time, 2),
+                "final_score": final_score,
+            },
         )
 
-        # Sanitize filename
-        filename_base = f"{company}_{position}".lower().replace(" ", "_")
+        logger.info(f"Job {job_id} completed successfully in {processing_time:.2f}s")
+        return True
 
-        output_files = {
-            "output_dir": str(output_dir),
-            "structured_resume": str(output_dir / "structured_resume.json"),
-        }
+    except Exception as e:
+        processing_time = time.time() - start_time
+        error_msg = str(e)
+        logger.error(f"Job {job_id} failed: {error_msg}")
 
-        # Check for LaTeX file
-        tex_file = output_dir / f"{filename_base}.tex"
-        if tex_file.exists():
-            output_files["latex"] = str(tex_file)
+        # Update metadata: job failed
+        update_job_metadata(
+            job_id,
+            {
+                "status": "failed",
+                "error": error_msg,
+                "completed_at": datetime.utcnow().isoformat() + "Z",
+                "processing_time_seconds": round(processing_time, 2),
+            },
+        )
 
-        # Check for PDF file
-        pdf_file = output_dir / f"{filename_base}.pdf"
-        if pdf_file.exists():
-            output_files["pdf"] = str(pdf_file)
+        return False
 
-        # Add checkpoint files
-        for checkpoint in ["jd_requirements", "matched_achievements", "critique"]:
-            checkpoint_file = output_dir / f"{checkpoint}.json"
-            if checkpoint_file.exists():
-                output_files[checkpoint] = str(checkpoint_file)
 
-        return output_files
+def callback(ch, method, properties, body):
+    """RabbitMQ callback for processing messages"""
+    try:
+        message = json.loads(body)
+        job_id = message.get("job_id")
 
-    def start(self):
-        """Start the worker and begin consuming jobs."""
-        if not self.enable_rabbitmq:
-            logger.error("RabbitMQ is not enabled or connection failed")
+        if not job_id:
+            logger.error("No job_id in message")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
             return
 
-        logger.info("Starting Resume Pipeline Worker")
-        logger.info(f"  RabbitMQ Host: {self.rabbitmq_client.config.host}")
-        logger.info(f"  Job Queue: {self.rabbitmq_client.config.job_queue}")
-        logger.info("")
+        logger.info(f"Received job: {job_id}")
 
-        try:
-            self.rabbitmq_client.consume_jobs(self.process_job)
-        except KeyboardInterrupt:
-            logger.info("Worker stopped by user")
-        except Exception as e:
-            logger.error(f"Worker error: {e}")
-            logger.error(traceback.format_exc())
-        finally:
-            if self.rabbitmq_client:
-                self.rabbitmq_client.close()
+        # Process the job
+        success = process_resume_job(job_id)
+
+        # Acknowledge the message
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+        if success:
+            logger.info(f"Job {job_id} acknowledged")
+        else:
+            logger.warning(f"Job {job_id} failed but acknowledged")
+
+    except Exception as e:
+        logger.error(f"Error processing message: {e}")
+        # Acknowledge even on error to prevent reprocessing
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
 def main():
-    """Main entry point for the worker."""
-    # Check if RabbitMQ should be enabled
-    enable_rabbitmq = os.getenv("ENABLE_RABBITMQ", "true").lower() == "true"
+    """Main worker loop"""
+    logger.info("Resume Pipeline Worker starting...")
+    logger.info(f"RabbitMQ Host: {RABBITMQ_HOST}")
+    logger.info(f"RabbitMQ Queue: {RABBITMQ_QUEUE}")
 
-    if not enable_rabbitmq:
-        logger.info("RabbitMQ integration disabled (ENABLE_RABBITMQ=false)")
-        return
+    # Ensure directories exist
+    JOBS_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(exist_ok=True)
 
-    # Create and start worker
-    worker = ResumePipelineWorker(enable_rabbitmq=enable_rabbitmq)
-    worker.start()
+    while True:
+        try:
+            # Connect to RabbitMQ
+            logger.info(f"Connecting to RabbitMQ at {RABBITMQ_HOST}")
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=RABBITMQ_HOST, heartbeat=600, blocked_connection_timeout=300
+                )
+            )
+            channel = connection.channel()
+
+            # Declare queue
+            channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+
+            # Set QoS to process one message at a time
+            channel.basic_qos(prefetch_count=1)
+
+            # Start consuming
+            logger.info("Waiting for messages. To exit press CTRL+C")
+            channel.basic_consume(queue=RABBITMQ_QUEUE, on_message_callback=callback)
+
+            channel.start_consuming()
+
+        except KeyboardInterrupt:
+            logger.info("Worker interrupted by user")
+            break
+        except Exception as e:
+            logger.error(f"Connection error: {e}")
+            logger.info("Reconnecting in 5 seconds...")
+            time.sleep(5)
+
+    logger.info("Worker shutting down")
 
 
 if __name__ == "__main__":

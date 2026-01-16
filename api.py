@@ -10,22 +10,32 @@ This version includes:
 - Health check endpoints
 - Improved SSE resource management
 - Request ID tracking
+- Job metadata tracking (P0)
+- File download endpoints (P0)
+- Job details endpoint (P0)
+- Profile management (P1)
+- Job deletion (P2)
+- List job files (P2)
 """
 
 import asyncio
 import json
 import logging
+import os
 import queue
+import re
 import threading
+import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pika
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, validator
 from sse_starlette.sse import EventSourceResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -37,6 +47,16 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Configuration
+JOBS_DIR = Path("jobs")
+OUTPUT_DIR = Path("output")
+PROFILES_DIR = Path("profiles")
+
+# Ensure directories exist
+JOBS_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(exist_ok=True)
+PROFILES_DIR.mkdir(exist_ok=True)
 
 
 # ============================================================================
@@ -83,6 +103,7 @@ class ErrorCode(str, Enum):
     INVALID_PATH = "invalid_path"
     QUEUE_ERROR = "queue_error"
     INTERNAL_ERROR = "internal_error"
+    CONFLICT = "conflict"
 
 
 class ErrorResponse(BaseModel):
@@ -264,6 +285,7 @@ class JobListItem(BaseModel):
     company: str
     job_title: str
     created_at: Optional[datetime] = None
+    status: Optional[str] = None
     file_size_bytes: Optional[int] = None
 
 
@@ -275,6 +297,44 @@ class PaginatedJobListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class JobDetailsResponse(BaseModel):
+    """Complete job details response."""
+
+    job_id: str
+    company: str
+    job_title: str
+    created_at: str
+    status: str
+    template: str
+    output_backend: str
+    priority: int
+    job_description: Optional[str] = None
+    output_dir: Optional[str] = None
+    output_files: Optional[Dict[str, str]] = None
+    completed_at: Optional[str] = None
+    processing_time_seconds: Optional[float] = None
+    final_score: Optional[float] = None
+    error: Optional[str] = None
+
+
+class FileInfo(BaseModel):
+    """File metadata."""
+
+    name: str
+    type: str
+    size_bytes: int
+    created_at: str
+    download_url: str
+
+
+class ProfileInfo(BaseModel):
+    """Career profile information."""
+
+    filename: str
+    size_bytes: int
+    uploaded_at: str
 
 
 class HealthStatus(str, Enum):
@@ -292,6 +352,96 @@ class HealthCheckResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     checks: Dict[str, bool]
     version: str
+
+
+# ============================================================================
+# METADATA MANAGEMENT
+# ============================================================================
+
+
+def create_job_metadata(job_id: str, job_data: dict) -> dict:
+    """Create initial job metadata file"""
+    metadata = {
+        "job_id": job_id,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "company": job_data.get("job_details", {}).get("company", ""),
+        "job_title": job_data.get("job_details", {}).get("job_title", ""),
+        "template": "awesome-cv",  # Will be updated by worker
+        "output_backend": "weasyprint",  # Will be updated by worker
+        "priority": 5,  # Will be updated by worker
+        "status": "queued",
+        "output_dir": None,
+        "completed_at": None,
+        "processing_time_seconds": None,
+        "final_score": None,
+        "error": None,
+    }
+
+    metadata_path = JOBS_DIR / f"{job_id}_metadata.json"
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    logger.info(f"Created metadata for job {job_id}")
+    return metadata
+
+
+def update_job_metadata(job_id: str, updates: dict) -> Optional[dict]:
+    """Update job metadata file"""
+    metadata_path = JOBS_DIR / f"{job_id}_metadata.json"
+
+    if not metadata_path.exists():
+        logger.warning(f"Metadata file not found for job {job_id}")
+        return None
+
+    try:
+        with open(metadata_path, "r") as f:
+            metadata = json.load(f)
+
+        metadata.update(updates)
+
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+        logger.info(f"Updated metadata for job {job_id}: {updates}")
+        return metadata
+    except Exception as e:
+        logger.error(f"Failed to update metadata for job {job_id}: {e}")
+        return None
+
+
+def get_job_metadata(job_id: str) -> Optional[dict]:
+    """Retrieve job metadata"""
+    metadata_path = JOBS_DIR / f"{job_id}_metadata.json"
+
+    if not metadata_path.exists():
+        return None
+
+    try:
+        with open(metadata_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error(f"Failed to read metadata for job {job_id}: {e}")
+        return None
+
+
+def validate_job_id_format(job_id: str) -> bool:
+    """Validate job ID format"""
+    # Check for directory traversal attempts
+    if ".." in job_id or "/" in job_id or "\\" in job_id:
+        return False
+    # Check length
+    if len(job_id) > 200:
+        return False
+    return True
+
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitize filename to prevent path traversal"""
+    # Remove any path components
+    filename = os.path.basename(filename)
+    # Remove any non-alphanumeric characters except dots, dashes, underscores
+    filename = re.sub(r"[^\w\-.]", "_", filename)
+    return filename
 
 
 # ============================================================================
@@ -343,13 +493,8 @@ def validate_job_id(job_id: str) -> None:
     Raises:
         ValidationError: If job ID is invalid
     """
-    # Check for directory traversal attempts
-    if ".." in job_id or "/" in job_id or "\\" in job_id:
-        raise ValidationError("Invalid job ID: contains illegal characters")
-
-    # Check length
-    if len(job_id) > 200:
-        raise ValidationError("Invalid job ID: too long")
+    if not validate_job_id_format(job_id):
+        raise ValidationError("Invalid job ID format")
 
 
 def validate_job_submission(request: ApiJobRequest) -> None:
@@ -389,7 +534,7 @@ def validate_job_submission(request: ApiJobRequest) -> None:
 app = FastAPI(
     title="Resume Pipeline API",
     description="Production-ready API for submitting resume generation jobs",
-    version="1.0.0",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -473,7 +618,7 @@ def read_root():
     """Root endpoint with API information."""
     return {
         "message": "Resume Pipeline API is running",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "docs": "/docs",
         "health": "/health",
     }
@@ -507,12 +652,11 @@ def health_check():
         checks["rabbitmq"] = False
 
     # Check jobs directory
-    jobs_dir = Path("jobs")
-    checks["jobs_directory"] = jobs_dir.exists() and jobs_dir.is_dir()
+    checks["jobs_directory"] = JOBS_DIR.exists() and JOBS_DIR.is_dir()
 
     # Check write permissions
     try:
-        test_file = jobs_dir / ".health_check"
+        test_file = JOBS_DIR / ".health_check"
         test_file.touch()
         test_file.unlink()
         checks["file_system_writable"] = True
@@ -530,7 +674,7 @@ def health_check():
     else:
         status = HealthStatus.UNHEALTHY
 
-    return HealthCheckResponse(status=status, checks=checks, version="1.0.0")
+    return HealthCheckResponse(status=status, checks=checks, version="2.0.0")
 
 
 @app.get("/ready")
@@ -563,28 +707,22 @@ def list_jobs(
     List all available jobs with pagination.
 
     This endpoint scans the 'jobs' directory and returns a summary of each
-    job JSON file found.
-
-    Query Parameters:
-    - page: Page number (1-indexed)
-    - page_size: Number of items per page (1-100)
-    - company: Filter by company name (optional)
-    - sort_by: Field to sort by (default: created_at)
-    - sort_order: Sort order: asc or desc (default: desc)
+    job JSON file found, including metadata status if available.
     """
-    jobs_dir = Path("jobs")
-    if not jobs_dir.exists():
+    if not JOBS_DIR.exists():
         return PaginatedJobListResponse(
             jobs=[], total_count=0, page=page, page_size=page_size, total_pages=0
         )
 
     # Collect all jobs
     all_jobs = []
-    for job_file in jobs_dir.glob("*.json"):
-        if job_file.name == "schema.json":
+    for job_file in JOBS_DIR.glob("*.json"):
+        if job_file.name == "schema.json" or job_file.name.endswith("_metadata.json"):
             continue
 
         try:
+            job_id = job_file.stem
+
             # Get file metadata
             file_stat = job_file.stat()
             created_at = datetime.fromtimestamp(file_stat.st_ctime)
@@ -598,30 +736,34 @@ def list_jobs(
                 if company and job_company.lower() != company.lower():
                     continue
 
+                # Get metadata status if available
+                metadata = get_job_metadata(job_id)
+                status = metadata.get("status", "unknown") if metadata else "unknown"
+
                 all_jobs.append(
                     JobListItem(
-                        job_id=job_file.stem,
+                        job_id=job_id,
                         company=job_company,
                         job_title=job_details.get("job_title", "Unknown"),
                         created_at=created_at,
+                        status=status,
                         file_size_bytes=file_stat.st_size,
                     )
                 )
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Could not parse {job_file.name}: {e}")
-            # Include in list with error indicator
             all_jobs.append(
                 JobListItem(
                     job_id=job_file.stem,
                     company="Invalid Format",
                     job_title="Invalid Format",
+                    status="error",
                 )
             )
 
     # Sort jobs
     reverse = sort_order == "desc"
     if sort_by == "created_at" and all_jobs:
-        # Sort by created_at, handling None values
         all_jobs.sort(
             key=lambda x: x.created_at if x.created_at else datetime.min,
             reverse=reverse,
@@ -635,7 +777,6 @@ def list_jobs(
     total_count = len(all_jobs)
     total_pages = (total_count + page_size - 1) // page_size if total_count > 0 else 0
 
-    # Validate page number
     if page > total_pages and total_pages > 0:
         raise HTTPException(
             status_code=400, detail=f"Page {page} exceeds total pages ({total_pages})"
@@ -654,6 +795,174 @@ def list_jobs(
     )
 
 
+@app.get(
+    "/jobs/{job_id}",
+    response_model=JobDetailsResponse,
+    summary="Get complete job details",
+    description="Retrieve complete information about a specific job including status and output files",
+)
+def get_job_details(job_id: str):
+    """Get complete job details including metadata and output files."""
+    try:
+        validate_job_id(job_id)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    job_file = JOBS_DIR / f"{job_id}.json"
+    if not job_file.exists():
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Read job data
+    with open(job_file, "r") as f:
+        job_data = json.load(f)
+
+    # Read metadata
+    metadata = get_job_metadata(job_id)
+    if not metadata:
+        # If metadata doesn't exist, create basic response from job data
+        return JobDetailsResponse(
+            job_id=job_id,
+            company=job_data.get("job_details", {}).get("company", "Unknown"),
+            job_title=job_data.get("job_details", {}).get("job_title", "Unknown"),
+            created_at=datetime.utcfromtimestamp(job_file.stat().st_mtime).isoformat()
+            + "Z",
+            status="unknown",
+            template="awesome-cv",
+            output_backend="weasyprint",
+            priority=5,
+            job_description=job_data.get("job_description", {}).get("full_text"),
+        )
+
+    # Get output files if available
+    output_files = None
+    if metadata.get("output_dir"):
+        output_dir = Path(metadata["output_dir"])
+        if output_dir.exists():
+            output_files = {}
+            for ext in [".pdf", ".tex", ".json"]:
+                files = list(output_dir.glob(f"*{ext}"))
+                if files:
+                    output_files[ext[1:]] = str(files[0])
+
+    return JobDetailsResponse(
+        job_id=job_id,
+        company=job_data.get("job_details", {}).get("company", "Unknown"),
+        job_title=job_data.get("job_details", {}).get("job_title", "Unknown"),
+        created_at=metadata.get("created_at"),
+        status=metadata.get("status", "unknown"),
+        template=metadata.get("template", "awesome-cv"),
+        output_backend=metadata.get("output_backend", "weasyprint"),
+        priority=metadata.get("priority", 5),
+        job_description=job_data.get("job_description", {}).get("full_text"),
+        output_dir=metadata.get("output_dir"),
+        output_files=output_files,
+        completed_at=metadata.get("completed_at"),
+        processing_time_seconds=metadata.get("processing_time_seconds"),
+        final_score=metadata.get("final_score"),
+        error=metadata.get("error"),
+    )
+
+
+@app.get(
+    "/jobs/{job_id}/files",
+    summary="List all files for a job",
+    description="Get a list of all output files available for a specific job",
+)
+def list_job_files(job_id: str):
+    """List all output files for a job."""
+    try:
+        validate_job_id(job_id)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    metadata = get_job_metadata(job_id)
+    if not metadata:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    output_dir = metadata.get("output_dir")
+    if not output_dir or not Path(output_dir).exists():
+        return {"job_id": job_id, "files": []}
+
+    output_path = Path(output_dir)
+    files = []
+
+    for file_path in output_path.iterdir():
+        if file_path.is_file():
+            stat = file_path.stat()
+
+            # Determine content type
+            ext = file_path.suffix.lower()
+            content_type = {
+                ".pdf": "application/pdf",
+                ".tex": "text/x-tex",
+                ".json": "application/json",
+                ".txt": "text/plain",
+            }.get(ext, "application/octet-stream")
+
+            files.append(
+                FileInfo(
+                    name=file_path.name,
+                    type=content_type,
+                    size_bytes=stat.st_size,
+                    created_at=datetime.utcfromtimestamp(stat.st_mtime).isoformat()
+                    + "Z",
+                    download_url=f"/jobs/{job_id}/files/{file_path.name}",
+                )
+            )
+
+    return {"job_id": job_id, "files": files}
+
+
+@app.get(
+    "/jobs/{job_id}/files/{filename}",
+    summary="Download job output file",
+    description="Download a specific output file from a completed job",
+)
+def download_job_file(job_id: str, filename: str):
+    """Download a specific file from a job's output."""
+    try:
+        validate_job_id(job_id)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Sanitize filename to prevent path traversal
+    filename = sanitize_filename(filename)
+    if not filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    # Get job metadata to find output directory
+    metadata = get_job_metadata(job_id)
+    if not metadata:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    output_dir = metadata.get("output_dir")
+    if not output_dir:
+        raise HTTPException(status_code=404, detail="Job output not available yet")
+
+    file_path = Path(output_dir) / filename
+
+    # Verify file exists and is within output directory
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Verify file is actually in the output directory (prevent traversal)
+    try:
+        file_path.resolve().relative_to(Path(output_dir).resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Determine content type
+    ext = file_path.suffix.lower()
+    content_type = {
+        ".pdf": "application/pdf",
+        ".tex": "text/x-tex",
+        ".json": "application/json",
+        ".txt": "text/plain",
+    }.get(ext, "application/octet-stream")
+
+    return FileResponse(path=str(file_path), media_type=content_type, filename=filename)
+
+
 @app.post(
     "/jobs",
     status_code=201,
@@ -670,10 +979,7 @@ def submit_job(request: ApiJobRequest, http_request: Request):
     Submit a new resume generation job.
 
     This endpoint accepts job details in JSON format, validates the input,
-    saves it to a file, and publishes a job request to the RabbitMQ queue.
-
-    The job will be processed asynchronously by a worker. Use the returned
-    status_url to monitor progress via Server-Sent Events.
+    saves it to a file, creates metadata, and publishes a job request to the queue.
     """
     job_id = f"api-job-{uuid.uuid4()}"
     request_id = (
@@ -700,15 +1006,16 @@ def submit_job(request: ApiJobRequest, http_request: Request):
         raise
 
     # Define path for the new job JSON file
-    jobs_dir = Path("jobs")
-    jobs_dir.mkdir(exist_ok=True)
-    job_json_path = jobs_dir / f"{job_id}.json"
+    job_json_path = JOBS_DIR / f"{job_id}.json"
 
     try:
         # Save the job data to a file
         with open(job_json_path, "w") as f:
             json.dump(request.job_data.dict(), f, indent=2)
         logger.info(f"Saved job data to {job_json_path}")
+
+        # Create metadata
+        create_job_metadata(job_id, request.job_data.dict())
 
         # Publish the job to the queue
         try:
@@ -723,9 +1030,12 @@ def submit_job(request: ApiJobRequest, http_request: Request):
             )
         except pika.exceptions.AMQPConnectionError as e:
             logger.error(f"RabbitMQ connection failed for job {job_id}: {e}")
-            # Clean up created job file
+            # Clean up created files
             if job_json_path.exists():
                 job_json_path.unlink()
+            metadata_path = JOBS_DIR / f"{job_id}_metadata.json"
+            if metadata_path.exists():
+                metadata_path.unlink()
             raise QueueConnectionError(f"Failed to connect to job queue: {e}")
 
         logger.info(
@@ -744,9 +1054,12 @@ def submit_job(request: ApiJobRequest, http_request: Request):
         logger.error(
             f"Failed to submit job {job_id}: {e}", extra={"request_id": request_id}
         )
-        # Clean up created job file if something goes wrong
+        # Clean up created files
         if job_json_path.exists():
             job_json_path.unlink()
+        metadata_path = JOBS_DIR / f"{job_id}_metadata.json"
+        if metadata_path.exists():
+            metadata_path.unlink()
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse(
@@ -775,10 +1088,7 @@ def resubmit_job(job_id: str, request: ResubmitJobRequest, http_request: Request
     Resubmit an existing job.
 
     This endpoint finds a job by its ID and submits it to the pipeline again
-    with the provided options. This is useful for:
-    - Regenerating a resume with a different template
-    - Retrying a failed job
-    - Creating a new version with updated settings
+    with the provided options.
     """
     request_id = (
         http_request.state.request_id
@@ -798,7 +1108,7 @@ def resubmit_job(job_id: str, request: ResubmitJobRequest, http_request: Request
     )
 
     # Find the job JSON file
-    job_json_path = Path("jobs") / f"{job_id}.json"
+    job_json_path = JOBS_DIR / f"{job_id}.json"
     if not job_json_path.exists():
         logger.warning(f"Job not found: {job_id}")
         raise HTTPException(
@@ -809,6 +1119,11 @@ def resubmit_job(job_id: str, request: ResubmitJobRequest, http_request: Request
                 request_id=request_id,
             ).dict(),
         )
+
+    # Update metadata status to queued
+    update_job_metadata(
+        job_id, {"status": "queued", "error": None, "completed_at": None}
+    )
 
     try:
         # Publish the job to the queue
@@ -855,6 +1170,147 @@ def resubmit_job(job_id: str, request: ResubmitJobRequest, http_request: Request
                 request_id=request_id,
             ).dict(),
         )
+
+
+@app.delete(
+    "/jobs/{job_id}",
+    summary="Delete a job",
+    description="Delete a job and its metadata files",
+)
+def delete_job(job_id: str):
+    """Delete a job and its metadata."""
+    try:
+        validate_job_id(job_id)
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    job_file = JOBS_DIR / f"{job_id}.json"
+    metadata_file = JOBS_DIR / f"{job_id}_metadata.json"
+
+    if not job_file.exists():
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Check if job is currently processing
+    metadata = get_job_metadata(job_id)
+    if metadata and metadata.get("status") == "processing":
+        raise HTTPException(
+            status_code=409, detail="Cannot delete job while it is processing"
+        )
+
+    deleted_count = 0
+
+    # Delete job file
+    if job_file.exists():
+        job_file.unlink()
+        deleted_count += 1
+        logger.info(f"Deleted job file: {job_file}")
+
+    # Delete metadata file
+    if metadata_file.exists():
+        metadata_file.unlink()
+        deleted_count += 1
+        logger.info(f"Deleted metadata file: {metadata_file}")
+
+    return {
+        "message": "Job deleted successfully",
+        "job_id": job_id,
+        "files_deleted": deleted_count,
+    }
+
+
+# ============================================================================
+# PROFILE ENDPOINTS
+# ============================================================================
+
+
+@app.post(
+    "/profiles",
+    summary="Upload career profile",
+    description="Upload a career profile JSON file",
+)
+async def upload_profile(file: UploadFile = File(...)):
+    """Upload a career profile JSON file."""
+    # Validate file extension
+    if not file.filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="File must be a JSON file")
+
+    # Read and validate JSON content
+    try:
+        content = await file.read()
+        json.loads(content)  # Validate JSON
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON content")
+
+    # Sanitize filename
+    filename = sanitize_filename(file.filename)
+    if not filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    # Save file
+    file_path = PROFILES_DIR / filename
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    stat = file_path.stat()
+    logger.info(f"Profile uploaded: {filename} ({stat.st_size} bytes)")
+
+    return {
+        "filename": filename,
+        "size_bytes": stat.st_size,
+        "uploaded_at": datetime.utcfromtimestamp(stat.st_mtime).isoformat() + "Z",
+        "path": str(file_path),
+    }
+
+
+@app.get(
+    "/profiles",
+    summary="List career profiles",
+    description="Get a list of all available career profiles",
+)
+def list_profiles():
+    """List all available career profiles."""
+    profiles = []
+
+    for profile_file in PROFILES_DIR.glob("*.json"):
+        try:
+            stat = profile_file.stat()
+            profiles.append(
+                ProfileInfo(
+                    filename=profile_file.name,
+                    size_bytes=stat.st_size,
+                    uploaded_at=datetime.utcfromtimestamp(stat.st_mtime).isoformat()
+                    + "Z",
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error reading profile {profile_file}: {e}")
+
+    # Sort by upload date (newest first)
+    profiles.sort(key=lambda x: x.uploaded_at, reverse=True)
+
+    return {"profiles": profiles}
+
+
+@app.delete(
+    "/profiles/{filename}",
+    summary="Delete career profile",
+    description="Delete a career profile file",
+)
+def delete_profile(filename: str):
+    """Delete a career profile."""
+    # Sanitize filename to prevent path traversal
+    filename = sanitize_filename(filename)
+    if not filename or not filename.endswith(".json"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    file_path = PROFILES_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    file_path.unlink()
+    logger.info(f"Deleted profile: {filename}")
+
+    return {"message": "Profile deleted successfully", "filename": filename}
 
 
 # ============================================================================
@@ -1032,16 +1488,6 @@ async def stream_all_jobs_status():
     Stream status updates for all jobs using Server-Sent Events.
 
     This endpoint provides real-time updates for all jobs in the system.
-    Connect to this endpoint with an EventSource client to receive updates.
-
-    Example JavaScript client:
-    ```javascript
-    const eventSource = new EventSource('/jobs/status');
-    eventSource.onmessage = (event) => {
-        const status = JSON.parse(event.data);
-        console.log('Job update:', status);
-    };
-    ```
     """
     return EventSourceResponse(status_event_generator())
 
@@ -1055,21 +1501,7 @@ async def stream_job_status(job_id: str):
     """
     Stream status updates for a specific job using Server-Sent Events.
 
-    This endpoint provides real-time updates for a single job. The connection
-    will automatically close when the job reaches a terminal state (completed or failed).
-
-    Example JavaScript client:
-    ```javascript
-    const eventSource = new EventSource('/jobs/your-job-id/status');
-    eventSource.onmessage = (event) => {
-        const status = JSON.parse(event.data);
-        console.log('Job status:', status);
-
-        if (status.status === 'job_completed' || status.status === 'job_failed') {
-            eventSource.close();
-        }
-    };
-    ```
+    The connection will automatically close when the job reaches a terminal state.
     """
     # Validate job_id
     try:
@@ -1090,12 +1522,15 @@ async def startup_event():
     """Initialize application on startup."""
     logger.info("Resume Pipeline API starting up")
 
-    # Ensure jobs directory exists
-    jobs_dir = Path("jobs")
-    jobs_dir.mkdir(exist_ok=True)
+    # Ensure directories exist
+    JOBS_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    PROFILES_DIR.mkdir(exist_ok=True)
 
     # Log configuration
-    logger.info(f"Jobs directory: {jobs_dir.absolute()}")
+    logger.info(f"Jobs directory: {JOBS_DIR.absolute()}")
+    logger.info(f"Output directory: {OUTPUT_DIR.absolute()}")
+    logger.info(f"Profiles directory: {PROFILES_DIR.absolute()}")
 
     # Test RabbitMQ connection
     try:
@@ -1126,6 +1561,4 @@ async def shutdown_event():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "api_improved:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
-    )
+    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

@@ -7,9 +7,9 @@ services:
         environment:
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}
-            - ENABLE_RABBITMQ=true
-            - RABBITMQ_HOST=rabbitmq
-            - RABBITMQ_PORT=5672
+            - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
+            - RABBITMQ_HOST=${RABBITMQ_HOST:-}
+            - RABBITMQ_PORT=${RABBITMQ_PORT:-}
         env_file:
             - .env
         volumes:
@@ -19,9 +19,9 @@ services:
             - ./jobs:/app/jobs:rw
             - ./templates:/app/templates:ro
         command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
-        depends_on:
-            rabbitmq:
-                condition: service_healthy
+        # depends_on:
+        #     rabbitmq:
+        #         condition: service_healthy
         restart: unless-stopped
 
         # Worker Pool (scalable)
@@ -30,9 +30,9 @@ services:
         environment:
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}
-            - ENABLE_RABBITMQ=true
-            - RABBITMQ_HOST=rabbitmq
-            - RABBITMQ_PORT=5672
+            - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
+            - RABBITMQ_HOST=${RABBITMQ_HOST:-}
+            - RABBITMQ_PORT=${RABBITMQ_PORT:-}
         env_file:
             - .env
         volumes:
@@ -42,9 +42,9 @@ services:
             - ./jobs:/app/jobs:ro
             - ./templates:/app/templates:ro
         command: python resume_worker.py
-        depends_on:
-            rabbitmq:
-                condition: service_healthy
+        # depends_on:
+        #     rabbitmq:
+        #         condition: service_healthy
         restart: unless-stopped
         deploy:
             replicas: 2
