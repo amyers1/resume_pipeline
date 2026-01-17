@@ -8,6 +8,9 @@ export default function NewJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [profiles, setProfiles] = useState([]);
+  const [jobTemplates, setJobTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [useTemplate, setUseTemplate] = useState(false);
   const [formData, setFormData] = useState({
     company: '',
     jobTitle: '',
@@ -30,6 +33,7 @@ export default function NewJobPage() {
 
   useEffect(() => {
     fetchProfiles();
+    fetchJobTemplates();
   }, []);
 
   const fetchProfiles = async () => {
@@ -38,6 +42,51 @@ export default function NewJobPage() {
       setProfiles(response.data.profiles || []);
     } catch (error) {
       console.error('Failed to fetch profiles:', error);
+    }
+  };
+
+  const fetchJobTemplates = async () => {
+    try {
+      const response = await apiService.listJobTemplates();
+      setJobTemplates(response.data.templates || []);
+    } catch (error) {
+      console.error('Failed to fetch job templates:', error);
+    }
+  };
+
+  const handleTemplateSelection = async (templateName) => {
+    if (!templateName) {
+      setSelectedTemplate('');
+      setUseTemplate(false);
+      return;
+    }
+
+    setSelectedTemplate(templateName);
+    setUseTemplate(true);
+
+    // Optionally fetch and preview template details
+    try {
+      const response = await apiService.getJobTemplate(templateName);
+      const templateData = response.data;
+      
+      // Pre-populate form fields from template for preview
+      setFormData((prev) => ({
+        ...prev,
+        company: templateData.job_details?.company || '',
+        jobTitle: templateData.job_details?.job_title || '',
+        employmentType: templateData.job_details?.employment_type || 'Full-time',
+        location: templateData.job_details?.location || '',
+        securityClearance: templateData.job_details?.security_clearance_required || '',
+        listedBenefits: templateData.benefits?.listed_benefits?.join(', ') || '',
+        benefitsText: templateData.benefits?.benefits_text || '',
+        headline: templateData.job_description?.headline || '',
+        shortSummary: templateData.job_description?.short_summary || '',
+        fullText: templateData.job_description?.full_text || '',
+        mustHaveSkills: templateData.job_description?.must_have_skills?.join(', ') || '',
+        niceToHaveSkills: templateData.job_description?.nice_to_have_skills?.join(', ') || '',
+      }));
+    } catch (error) {
+      console.error('Failed to fetch template details:', error);
     }
   };
 
@@ -77,39 +126,54 @@ export default function NewJobPage() {
     try {
       setSubmitting(true);
 
-      const jobData = {
-        job_data: {
-          job_details: {
-            company: formData.company,
-            job_title: formData.jobTitle,
-            employment_type: formData.employmentType,
-            location: formData.location,
-            security_clearance_required: formData.securityClearance || null,
+      let jobData;
+
+      if (useTemplate && selectedTemplate) {
+        // Submit using existing template file
+        jobData = {
+          job_template_path: selectedTemplate,
+          career_profile_path: formData.careerProfilePath,
+          template: formData.template,
+          output_backend: formData.outputBackend,
+          priority: parseInt(formData.priority),
+          enable_uploads: formData.enableUploads,
+        };
+      } else {
+        // Submit with full job data from form
+        jobData = {
+          job_data: {
+            job_details: {
+              company: formData.company,
+              job_title: formData.jobTitle,
+              employment_type: formData.employmentType,
+              location: formData.location,
+              security_clearance_required: formData.securityClearance || null,
+            },
+            benefits: {
+              listed_benefits: formData.listedBenefits
+                ? formData.listedBenefits.split(',').map((s) => s.trim())
+                : [],
+              benefits_text: formData.benefitsText,
+            },
+            job_description: {
+              headline: formData.headline,
+              short_summary: formData.shortSummary,
+              full_text: formData.fullText,
+              must_have_skills: formData.mustHaveSkills
+                ? formData.mustHaveSkills.split(',').map((s) => s.trim())
+                : [],
+              nice_to_have_skills: formData.niceToHaveSkills
+                ? formData.niceToHaveSkills.split(',').map((s) => s.trim())
+                : [],
+            },
           },
-          benefits: {
-            listed_benefits: formData.listedBenefits
-              ? formData.listedBenefits.split(',').map((s) => s.trim())
-              : [],
-            benefits_text: formData.benefitsText,
-          },
-          job_description: {
-            headline: formData.headline,
-            short_summary: formData.shortSummary,
-            full_text: formData.fullText,
-            must_have_skills: formData.mustHaveSkills
-              ? formData.mustHaveSkills.split(',').map((s) => s.trim())
-              : [],
-            nice_to_have_skills: formData.niceToHaveSkills
-              ? formData.niceToHaveSkills.split(',').map((s) => s.trim())
-              : [],
-          },
-        },
-        career_profile_path: formData.careerProfilePath,
-        template: formData.template,
-        output_backend: formData.outputBackend,
-        priority: parseInt(formData.priority),
-        enable_uploads: formData.enableUploads,
-      };
+          career_profile_path: formData.careerProfilePath,
+          template: formData.template,
+          output_backend: formData.outputBackend,
+          priority: parseInt(formData.priority),
+          enable_uploads: formData.enableUploads,
+        };
+      }
 
       const response = await apiService.submitJob(jobData);
       const jobId = response.data.job_id;
@@ -149,8 +213,40 @@ export default function NewJobPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Job Details Section */}
+        {/* Template Selection Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Job Source
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Use Existing Job Template (Optional)
+              </label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => handleTemplateSelection(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="">-- Create New Job (Fill Form Below) --</option>
+                {jobTemplates.map((template) => (
+                  <option key={template} value={template}>
+                    {template.replace('.json', '').replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {useTemplate 
+                  ? 'Using template as starting point. You can still adjust configuration below.'
+                  : 'Select a template or fill out the form below to create a new job.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Job Details Section - Show only if not using template */}
+        {!useTemplate && (
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Job Details
           </h2>
@@ -230,8 +326,10 @@ export default function NewJobPage() {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Job Description Section */}
+        {/* Job Description Section - Show only if not using template */}
+        {!useTemplate && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Job Description
@@ -294,8 +392,9 @@ export default function NewJobPage() {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Configuration Section */}
+        {/* Configuration Section - Always shown */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Resume Configuration

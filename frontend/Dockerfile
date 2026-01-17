@@ -1,7 +1,7 @@
 # Multi-stage build for optimized production image
 
 # Build stage
-FROM node:18-alpine as build
+FROM node:lts-alpine3.23 as build
 
 WORKDIR /app
 
@@ -31,7 +31,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

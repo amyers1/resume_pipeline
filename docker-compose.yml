@@ -68,3 +68,17 @@ services:
         restart: unless-stopped
         deploy:
             replicas: 2
+
+    # Frontend
+    frontend:
+        build: ./resume-frontend
+        container_name: resume-pipeline-frontend
+        ports:
+            - "3000:80"
+        depends_on:
+            - api
+        restart: unless-stopped
+
+networks:
+    default:
+        name: resume-pipeline-network

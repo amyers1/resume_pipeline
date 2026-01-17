@@ -58,17 +58,6 @@ export default function JobCard({ job }) {
           <button className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
             View Details
           </button>
-          {status === 'completed' && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                // Handle regenerate
-              }}
-              className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-            >
-              Regenerate
-            </button>
-          )}
         </div>
       </div>
     </Link>
