@@ -168,6 +168,11 @@ class PipelineConfig(BaseModel):
         """Get time stamp for output directory (HHMMSS)."""
         return self.now.strftime("%H%M%S")
 
+    @property
+    def full_time_stamp(self) -> str:
+        """Get time stamp for output directory (HHMMSS)."""
+        return f"{self.date_stamp}_{self.time_stamp}"
+
     def get_checkpoint_filename(self, name: str) -> str:
         """Get standardized checkpoint filename."""
         return f"checkpoint_{name}.json"
