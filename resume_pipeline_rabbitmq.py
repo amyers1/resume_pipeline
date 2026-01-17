@@ -430,13 +430,15 @@ def publish_job_request(
     priority: int = 0,
     enable_uploads: bool = True,
     metadata: Optional[Dict[str, Any]] = None,
+    job_id: Optional[str] = None,
 ) -> str:
     """
     Publish a job request to RabbitMQ.
 
     Returns the job_id.
     """
-    job_id = f"job_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
+    if not job_id:
+        job_id = f"job_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
 
     job_request = JobRequest(
         job_id=job_id,

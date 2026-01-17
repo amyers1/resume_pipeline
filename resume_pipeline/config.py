@@ -20,6 +20,12 @@ load_dotenv()
 class PipelineConfig(BaseModel):
     """Configuration for resume generation pipeline."""
 
+    top_k_heuristic: int = Field(default=20)
+    top_k_final: int = Field(default=12)
+    critique_threshold: float = Field(default=0.80)
+    max_critique_loops: int = Field(default=2)
+    escalate_on_second_pass: bool = Field(default=False)
+
     # API Keys
     openai_api_key: Optional[str] = Field(default=None)
     google_api_key: Optional[str] = Field(default=None)
@@ -89,6 +95,14 @@ class PipelineConfig(BaseModel):
             job_path = Path(job_path_str)
 
         return cls(
+            # Pipeline Configuration
+            top_k_heuristic=int(os.getenv("TOP_K_HEURISTIC", "20")),
+            top_k_final=int(os.getenv("TOP_K_FINAL", "12")),
+            critique_threshold=float(os.getenv("CRITIQUE_THRESHOLD", "0.80")),
+            max_critique_loops=int(os.getenv("MAX_CRITIQUE_LOOPS", "2")),
+            escalate_on_second_pass=(
+                os.getenv("ESCALATE_ON_SECOND_PASS", "false").lower() == "true"
+            ),
             # API Keys
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             google_api_key=os.getenv("GOOGLE_API_KEY"),
@@ -140,6 +154,11 @@ class PipelineConfig(BaseModel):
         return datetime.now(self.timezone)
 
     @property
+    def current_year(self) -> str:
+        """Get date stamp for output directory (YYYYMMDD)."""
+        return self.now.strftime("%Y")
+
+    @property
     def date_stamp(self) -> str:
         """Get date stamp for output directory (YYYYMMDD)."""
         return self.now.strftime("%Y%m%d")
@@ -148,6 +167,10 @@ class PipelineConfig(BaseModel):
     def time_stamp(self) -> str:
         """Get time stamp for output directory (HHMMSS)."""
         return self.now.strftime("%H%M%S")
+
+    def get_checkpoint_filename(self, name: str) -> str:
+        """Get standardized checkpoint filename."""
+        return f"checkpoint_{name}.json"
 
     @property
     def template_files_dir(self) -> Path:

@@ -21,6 +21,7 @@ services:
         ports:
             - "8000:8000"
         environment:
+            - REDIS_HOST=${REDIS_HOST:-redis}
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}
             - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
@@ -46,6 +47,7 @@ services:
     worker:
         build: .
         environment:
+            - REDIS_HOST=${REDIS_HOST:-redis}
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}
             - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
@@ -71,7 +73,7 @@ services:
 
     # Frontend
     frontend:
-        build: ./resume-frontend
+        build: ./frontend
         container_name: resume-pipeline-frontend
         ports:
             - "3000:80"

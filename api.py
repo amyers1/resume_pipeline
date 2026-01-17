@@ -515,13 +515,14 @@ app.add_middleware(RequestIDMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # React dev
-        "http://localhost:8080",  # Vue dev
-        "http://localhost:5173",  # Vite dev
-        "http://0.0.0.0:3000",  # React dev
-        "http://0.0.0.0:8080",  # Vue dev
-        "http://0.0.0.0:5173",  # Vite dev
-        # Add production origins as needed
+        "*",
+        # "http://localhost:3000",  # React dev
+        # "http://localhost:8080",  # Vue dev
+        # "http://localhost:5173",  # Vite dev
+        # "http://0.0.0.0:3000",  # React dev
+        # "http://0.0.0.0:8080",  # Vue dev
+        # "http://0.0.0.0:5173",  # Vite dev
+        # # Add production origins as needed
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -1032,6 +1033,7 @@ def submit_job(request: JobSubmitRequest, http_request: Request):
                 priority=request.priority,
                 enable_uploads=request.enable_uploads,
                 metadata=None,  # request.metadata,
+                job_id=job_id,
             )
         except pika.exceptions.AMQPConnectionError as e:
             logger.error(f"RabbitMQ connection failed for job {job_id}: {e}")
@@ -1140,6 +1142,7 @@ def resubmit_job(job_id: str, request: ResubmitJobRequest, http_request: Request
             priority=request.priority,
             enable_uploads=request.enable_uploads,
             metadata=request.metadata,
+            job_id=job_id,
         )
 
         logger.info(

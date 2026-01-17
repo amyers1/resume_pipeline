@@ -28,6 +28,7 @@ class ResumePipeline:
 
     def __init__(self, config: PipelineConfig):
         self.config = config
+        self.config.output_dir = self.config.get_output_dir()
 
         # Helper to initialize the correct LLM provider
         def get_model(model_name: str, temperature: float):
@@ -48,7 +49,13 @@ class ResumePipeline:
         self.strong_llm = get_model(config.strong_model, 0.1)
 
         # Initialize components
-        self.cache = CacheManager(config.cache_dir)
+        self.cache = CacheManager(
+            host=config.redis_host,
+            port=config.redis_port,
+            db=config.redis_db,
+            password=config.redis_password,
+            ttl_days=config.redis_cache_ttl_days,
+        )
         self.analyzer = JobAnalyzer(self.base_llm)
         self.matcher = AchievementMatcher(self.base_llm, self.strong_llm, config)
         self.draft_gen = DraftGenerator(self.strong_llm, config)
@@ -88,7 +95,7 @@ class ResumePipeline:
             )
 
         self.nextcloud = None
-        if config.enable_nextcloud:
+        if config.enable_nextcloud and config.nextcloud_endpoint:
             self.nextcloud = NextcloudUploader(
                 config.nextcloud_endpoint,
                 config.nextcloud_user,
@@ -291,7 +298,9 @@ class ResumePipeline:
         if self.nextcloud and self.nextcloud.enabled:
             # NEW: Include run timestamp in Nextcloud path
             remote_parent = f"Resumes/{self.config.date_stamp}"
-            remote_dir = f"Resumes/{self.config.date_stamp}/run_{self.config.time_stamp}"
+            remote_dir = (
+                f"Resumes/{self.config.date_stamp}/run_{self.config.time_stamp}"
+            )
             self.nextcloud.upload_file(file_path, remote_parent, remote_dir)
 
     def _load_json(self, path: Path) -> dict:
