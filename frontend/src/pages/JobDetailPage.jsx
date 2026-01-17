@@ -58,6 +58,14 @@ export default function JobDetailPage() {
         try {
             setLoading(true);
             const response = await apiService.getJobDetails(jobId);
+            console.log("Job details fetched:", response.data);
+            console.log("Final score:", response.data.final_score);
+            console.log(
+                "Processing time:",
+                response.data.processing_time_seconds,
+            );
+            console.log("Status:", response.data.status);
+            console.log("Output dir:", response.data.output_dir);
             setJob(response.data);
             dispatch({
                 type: actionTypes.SET_CURRENT_JOB,
@@ -76,6 +84,8 @@ export default function JobDetailPage() {
     const fetchJobFiles = async () => {
         try {
             const response = await apiService.listJobFiles(jobId);
+            console.log("Job files fetched:", response.data);
+            console.log("Number of files:", response.data.files?.length || 0);
             setFiles(response.data.files || []);
         } catch (error) {
             console.error("Failed to fetch job files:", error);
@@ -250,35 +260,64 @@ export default function JobDetailPage() {
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                 Results
                             </h2>
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                {job.final_score !== undefined && (
+
+                            {/* Stats Grid - Only show if we have at least one stat */}
+                            {(job.final_score !== undefined ||
+                                job.final_score !== null ||
+                                job.processing_time_seconds !== undefined ||
+                                job.processing_time_seconds !== null) && (
+                                <div className="grid grid-cols-2 gap-4 mb-6">
                                     <div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                             Quality Score
                                         </p>
-                                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                            {job.final_score}/10
-                                        </p>
+                                        {job.final_score !== undefined &&
+                                        job.final_score !== null ? (
+                                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                {job.final_score}/10
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 dark:text-gray-500 italic">
+                                                Not available
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                                {job.processing_time_seconds !== undefined && (
                                     <div>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
                                             Processing Time
                                         </p>
-                                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                                            {formatDuration(
-                                                job.processing_time_seconds,
-                                            )}
-                                        </p>
+                                        {job.processing_time_seconds !==
+                                            undefined &&
+                                        job.processing_time_seconds !== null ? (
+                                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                {formatDuration(
+                                                    job.processing_time_seconds,
+                                                )}
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 dark:text-gray-500 italic">
+                                                Not available
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Generated Files
                             </h3>
                             <ArtifactList jobId={jobId} files={files} />
+
+                            {/* Debug info - can remove this later */}
+                            {files.length === 0 && job.output_dir && (
+                                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
+                                    <p className="text-yellow-800 dark:text-yellow-200">
+                                        <strong>Debug:</strong> Output directory
+                                        exists at {job.output_dir} but no files
+                                        were found.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 
