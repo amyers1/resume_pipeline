@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from datetime import datetime
+from imaplib import Commands
 from pathlib import Path
 from typing import Optional
 
@@ -20,6 +21,8 @@ load_dotenv()
 class PipelineConfig(BaseModel):
     """Configuration for resume generation pipeline."""
 
+    company: str = Field(default="Company Name")
+    job_title: str = Field(default="Job Title")
     base_file_name: str = Field(default="resume")
     top_k_heuristic: int = Field(default=20)
     top_k_final: int = Field(default=12)
@@ -84,10 +87,15 @@ class PipelineConfig(BaseModel):
 
     @classmethod
     def from_env(
-        cls, base_file_name: str, job_json_path: Optional[str] = None
+        cls,
+        company: str,
+        job_title: str,
+        base_file_name: str,
+        job_json_path: Optional[str] = None,
     ) -> "PipelineConfig":
         """Create configuration from environment variables."""
-
+        company = company
+        job_title = job_title
         base_file_name = base_file_name
 
         # Get job path from parameter or environment

@@ -199,7 +199,7 @@ class ResumeWorker:
             # Create pipeline configuration using from_env()
             # This loads from .env and we override with job-specific values
             pipeline_config = PipelineConfig.from_env(
-                job_id, job_json_path=str(job_json_path)
+                company, job_title, base_file_name, job_json_path=str(job_json_path)
             )
 
             # Override config with job-specific values
