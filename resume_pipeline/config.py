@@ -94,9 +94,6 @@ class PipelineConfig(BaseModel):
         job_json_path: Optional[str] = None,
     ) -> "PipelineConfig":
         """Create configuration from environment variables."""
-        company = company
-        job_title = job_title
-        base_file_name = base_file_name
 
         # Get job path from parameter or environment
         if job_json_path:
@@ -109,6 +106,9 @@ class PipelineConfig(BaseModel):
 
         return cls(
             # Pipeline Configuration
+            company=company,
+            job_title=job_title,
+            base_file_name=base_file_name,
             top_k_heuristic=int(os.getenv("TOP_K_HEURISTIC", "20")),
             top_k_final=int(os.getenv("TOP_K_FINAL", "12")),
             critique_threshold=float(os.getenv("CRITIQUE_THRESHOLD", "0.80")),

@@ -285,7 +285,7 @@ class ResumeWorker:
 
             # Try to extract final score from critique.json
             final_score = None
-            critique_file = output_dir / "critique.json"
+            critique_file = output_dir / "checkpoint_critique.json"
             if critique_file.exists():
                 try:
                     with open(critique_file, "r") as f:
