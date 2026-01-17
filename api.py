@@ -208,45 +208,14 @@ class JobData(BaseModel):
         return v
 
 
-class ApiJobRequest(BaseModel):
-    """Request model for new job submission."""
-
-    job_data: JobData
-    career_profile_path: str = "career_profile.json"
+class JobSubmitRequest(BaseModel):
+    job_data: Optional[JobData] = None
+    job_template_path: Optional[str] = None
+    career_profile_path: str
     template: str = "awesome-cv"
     output_backend: str = "weasyprint"
-    priority: int = Field(0, ge=0, le=10, description="Job priority (0-10)")
+    priority: int = 5
     enable_uploads: bool = True
-    metadata: Optional[Dict[str, Any]] = None
-
-    @validator("template")
-    def validate_template(cls, v, values):
-        """Validate template choice."""
-        valid_templates = ["modern-deedy", "awesome-cv"]
-        if v not in valid_templates:
-            raise ValueError(f"Template must be one of: {', '.join(valid_templates)}")
-        return v
-
-    @validator("output_backend")
-    def validate_backend(cls, v):
-        """Validate output backend choice."""
-        valid_backends = ["weasyprint", "latex"]
-        if v not in valid_backends:
-            raise ValueError(f"Backend must be one of: {', '.join(valid_backends)}")
-        return v
-
-    @validator("career_profile_path")
-    def validate_career_profile_path(cls, v):
-        """Validate career profile exists."""
-        path = Path(v)
-        if not path.exists():
-            raise ValueError(f"Career profile not found: {v}")
-        if not path.is_file():
-            raise ValueError(f"Career profile path is not a file: {v}")
-        # Basic sanitization - prevent directory traversal
-        if ".." in str(path) or str(path).startswith("/"):
-            raise ValueError("Invalid career profile path")
-        return v
 
 
 class ResubmitJobRequest(BaseModel):
@@ -693,6 +662,42 @@ def readiness_check():
     return {"ready": True}
 
 
+@app.get("/job-templates")
+def list_job_templates():
+    """List available job template files."""
+    jobs_dir = Path("jobs")
+    templates = []
+
+    if jobs_dir.exists():
+        templates = [
+            f.name
+            for f in jobs_dir.glob("*.json")
+            if not f.name.startswith(".") and not f.name.endswith("_metadata.json")
+        ]
+        templates.sort()
+
+    return {"templates": templates}
+
+
+@app.get("/job-templates/{filename}")
+def get_job_template(filename: str):
+    """Get the content of a specific job template."""
+    # Validate filename
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(400, "Invalid filename")
+
+    template_path = JOBS_DIR / filename
+
+    if not template_path.exists():
+        raise HTTPException(404, f"Template '{filename}' not found")
+
+    try:
+        with open(template_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(500, f"Failed to read template: {e}")
+
+
 @app.get(
     "/jobs",
     response_model=PaginatedJobListResponse,
@@ -719,48 +724,23 @@ def list_jobs(
 
     # Collect all jobs
     all_jobs = []
-    for job_file in JOBS_DIR.glob("*.json"):
-        if job_file.name == "schema.json" or job_file.name.endswith("_metadata.json"):
-            continue
+    for file in JOBS_DIR.glob("*_metadata.json"):
+        job_id = file.stem.replace("_metadata", "")
+        with open(file, "r") as f:
+            metadata = json.load(f)
 
-        try:
-            job_id = job_file.stem
+            # Apply company filter
+            if company and metadata.get("company", "").lower() != company.lower():
+                continue
 
-            # Get file metadata
-            file_stat = job_file.stat()
-            created_at = datetime.fromtimestamp(file_stat.st_ctime)
-
-            with open(job_file, "r") as f:
-                job_data = json.load(f)
-                job_details = job_data.get("job_details", {})
-
-                # Apply company filter
-                job_company = job_details.get("company", "Unknown")
-                if company and job_company.lower() != company.lower():
-                    continue
-
-                # Get metadata status if available
-                metadata = get_job_metadata(job_id)
-                status = metadata.get("status", "unknown") if metadata else "unknown"
-
-                all_jobs.append(
-                    JobListItem(
-                        job_id=job_id,
-                        company=job_company,
-                        job_title=job_details.get("job_title", "Unknown"),
-                        created_at=created_at,
-                        status=status,
-                        file_size_bytes=file_stat.st_size,
-                    )
-                )
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.warning(f"Could not parse {job_file.name}: {e}")
             all_jobs.append(
                 JobListItem(
-                    job_id=job_file.stem,
-                    company="Invalid Format",
-                    job_title="Invalid Format",
-                    status="error",
+                    job_id=job_id,
+                    company=metadata.get("company", "Unknown"),
+                    job_title=metadata.get("job_title", "Unknown"),
+                    created_at=metadata.get("created_at"),
+                    status=metadata.get("status", "unknown"),
+                    file_size_bytes=file.stat().st_size,
                 )
             )
 
@@ -977,13 +957,22 @@ def download_job_file(job_id: str, filename: str):
     summary="Submit a new job",
     description="Submit a new resume generation job to the pipeline",
 )
-def submit_job(request: ApiJobRequest, http_request: Request):
+def submit_job(request: JobSubmitRequest, http_request: Request):
     """
     Submit a new resume generation job.
 
     This endpoint accepts job details in JSON format, validates the input,
     saves it to a file, creates metadata, and publishes a job request to the queue.
     """
+    # Validate that exactly one source is provided
+    if not request.job_data and not request.job_template_path:
+        raise HTTPException(
+            400, "Either job_data or job_template_path must be provided"
+        )
+
+    if request.job_data and request.job_template_path:
+        raise HTTPException(400, "Cannot provide both job_data and job_template_path")
+
     job_id = f"api-job-{uuid.uuid4()}"
     request_id = (
         http_request.state.request_id
@@ -991,22 +980,35 @@ def submit_job(request: ApiJobRequest, http_request: Request):
         else "unknown"
     )
 
+    # Load job data from template if specified
+    if request.job_template_path:
+        template_path = JOBS_DIR / request.job_template_path
+        if not template_path.exists():
+            raise HTTPException(
+                404, f"Template '{request.job_template_path}' not found"
+            )
+
+        with open(template_path, "r") as f:
+            job_data = json.load(f)
+    else:
+        job_data = request.job_data.dict()
+
     logger.info(
         f"Job submission received",
         extra={
             "job_id": job_id,
             "request_id": request_id,
-            "company": request.job_data.job_details.company,
-            "job_title": request.job_data.job_details.job_title,
+            "company": job_data.get("job_details", {}).get("company", ""),
+            "job_title": job_data.get("job_details", {}).get("job_title", ""),
         },
     )
 
     # Validate request
-    try:
-        validate_job_submission(request)
-    except ValidationError as e:
-        logger.error(f"Validation failed for job {job_id}: {e}")
-        raise
+    # try:
+    #     validate_job_submission(request)
+    # except ValidationError as e:
+    #     logger.error(f"Validation failed for job {job_id}: {e}")
+    #     raise
 
     # Define path for the new job JSON file
     job_json_path = JOBS_DIR / f"{job_id}.json"
@@ -1014,11 +1016,11 @@ def submit_job(request: ApiJobRequest, http_request: Request):
     try:
         # Save the job data to a file
         with open(job_json_path, "w") as f:
-            json.dump(request.job_data.dict(), f, indent=2)
+            json.dump(job_data, f, indent=2)
         logger.info(f"Saved job data to {job_json_path}")
 
         # Create metadata
-        create_job_metadata(job_id, request.job_data.dict())
+        create_job_metadata(job_id, job_data)
 
         # Publish the job to the queue
         try:
@@ -1029,7 +1031,7 @@ def submit_job(request: ApiJobRequest, http_request: Request):
                 output_backend=request.output_backend,
                 priority=request.priority,
                 enable_uploads=request.enable_uploads,
-                metadata=request.metadata,
+                metadata=None,  # request.metadata,
             )
         except pika.exceptions.AMQPConnectionError as e:
             logger.error(f"RabbitMQ connection failed for job {job_id}: {e}")
