@@ -18,6 +18,9 @@ langchain-openai
 # PDF generation
 weasyprint
 
+# Caching
+redis>=5.0.0
+
 # Cloud storage (optional)
 minio
 webdav4
