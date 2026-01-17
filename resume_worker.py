@@ -178,6 +178,7 @@ class ResumeWorker:
 
             company = job_data.get("job_details", {}).get("company", "Unknown")
             job_title = job_data.get("job_details", {}).get("job_title", "Unknown")
+            base_file_name = f"{company}_{job_title}"
 
             logger.info(f"Processing: {company} - {job_title}")
 
@@ -197,7 +198,9 @@ class ResumeWorker:
 
             # Create pipeline configuration using from_env()
             # This loads from .env and we override with job-specific values
-            pipeline_config = PipelineConfig.from_env(job_json_path=str(job_json_path))
+            pipeline_config = PipelineConfig.from_env(
+                job_id, job_json_path=str(job_json_path)
+            )
 
             # Override config with job-specific values
             pipeline_config.career_profile_path = career_profile_path

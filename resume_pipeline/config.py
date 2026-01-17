@@ -20,6 +20,7 @@ load_dotenv()
 class PipelineConfig(BaseModel):
     """Configuration for resume generation pipeline."""
 
+    base_file_name: str = Field(default="resume")
     top_k_heuristic: int = Field(default=20)
     top_k_final: int = Field(default=12)
     critique_threshold: float = Field(default=0.80)
@@ -82,8 +83,12 @@ class PipelineConfig(BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_env(cls, job_json_path: Optional[str] = None) -> "PipelineConfig":
+    def from_env(
+        cls, base_file_name: str, job_json_path: Optional[str] = None
+    ) -> "PipelineConfig":
         """Create configuration from environment variables."""
+
+        base_file_name = base_file_name
 
         # Get job path from parameter or environment
         if job_json_path:
@@ -169,7 +174,7 @@ class PipelineConfig(BaseModel):
         return self.now.strftime("%H%M%S")
 
     @property
-    def full_time_stamp(self) -> str:
+    def full_timestamp(self) -> str:
         """Get time stamp for output directory (HHMMSS)."""
         return f"{self.date_stamp}_{self.time_stamp}"
 
@@ -204,6 +209,10 @@ class PipelineConfig(BaseModel):
         latest_link.symlink_to(run_dir.name)
 
         return run_dir
+
+    def get_output_filename(self, ext: str) -> str:
+        """Get standardized output filename."""
+        return f"{self.base_file_name}.{ext}"
 
     def print_config_summary(self):
         """Print configuration summary for debugging."""
