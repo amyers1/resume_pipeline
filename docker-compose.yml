@@ -2,6 +2,7 @@ services:
     # Redis Cache Server
     redis:
         image: redis:7-alpine
+        user: "${UID:-1000}:${GID:-1000}"
         container_name: resume-redis
         ports:
             - "6379:6379"
@@ -44,7 +45,6 @@ services:
         # Worker Pool (scalable)
     worker:
         build: .
-        user: "${UID:-1000}:${GID:-1000}"
         environment:
             - USER_ID=${USER_ID:-1000}
             - GROUP_ID=${GROUP_ID:-1000}

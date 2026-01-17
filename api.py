@@ -549,6 +549,9 @@ app.add_middleware(
         "http://localhost:3000",  # React dev
         "http://localhost:8080",  # Vue dev
         "http://localhost:5173",  # Vite dev
+        "http://0.0.0.0:3000",  # React dev
+        "http://0.0.0.0:8080",  # Vue dev
+        "http://0.0.0.0:5173",  # Vite dev
         # Add production origins as needed
     ],
     allow_credentials=True,
