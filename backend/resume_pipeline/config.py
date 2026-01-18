@@ -82,6 +82,8 @@ class PipelineConfig(BaseModel):
     nextcloud_user: str = Field(default="")
     nextcloud_password: str = Field(default="")
 
+    use_flat_structure: bool = Field(default=False)
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -186,22 +188,27 @@ class PipelineConfig(BaseModel):
         """Get time stamp for output directory (HHMMSS)."""
         return f"{self.date_stamp}_{self.time_stamp}"
 
-    def get_checkpoint_filename(self, name: str) -> str:
-        """Get standardized checkpoint filename."""
-        return f"checkpoint_{name}.json"
-
     @property
     def template_files_dir(self) -> Path:
         """Get templates directory path."""
         return Path(__file__).parent.parent / "templates"
 
+    def get_checkpoint_filename(self, name: str) -> str:
+        """Get standardized checkpoint filename."""
+        return f"checkpoint_{name}.json"
+
     def get_output_dir(self) -> Path:
         """
-        Create and return output directory with date/time structure.
-
-        Structure: output/YYYYMMDD/run_HHMMSS/
-        Also creates a 'latest' symlink to the most recent run.
+        Create and return output directory.
+        If use_flat_structure is True, returns output_dir directly.
+        Otherwise, creates nested date/time structure.
         """
+        # NEW LOGIC
+        if self.use_flat_structure:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            return self.output_dir
+
+        # OLD LOGIC (Keep for backward compatibility)
         # Create date-based directory
         date_dir = self.output_dir / self.date_stamp
         date_dir.mkdir(parents=True, exist_ok=True)
@@ -214,7 +221,10 @@ class PipelineConfig(BaseModel):
         latest_link = date_dir / "latest"
         if latest_link.is_symlink():
             latest_link.unlink()
-        latest_link.symlink_to(run_dir.name)
+        try:
+            latest_link.symlink_to(run_dir.name)
+        except OSError:
+            pass  # Ignore symlink errors on Windows/weird filesystems
 
         return run_dir
 

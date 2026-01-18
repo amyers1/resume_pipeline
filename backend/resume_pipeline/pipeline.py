@@ -4,12 +4,14 @@ Simplified version without Google Drive integration.
 """
 
 import json
+import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
+# ... Keep existing imports ...
 from .analyzers.job_analyzer import JobAnalyzer
 from .cache import CacheManager
 from .compilers import COMPILERS
@@ -22,6 +24,9 @@ from .models import CachedPipelineState, CareerProfile, StructuredResume
 from .uploaders.minio_uploader import MinioUploader
 from .uploaders.nextcloud_uploader import NextcloudUploader
 
+# Configure Logger
+logger = logging.getLogger(__name__)
+
 
 class ResumePipeline:
     """Main pipeline orchestrator for resume generation."""
@@ -29,6 +34,9 @@ class ResumePipeline:
     def __init__(self, config: PipelineConfig):
         self.config = config
         self.run_dir = self.config.get_output_dir()
+
+        # New: Progress Callback
+        self.progress_callback: Optional[Callable[[str, int, str], None]] = None
 
         # Helper to initialize the correct LLM provider
         def get_model(model_name: str, temperature: float):
@@ -63,28 +71,26 @@ class ResumePipeline:
         self.parser = StructuredResumeParser(self.base_llm)
         self.latex_gen = LaTeXGenerator(config.latex_template)
 
-        # Backend selection from config
+        # Backend selection
         self.output_backend = config.output_backend
 
-        # Instantiate appropriate compiler
+        # Instantiate compiler
         CompilerCls = COMPILERS.get(self.output_backend)
         if not CompilerCls:
             raise ValueError(f"Unsupported OUTPUT_BACKEND: {self.output_backend}")
 
         if self.output_backend == "latex":
-            # LaTeX compiler (for .tex generation only, no compilation)
             self.compiler = CompilerCls(
                 template_dir=config.template_files_dir,
-                fonts_dir=None,  # Not needed since we won't compile
+                fonts_dir=None,
             )
         else:
-            # WeasyPrint compiler
             self.compiler = CompilerCls(
                 template_dir=config.template_files_dir,
                 css_file=config.css_file,
             )
 
-        # Initialize uploaders (no Google Drive)
+        # Initialize uploaders
         self.minio = None
         if config.enable_minio:
             self.minio = MinioUploader(
@@ -102,19 +108,29 @@ class ResumePipeline:
                 config.nextcloud_password,
             )
 
+    # NEW: Method called by Worker
+    def set_progress_callback(self, callback: Callable[[str, int, str], None]):
+        """Set a callback function to report progress updates."""
+        self.progress_callback = callback
+
+    # NEW: Internal helper
+    def _report_progress(self, stage: str, percent: int, message: str):
+        """Send progress update if callback is configured."""
+        logger.info(f"[{percent}%] {stage}: {message}")
+        if self.progress_callback:
+            try:
+                self.progress_callback(stage, percent, message)
+            except Exception as e:
+                logger.error(f"Error in progress callback: {e}")
+
     def run(self) -> Tuple[StructuredResume, str, Optional[Path]]:
         """
         Execute the full resume generation pipeline.
-
-        Returns:
-            Tuple of (structured_resume, raw_output, pdf_path)
         """
-        print("=" * 80)
-        print("RESUME GENERATION PIPELINE")
-        print("=" * 80)
+        logger.info("Starting Resume Generation Pipeline")
+        self._report_progress("analyzing_jd", 5, "Loading inputs")
 
         # Step 1: Load inputs
-        print("\n[1/7] Loading job description and career profile...")
         jd_json = self._load_json(self.config.job_json_path)
         career_profile = CareerProfile.model_validate_json(
             self.config.career_profile_path.read_text(encoding="utf-8")
@@ -131,25 +147,26 @@ class ResumePipeline:
             cached_state = self.cache.load(cache_key)
 
         if cached_state:
-            print("  ✓ Using cached job analysis, matching, and draft")
+            logger.info("Using cached pipeline state")
+            self._report_progress("generating_draft", 50, "Restored cached draft")
             jd_requirements = cached_state.jd_requirements
             matched_achievements = cached_state.matched_achievements
             draft_resume = cached_state.draft_resume
         else:
             # Step 2: Analyze JD
-            print("[2/7] Analyzing job requirements...")
+            self._report_progress("analyzing_jd", 15, "Analyzing job requirements")
             jd_requirements = self.analyzer.analyze(jd_json)
             self._save_checkpoint("jd_requirements", jd_requirements.model_dump())
 
             # Step 3: Match achievements
-            print("[3/7] Matching achievements to job requirements...")
+            self._report_progress("matching_achievements", 30, "Matching achievements")
             matched_achievements = self.matcher.match(jd_requirements, career_profile)
             self._save_checkpoint(
                 "matched_achievements", [a.model_dump() for a in matched_achievements]
             )
 
             # Step 4: Generate draft
-            print("[4/7] Generating draft resume...")
+            self._report_progress("generating_draft", 45, "Generating draft resume")
             draft_resume = self.draft_gen.generate(
                 jd_requirements, career_profile, matched_achievements
             )
@@ -170,7 +187,7 @@ class ResumePipeline:
                 )
 
         # Step 5: Critique and refine
-        print("[5/7] Critiquing and refining resume...")
+        self._report_progress("critiquing", 70, "Critiquing and refining")
         final_resume, critique = self.critic.critique_and_refine(
             draft_resume, jd_requirements
         )
@@ -178,40 +195,28 @@ class ResumePipeline:
         self._save_checkpoint("critique", critique)
 
         # Step 6: Generate structured output
-        print("[6/7] Generating structured output...")
+        self._report_progress("refining", 85, "Structuring data")
         structured_resume = self.parser.parse(final_resume)
         self._save_checkpoint("structured_resume", structured_resume.model_dump())
 
         # Step 7: Generate outputs and upload
-        print("[7/7] Post-processing and file generation...")
+        self._report_progress("generating_output", 90, "Compiling final documents")
         pdf_path: Optional[Path] = None
         latex_output = ""
 
         if self.output_backend == "latex":
             # Generate LaTeX file
-            print("  Generating LaTeX (.tex) file...")
             latex_output = self.latex_gen.generate(structured_resume)
             latex_filename = self.config.get_output_filename("tex")
             latex_path = self.run_dir / latex_filename
             latex_path.write_text(latex_output, encoding="utf-8")
-            print(f"  ✓ LaTeX file created: {latex_filename}")
 
-            # Note: We no longer compile LaTeX to PDF automatically
-            # Users can upload .tex to Overleaf or compile manually
-            print("  ℹ️  LaTeX compilation skipped (generate .tex only)")
-            print("     Upload .tex file to Overleaf or compile manually with:")
-            print(f"     xelatex {latex_filename}")
-
-            # Upload .tex file
             self._handle_uploads(latex_path)
-
-            self._print_summary(critique, latex_filename, None)
+            self._report_progress("completed", 100, "LaTeX generation complete")
             return structured_resume, latex_output, None
 
         else:
-            # WeasyPrint backend - generate both PDF and .tex
-            print("  Using WeasyPrint for PDF generation...")
-
+            # WeasyPrint backend
             # Generate PDF
             pdf_filename = self.config.get_output_filename("pdf")
             output_pdf = self.run_dir / pdf_filename
@@ -223,20 +228,18 @@ class ResumePipeline:
                 context=context,
             )
 
-            # Also generate .tex file for archival/manual compilation
-            print("  Also generating LaTeX (.tex) file for archival...")
+            # Also generate .tex file for archival
             latex_output = self.latex_gen.generate(structured_resume)
             latex_filename = self.config.get_output_filename("tex")
             latex_path = self.run_dir / latex_filename
             latex_path.write_text(latex_output, encoding="utf-8")
-            print(f"  ✓ LaTeX file created: {latex_filename}")
 
-            # Upload both PDF and .tex
+            # Uploads
             if pdf_path:
                 self._handle_uploads(pdf_path)
             self._handle_uploads(latex_path)
 
-            self._print_summary(critique, latex_filename, pdf_path)
+            self._report_progress("completed", 100, "PDF generation complete")
             return structured_resume, latex_output, pdf_path
 
     def compile_existing_json(self, json_path: Path) -> Optional[Path]:

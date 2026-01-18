@@ -1,8 +1,26 @@
 services:
+    # PostgreSQL Database (New)
+    db:
+        image: postgres:15-alpine
+        container_name: resume-postgres
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER:-postgres}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+            - POSTGRES_DB=${POSTGRES_DB:-resume_pipeline}
+        ports:
+            - "5432:5432" # Expose to host for local inspection tools
+        volumes:
+            - ./data/postgres:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+
     # Redis Cache Server
     redis:
         image: redis:7-alpine
-        user: "${UID:-1000}:${GID:-1000}"
         container_name: resume-redis
         ports:
             - "6379:6379"
@@ -15,61 +33,56 @@ services:
             timeout: 3s
             retries: 3
         restart: unless-stopped
+
+    # API Service
     api:
-        build: .
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
         container_name: resume-pipeline-api
         ports:
             - "8000:8000"
-        environment:
-            - REDIS_HOST=${REDIS_HOST:-redis}
-            - USER_ID=${USER_ID:-1000}
-            - GROUP_ID=${GROUP_ID:-1000}
-            - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
-            - RABBITMQ_HOST=${RABBITMQ_HOST:-}
-            - RABBITMQ_PORT=${RABBITMQ_PORT:-}
         env_file:
             - .env
+        environment:
+            # Ensure DB URL uses the service name 'db'
+            - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
         volumes:
-            - ./career_profile.json:/app/career_profile.json:ro
-            - ./.env:/app/.env:ro
-            - ./jobs:/app/jobs
-            - ./output:/app/output
-            - ./profiles:/app/profiles
-            - ./api.py:/app/api.py
-            - ./resume_pipeline_rabbitmq.py:/app/resume_pipeline_rabbitmq.py
+            # Map the entire backend directory for hot-reloading
+            - ./backend:/app
+            # Persist output outside the container if needed
+            - ./backend/output:/app/output
         command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
         depends_on:
             redis:
                 condition: service_healthy
+            db:
+                condition: service_healthy
         restart: unless-stopped
 
-        # Worker Pool (scalable)
+    # Worker Service
     worker:
-        build: .
-        environment:
-            - REDIS_HOST=${REDIS_HOST:-redis}
-            - USER_ID=${USER_ID:-1000}
-            - GROUP_ID=${GROUP_ID:-1000}
-            - ENABLE_RABBITMQ=${ENABLE_RABBITMQ:-false}
-            - RABBITMQ_HOST=${RABBITMQ_HOST:-}
-            - RABBITMQ_PORT=${RABBITMQ_PORT:-}
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: resume-pipeline-worker
         env_file:
             - .env
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
         volumes:
-            - ./.env:/app/.env:ro
-            - ./career_profile.json:/app/career_profile.json:ro
-            - ./jobs:/app/jobs
-            - ./output:/app/output
-            - ./profiles:/app/profiles
-            - ./resume_worker.py:/app/resume_worker.py
-            - ./resume_pipeline_rabbitmq.py:/app/resume_pipeline_rabbitmq.py
-        command: python resume_worker.py
+            - ./backend:/app
+            - ./backend/output:/app/output
+        # Updated command to use the new filename
+        command: python worker.py
         depends_on:
             redis:
                 condition: service_healthy
-        restart: unless-stopped
+            db:
+                condition: service_healthy
         deploy:
             replicas: 2
+        restart: unless-stopped
 
     # Frontend
     frontend:
@@ -79,6 +92,8 @@ services:
             - "3000:80"
         depends_on:
             - api
+        environment:
+            - VITE_API_URL=${VITE_API_URL}
         restart: unless-stopped
 
 networks:
