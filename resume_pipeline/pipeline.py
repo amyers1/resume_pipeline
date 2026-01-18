@@ -28,7 +28,7 @@ class ResumePipeline:
 
     def __init__(self, config: PipelineConfig):
         self.config = config
-        self.config.output_dir = self.config.get_output_dir()
+        self.run_dir = self.config.get_output_dir()
 
         # Helper to initialize the correct LLM provider
         def get_model(model_name: str, temperature: float):
@@ -192,7 +192,7 @@ class ResumePipeline:
             print("  Generating LaTeX (.tex) file...")
             latex_output = self.latex_gen.generate(structured_resume)
             latex_filename = self.config.get_output_filename("tex")
-            latex_path = self.config.output_dir / latex_filename
+            latex_path = self.run_dir / latex_filename
             latex_path.write_text(latex_output, encoding="utf-8")
             print(f"  ✓ LaTeX file created: {latex_filename}")
 
@@ -214,7 +214,7 @@ class ResumePipeline:
 
             # Generate PDF
             pdf_filename = self.config.get_output_filename("pdf")
-            output_pdf = self.config.output_dir / pdf_filename
+            output_pdf = self.run_dir / pdf_filename
             context = structured_resume.model_dump()
 
             pdf_path = self.compiler.compile(
@@ -227,7 +227,7 @@ class ResumePipeline:
             print("  Also generating LaTeX (.tex) file for archival...")
             latex_output = self.latex_gen.generate(structured_resume)
             latex_filename = self.config.get_output_filename("tex")
-            latex_path = self.config.output_dir / latex_filename
+            latex_path = self.run_dir / latex_filename
             latex_path.write_text(latex_output, encoding="utf-8")
             print(f"  ✓ LaTeX file created: {latex_filename}")
 
@@ -271,7 +271,7 @@ class ResumePipeline:
             structured_resume = StructuredResume(**context)
             latex_output = self.latex_gen.generate(structured_resume)
             latex_filename = self.config.get_output_filename("tex")
-            latex_path = self.config.output_dir / latex_filename
+            latex_path = self.run_dir / latex_filename
             latex_path.write_text(latex_output, encoding="utf-8")
             print(f"  ✓ LaTeX file created: {latex_filename}")
             if latex_path:
@@ -310,7 +310,7 @@ class ResumePipeline:
     def _save_checkpoint(self, name: str, data):
         """Save intermediate pipeline state."""
         filename = self.config.get_checkpoint_filename(name)
-        path = self.config.output_dir / filename
+        path = self.run_dir / filename
         if isinstance(data, str):
             path.write_text(json.dumps({"content": data}, indent=2), encoding="utf-8")
         else:
@@ -327,7 +327,7 @@ class ResumePipeline:
         print(f"Company: {self.config.company}")
         print(f"Position: {self.config.job_title}")
         print(f"Template: {self.config.latex_template}")
-        print(f"Output Directory: {self.config.output_dir}")
+        print(f"Output Directory: {self.run_dir}")
         print(f"\nGenerated Files:")
         print(f"  • LaTeX: {latex_filename}")
         if pdf_path:
