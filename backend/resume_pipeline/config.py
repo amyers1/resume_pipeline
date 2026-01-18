@@ -11,18 +11,17 @@ from pathlib import Path
 from typing import Optional
 
 import pytz
-from dotenv import load_dotenv
+
+# from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-# Load environment variables
-load_dotenv()
+# # Load environment variables
+# load_dotenv()
 
 
 class PipelineConfig(BaseModel):
     """Configuration for resume generation pipeline."""
 
-    company: str = Field(default="Company Name")
-    job_title: str = Field(default="Job Title")
     base_file_name: str = Field(default="resume")
     top_k_heuristic: int = Field(default=20)
     top_k_final: int = Field(default=12)
@@ -90,8 +89,6 @@ class PipelineConfig(BaseModel):
     @classmethod
     def from_env(
         cls,
-        company: str,
-        job_title: str,
         base_file_name: str,
         job_json_path: Optional[str] = None,
     ) -> "PipelineConfig":
@@ -108,8 +105,6 @@ class PipelineConfig(BaseModel):
 
         return cls(
             # Pipeline Configuration
-            company=company,
-            job_title=job_title,
             base_file_name=base_file_name,
             top_k_heuristic=int(os.getenv("TOP_K_HEURISTIC", "20")),
             top_k_final=int(os.getenv("TOP_K_FINAL", "12")),

@@ -7,16 +7,16 @@ import traceback
 from datetime import UTC, datetime
 from pathlib import Path
 
-from rabbitmq import (
-    JobRequest,
-    RabbitMQClient,
-    MessageType,
-    PipelineStage,
-)
 from database import SessionLocal
 from models import Job
-from resume_pipeline.pipeline import ResumePipeline
+from rabbitmq import (
+    JobRequest,
+    MessageType,
+    PipelineStage,
+    RabbitMQClient,
+)
 from resume_pipeline.config import PipelineConfig
+from resume_pipeline.pipeline import ResumePipeline
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +60,7 @@ class DatabaseResumeWorker:
                 # 2. Configure Pipeline
                 # We use the existing Pipeline logic but point it to temp files
                 config = PipelineConfig.from_env(
-                    company_name=job.company,
-                    job_title=job.job_title,
-                    base_filename=f"{job.company}_{job.job_title}".replace(" ", "_"),
+                    base_file_name=f"{job.company}_{job.job_title}".replace(" ", "_"),
                     job_json_path=str(jd_path),
                 )
 
@@ -145,12 +143,6 @@ class DatabaseResumeWorker:
         self.rabbitmq.connect()
         self.rabbitmq.consume_jobs(self.process_job)
 
-            return 0.0
-        return 0.0
-
-    def start(self):
-        self.rabbitmq.connect()
-        self.rabbitmq.consume_jobs(self.process_job)
 
 if __name__ == "__main__":
     worker = DatabaseResumeWorker()
