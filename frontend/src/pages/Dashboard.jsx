@@ -26,6 +26,7 @@ export default function Dashboard() {
                 sort_order: filters.sortOrder,
             });
 
+            // The API returns { items: [], total: 0, page: 1, size: 20 }
             dispatch({ type: actionTypes.SET_JOBS, payload: response.data });
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
@@ -52,7 +53,16 @@ export default function Dashboard() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const { list: jobs, pagination } = state.jobs;
+    // FIXED: API returns 'items', not 'list'.
+    // We normalize it here so the rest of the component works.
+    const jobsList = state.jobs.items || state.jobs.list || [];
+    const pagination = {
+        page: state.jobs.page || 1,
+        totalCount: state.jobs.total || 0,
+        totalPages: Math.ceil(
+            (state.jobs.total || 0) / (state.jobs.size || 20),
+        ),
+    };
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -123,7 +133,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-center py-12">
                     <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-            ) : jobs.length === 0 ? (
+            ) : jobsList.length === 0 ? (
                 <div className="text-center py-12">
                     <div className="text-6xl mb-4">📄</div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -143,8 +153,8 @@ export default function Dashboard() {
             ) : (
                 <>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {jobs.map((job) => (
-                            <JobCard key={job.job_id} job={job} />
+                        {jobsList.map((job) => (
+                            <JobCard key={job.id || job.job_id} job={job} />
                         ))}
                     </div>
 

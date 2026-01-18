@@ -2,11 +2,10 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from database import Base
 from pydantic import BaseModel, Field
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.sql import func
-
-from .database import Base
 
 # ==========================
 # SQLALCHEMY MODELS (DB)

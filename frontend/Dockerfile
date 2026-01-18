@@ -1,37 +1,37 @@
-# Multi-stage build for optimized production image
+# frontend/Dockerfile
 
-# Build stage
-FROM node:lts-alpine3.23 as build
+# 1. Build Stage
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files first to leverage caching
+COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev
+# Install dependencies (use --frozen-lockfile for consistency)
+# We also forcefully install the correct linux binary for esbuild to avoid platform errors
+RUN npm ci && npm rebuild esbuild
 
 # Copy source code
 COPY . .
 
-# Build the application
+# ARGS for build time (These must be defined to bake them in)
+# We default to empty so it uses the relative path logic we set up in nginx
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build the app
 RUN npm run build
 
-# Production stage
+# 2. Serve Stage
 FROM nginx:alpine
 
-# Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom nginx configuration
+# Copy custom Nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80
 EXPOSE 80
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

@@ -76,49 +76,81 @@ export const apiService = {
     getJobTemplate: (filename) => api.get(`/job-templates/${filename}`),
 };
 
-// SSE connection for job status
-export const createJobStatusSSE = (jobId, callbacks) => {
-    const eventSource = new EventSource(`/api/jobs/${jobId}/status`);
+// =========================================================
+// SHARED EVENT SOURCE (Broadcast Pattern)
+// =========================================================
 
-    eventSource.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            callbacks.onMessage?.(data);
-        } catch (error) {
-            console.error("Failed to parse SSE message:", error);
-        }
-    };
+let globalEventSource = null;
+const globalListeners = new Set();
 
-    eventSource.onerror = (error) => {
-        console.error("SSE error:", error);
-        callbacks.onError?.(error);
-        eventSource.close();
-    };
+const getGlobalEventSource = () => {
+    if (!globalEventSource) {
+        // Connect to the new single broadcast endpoint
+        // Nginx will proxy '/api/events' -> 'http://api:8000/events'
+        globalEventSource = new EventSource("/api/events");
 
-    // Return cleanup function
-    return () => eventSource.close();
+        globalEventSource.onmessage = (event) => {
+            try {
+                // The data might be double-encoded depending on the backend serializer
+                const raw = JSON.parse(event.data);
+                // If the backend wraps it in {"data": ...}, unwrap it
+                const payload = raw.data
+                    ? typeof raw.data === "string"
+                        ? JSON.parse(raw.data)
+                        : raw.data
+                    : raw;
+
+                // Broadcast to all active listeners
+                globalListeners.forEach((listener) => listener(payload));
+            } catch (error) {
+                console.error("Failed to parse SSE message:", error);
+            }
+        };
+
+        globalEventSource.onerror = (error) => {
+            console.error("SSE connection lost or error:", error);
+            // EventSource automatically retries, so we just log it
+        };
+    }
+    return globalEventSource;
 };
 
-// SSE connection for all jobs
-export const createAllJobsStatusSSE = (callbacks) => {
-    const eventSource = new EventSource(`/api/jobs/status`);
+// SSE connection for a SPECIFIC job
+export const createJobStatusSSE = (jobId, callbacks) => {
+    // Ensure the global connection is active
+    getGlobalEventSource();
 
-    eventSource.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            callbacks.onMessage?.(data);
-        } catch (error) {
-            console.error("Failed to parse SSE message:", error);
+    const listener = (payload) => {
+        // Only trigger callback if the message is for THIS job
+        if (payload && payload.job_id === jobId) {
+            callbacks.onMessage?.(payload);
         }
     };
 
-    eventSource.onerror = (error) => {
-        console.error("SSE error:", error);
-        callbacks.onError?.(error);
-        eventSource.close();
+    globalListeners.add(listener);
+
+    // Return cleanup function
+    return () => {
+        globalListeners.delete(listener);
+        // Note: We intentionally do NOT close the global connection
+        // so other components (like the Dashboard) keep receiving updates.
+    };
+};
+
+// SSE connection for ALL jobs (Dashboard)
+export const createAllJobsStatusSSE = (callbacks) => {
+    // Ensure the global connection is active
+    getGlobalEventSource();
+
+    const listener = (payload) => {
+        callbacks.onMessage?.(payload);
     };
 
-    return () => eventSource.close();
+    globalListeners.add(listener);
+
+    return () => {
+        globalListeners.delete(listener);
+    };
 };
 
 export default api;
