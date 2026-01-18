@@ -186,15 +186,10 @@ class ResumeWorker:
             ResumePipeline, PipelineConfig = self._get_pipeline()
 
             # Create output directory
-            timestamp = datetime.now().strftime("%Y%m%d")
-            run_timestamp = datetime.now().strftime("%H%M%S")
-            output_dir = OUTPUT_DIR / timestamp / f"run_{run_timestamp}"
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            logger.info(f"Output directory: {output_dir}")
-
-            # Update metadata with output directory
-            self.update_job_metadata(job_id, {"output_dir": str(output_dir.absolute())})
+            # timestamp = datetime.now().strftime("%Y%m%d")
+            # run_timestamp = datetime.now().strftime("%H%M%S")
+            # output_dir = OUTPUT_DIR / timestamp / f"run_{run_timestamp}"
+            # output_dir.mkdir(parents=True, exist_ok=True)
 
             # Create pipeline configuration using from_env()
             # This loads from .env and we override with job-specific values
@@ -202,9 +197,16 @@ class ResumeWorker:
                 company, job_title, base_file_name, job_json_path=str(job_json_path)
             )
 
+            logger.info(
+                f"Output directory: {pipeline_config.get_output_dir().absolute()}"
+            )
+
+            # Update metadata with output directory
+            self.update_job_metadata(
+                job_id, {"output_dir": str(pipeline_config.get_output_dir().absolute())}
+            )
+
             # Override config with job-specific values
-            pipeline_config.career_profile_path = career_profile_path
-            pipeline_config.output_dir = output_dir
             pipeline_config.output_backend = job_request.output_backend
 
             # Map template to the appropriate config fields
@@ -271,7 +273,7 @@ class ResumeWorker:
 
             # Collect output files
             output_files = {
-                "output_dir": str(output_dir.absolute()),
+                "output_dir": str(pipeline_config.get_output_dir().absolute()),
             }
 
             if pdf_path:
@@ -279,13 +281,15 @@ class ResumeWorker:
 
             # Find other output files
             for ext in [".tex", ".json", ".txt"]:
-                matching_files = list(output_dir.glob(f"*{ext}"))
+                matching_files = list(pipeline_config.get_output_dir().glob(f"*{ext}"))
                 if matching_files:
                     output_files[ext.lstrip(".")] = str(matching_files[0].absolute())
 
             # Try to extract final score from critique.json
             final_score = None
-            critique_file = output_dir / "checkpoint_critique.json"
+            critique_file = (
+                pipeline_config.get_output_dir() / "checkpoint_critique.json"
+            )
             if critique_file.exists():
                 try:
                     with open(critique_file, "r") as f:
@@ -324,7 +328,7 @@ class ResumeWorker:
                 f"Job {job_id} completed successfully in {processing_time:.2f}s"
             )
             logger.info(f"Final score: {final_score}")
-            logger.info(f"Output: {output_dir}")
+            logger.info(f"Output: {pipeline_config.get_output_dir()}")
 
             return True
 
