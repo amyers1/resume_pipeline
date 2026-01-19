@@ -254,12 +254,20 @@ class DatabaseResumeWorker:
         # Ensure output directory exists
         Path("output").mkdir(exist_ok=True)
 
-        # Connect to RabbitMQ
-        if not self.rabbitmq.connect():
-            logger.error("❌ Failed to connect to RabbitMQ")
-            sys.exit(1)
+        # Connect to RabbitMQ (note: connect() may return None, so check channel instead)
+        try:
+            self.rabbitmq.connect()
 
-        logger.info("✅ Connected to RabbitMQ")
+            # Verify connection by checking if channel exists
+            if not self.rabbitmq.channel:
+                logger.error("❌ Failed to establish RabbitMQ channel")
+                sys.exit(1)
+
+            logger.info("✅ Ready to process jobs")
+
+        except Exception as e:
+            logger.error(f"❌ Failed to connect to RabbitMQ: {e}")
+            sys.exit(1)
 
         # Start consuming jobs
         try:
@@ -272,8 +280,11 @@ class DatabaseResumeWorker:
             logger.debug(traceback.format_exc())
         finally:
             logger.info("🛑 Shutting down worker...")
-            if hasattr(self.rabbitmq, "close"):
-                self.rabbitmq.close()
+            if hasattr(self.rabbitmq, "connection") and self.rabbitmq.connection:
+                try:
+                    self.rabbitmq.connection.close()
+                except:
+                    pass
             logger.info("✅ Worker shut down gracefully")
 
 

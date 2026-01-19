@@ -10,14 +10,27 @@ from typing import Any
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
+from ..config import PipelineConfig
 from ..models import Achievement, CareerProfile, JDRequirements
 
 
 class AchievementMatcher:
     """Matches candidate achievements to job requirements."""
 
-    def __init__(self, llm: ChatOpenAI):
-        self.llm = llm
+    def __init__(
+        self, base_llm: ChatOpenAI, strong_llm: ChatOpenAI, config: PipelineConfig
+    ):
+        """
+        Initialize achievement matcher.
+
+        Args:
+            base_llm: Base language model for initial processing
+            strong_llm: Strong language model for final ranking
+            config: Pipeline configuration
+        """
+        self.base_llm = base_llm
+        self.strong_llm = strong_llm  # Use strong model for important matching
+        self.config = config
         self._setup_prompts()
 
     def _setup_prompts(self) -> None:
@@ -163,7 +176,8 @@ Return top 15-20 achievements as JSON array, sorted by relevance."""
             [("system", self.system_prompt), ("user", self.user_prompt)]
         )
 
-        chain = prompt | self.llm
+        # Use strong LLM for important matching task
+        chain = prompt | self.strong_llm
 
         # Create profile summary
         profile_summary = self._create_profile_summary(profile)

@@ -80,7 +80,13 @@ class ResumeCritic:
         """
         current_resume = draft
         all_critiques = []
-        max_loops = self.config.max_critique_loops
+
+        # Get max loops from config (defaults to 2 if not set)
+        max_loops = getattr(self.config, "max_critique_loops", 2)
+
+        # Get min quality score (default 0.8 which is 8.0/10)
+        # Note: config stores it as 0-1 scale, advanced_settings uses 0-10 scale
+        min_quality_score = getattr(self.config, "critique_threshold", 0.8)
 
         print(f"\n{'=' * 80}")
         print("CRITIQUE & REFINEMENT")
@@ -98,7 +104,7 @@ class ResumeCritic:
 
             # Check if quality threshold met
             if (
-                critique.score >= self.config.min_quality_score / 10
+                critique.score >= min_quality_score
                 and critique.ats_ok
                 and critique.length_ok
             ):
