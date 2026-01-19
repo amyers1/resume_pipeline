@@ -47,18 +47,18 @@ class DatabaseResumeWorker:
             temp_path = Path(temp_dir)
 
             try:
-                # 1. Materialize inputs to files (Pipeline expects files)
+                # 1. Materialize inputs to files
                 jd_path = temp_path / "job_description.json"
                 profile_path = temp_path / "career_profile.json"
 
+                # Generate the JSON file from DB columns on the fly
+                reconstructed_json = job.to_schema_json()
+
                 with open(jd_path, "w") as f:
-                    json.dump(job.job_description_json, f)
+                    json.dump(reconstructed_json, f)
 
                 with open(profile_path, "w") as f:
                     json.dump(job.career_profile_json, f)
-
-                persistent_output = Path("output") / str(job.id)
-                persistent_output.mkdir(parents=True, exist_ok=True)
 
                 # 2. Configure Pipeline with Advanced Settings
                 # Merge basic job info with advanced settings

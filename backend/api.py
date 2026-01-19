@@ -13,7 +13,10 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from models import (
+    CareerEducation,
+    CareerExperience,
     CareerProfile,
+    CareerProject,
     Job,
     JobListResponse,
     JobResponse,
@@ -26,10 +29,9 @@ from models import (
 )
 from rabbitmq import RabbitMQClient, RabbitMQConfig, publish_job_request
 from sqlalchemy import desc
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sse_starlette.sse import EventSourceResponse
 
-# Initialize Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -37,17 +39,9 @@ logger = logging.getLogger(__name__)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Resume Pipeline API")
-
-# Directories
 OUTPUT_DIR = Path("output")
-PROFILES_DIR = Path("profiles")
-TEMPLATES_DIR = Path("templates")
-
-# Ensure directories exist
 OUTPUT_DIR.mkdir(exist_ok=True)
-PROFILES_DIR.mkdir(exist_ok=True)
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -187,24 +181,130 @@ def list_users(db: Session = Depends(get_db)):
 
 
 @app.post("/users/{user_id}/profiles", response_model=ProfileResponse)
-def create_profile(user_id: str, profile: ProfileCreate, db: Session = Depends(get_db)):
-    # Verify user exists
+def create_profile(
+    user_id: str, profile_req: ProfileCreate, db: Session = Depends(get_db)
+):
+    """Create a new profile by unpacking JSON Resume data into tables."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    data = profile_req.profile_json
+    basics = data.get("basics", {})
+    location = basics.get("location", {})
+
+    # 1. Create Main Profile
     new_profile = CareerProfile(
-        user_id=user_id, name=profile.name, profile_json=profile.profile_json
+        id=str(uuid.uuid4()),
+        user_id=user_id,
+        name=basics.get("name", "Unknown"),
+        label=basics.get("label"),
+        email=basics.get("email"),
+        phone=basics.get("phone"),
+        url=basics.get("url"),
+        summary=basics.get("summary"),
+        city=location.get("city"),
+        region=location.get("region"),
+        country_code=location.get("countryCode"),
+        skills=[s.get("name") for s in data.get("skills", []) if s.get("name")],
+        languages=[
+            l.get("language") for l in data.get("languages", []) if l.get("language")
+        ],
     )
+
+    # Socials
+    for p in basics.get("profiles", []):
+        net = p.get("network", "").lower()
+        if "linkedin" in net:
+            new_profile.linkedin_url = p.get("url")
+        elif "github" in net:
+            new_profile.github_url = p.get("url")
+
     db.add(new_profile)
+    db.commit()  # Commit main profile to get ID
+
+    # 2. Add Experience
+    for work in data.get("work", []):
+        exp = CareerExperience(
+            id=str(uuid.uuid4()),
+            profile_id=new_profile.id,
+            company=work.get("name", ""),
+            position=work.get("position", ""),
+            start_date=work.get("startDate"),
+            end_date=work.get("endDate"),
+            summary=work.get("summary"),
+            highlights=work.get("highlights", []),
+        )
+        db.add(exp)
+
+    # 3. Add Education
+    for edu in data.get("education", []):
+        ed = CareerEducation(
+            id=str(uuid.uuid4()),
+            profile_id=new_profile.id,
+            institution=edu.get("institution", ""),
+            area=edu.get("area"),
+            study_type=edu.get("studyType"),
+            start_date=edu.get("startDate"),
+            end_date=edu.get("endDate"),
+            score=edu.get("score"),
+            courses=edu.get("courses", []),
+        )
+        db.add(ed)
+
+    # 4. Add Projects
+    for proj in data.get("projects", []):
+        pr = CareerProject(
+            id=str(uuid.uuid4()),
+            profile_id=new_profile.id,
+            name=proj.get("name", ""),
+            description=proj.get("description"),
+            url=proj.get("url"),
+            keywords=proj.get("keywords", []),
+            roles=proj.get("roles", []),
+            start_date=proj.get("startDate"),
+            end_date=proj.get("endDate"),
+        )
+        db.add(pr)
+
     db.commit()
     db.refresh(new_profile)
-    return new_profile
+
+    # Reconstruct JSON for response
+    resp = ProfileResponse.from_orm(new_profile)
+    resp.profile_json = new_profile.to_full_json()
+    return resp
 
 
 @app.get("/users/{user_id}/profiles", response_model=List[ProfileResponse])
 def list_profiles(user_id: str, db: Session = Depends(get_db)):
-    return db.query(CareerProfile).filter(CareerProfile.user_id == user_id).all()
+    profiles = (
+        db.query(CareerProfile)
+        .options(
+            joinedload(CareerProfile.experience), joinedload(CareerProfile.education)
+        )
+        .filter(CareerProfile.user_id == user_id)
+        .all()
+    )
+
+    results = []
+    for p in profiles:
+        r = ProfileResponse.from_orm(p)
+        r.profile_json = p.to_full_json()
+        results.append(r)
+    return results
+
+
+@app.get("/profiles")
+def list_all_profiles(db: Session = Depends(get_db)):
+    # Simple list for job submission dropdown
+    profiles = db.query(CareerProfile).all()
+    results = []
+    for p in profiles:
+        r = ProfileResponse.from_orm(p)
+        r.profile_json = p.to_full_json()
+        results.append(r)
+    return results
 
 
 # ==========================
@@ -214,14 +314,12 @@ def list_profiles(user_id: str, db: Session = Depends(get_db)):
 
 @app.post("/jobs", response_model=JobResponse, status_code=201)
 def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
-    """Submit a new job. Resolves Profile ID if provided."""
+    """Submit a new job, unpacking JSON into normalized columns."""
     job_id = str(uuid.uuid4())
 
-    # 1. Resolve Profile Data
+    # 1. Resolve Profile
     final_profile_json = None
-
     if request.profile_id:
-        # Fetch from DB
         profile_record = (
             db.query(CareerProfile)
             .filter(CareerProfile.id == request.profile_id)
@@ -229,14 +327,10 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
         )
         if not profile_record:
             raise HTTPException(status_code=404, detail="Profile ID not found")
-        final_profile_json = profile_record.profile_json
-
-        # If user_id wasn't explicit, infer it from the profile
+        final_profile_json = profile_record.to_full_json()
         if not request.user_id:
             request.user_id = profile_record.user_id
-
     elif request.career_profile_data:
-        # Use provided JSON (legacy mode or one-off)
         final_profile_json = request.career_profile_data
     else:
         raise HTTPException(
@@ -244,14 +338,64 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
             detail="Must provide either profile_id or career_profile_data",
         )
 
-    # 2. Save to Postgres
+    # 2. Unpack JSON Schema
+    data = request.job_data
+    jd = data.get("job_details", {})
+    ben = data.get("benefits", {})
+    desc = data.get("job_description", {})
+    ctx = jd.get("job_board_list_context", {})
+
+    def safe_int(val):
+        try:
+            return int(val) if val is not None else None
+        except:
+            return None
+
     new_job = Job(
         id=job_id,
-        user_id=request.user_id,  # Can be None if anonymous
-        company=request.job_data.get("job_details", {}).get("company", "Unknown"),
-        job_title=request.job_data.get("job_details", {}).get("job_title", "Unknown"),
-        job_description_json=request.job_data,
-        career_profile_json=final_profile_json,  # Snapshot
+        user_id=request.user_id,
+        # --- JOB DETAILS ---
+        company=jd.get("company", "Unknown"),
+        job_title=jd.get("job_title", "Unknown"),
+        source=jd.get("source"),
+        platform=jd.get("platform"),
+        company_rating=jd.get("company_rating"),
+        location=jd.get("location"),
+        location_detail=jd.get("location_detail"),
+        employment_type=jd.get("employment_type"),
+        pay_currency=jd.get("pay_currency", "USD"),
+        pay_min_annual=safe_int(jd.get("pay_min_annual")),
+        pay_max_annual=safe_int(jd.get("pay_max_annual")),
+        pay_rate_type=jd.get("pay_rate_type"),
+        pay_display=jd.get("pay_display"),
+        remote_type=jd.get("remote_type"),
+        work_model=jd.get("work_model"),
+        work_model_notes=jd.get("work_model_notes"),
+        job_post_url=jd.get("job_post_url"),
+        apply_url=jd.get("apply_url"),
+        posting_age=jd.get("posting_age"),
+        security_clearance_required=jd.get("security_clearance_required"),
+        security_clearance_preferred=jd.get("security_clearance_preferred"),
+        # Search Context
+        search_keywords=ctx.get("search_keywords"),
+        search_location=ctx.get("search_location"),
+        search_radius=safe_int(ctx.get("search_radius_miles")),
+        # --- BENEFITS ---
+        benefits_listed=ben.get("listed_benefits", []),
+        benefits_text=ben.get("benefits_text"),
+        benefits_eligibility=ben.get("eligibility_notes"),
+        benefits_relocation=ben.get("relocation"),
+        benefits_sign_on_bonus=ben.get("sign_on_bonus"),
+        # --- DESCRIPTION ---
+        jd_headline=desc.get("headline"),
+        jd_short_summary=desc.get("short_summary"),
+        jd_full_text=desc.get("full_text"),
+        jd_experience_min=safe_int(desc.get("required_experience_years_min")),
+        jd_education=desc.get("required_education"),
+        jd_must_have_skills=desc.get("must_have_skills", []),
+        jd_nice_to_have_skills=desc.get("nice_to_have_skills", []),
+        # --- CONFIG ---
+        career_profile_json=final_profile_json,
         template=request.template,
         output_backend=request.output_backend,
         priority=request.priority,
@@ -260,11 +404,12 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
         else {},
         status="queued",
     )
+
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
 
-    # 3. Publish ID to RabbitMQ
+    # 3. Publish to RabbitMQ
     publish_job_request(
         job_id=job_id,
         job_json_path="DB",
@@ -274,16 +419,12 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
         priority=request.priority,
     )
 
-    return new_job
+    # We manually attach the reconstructed JSON for the response
+    # (Since we removed the JSON column from DB, but Frontend expects it)
+    response_obj = JobResponse.from_orm(new_job)
+    response_obj.job_description_json = new_job.to_schema_json()
 
-
-@app.get("/jobs", response_model=JobListResponse)
-def list_jobs(page: int = 1, size: int = 20, db: Session = Depends(get_db)):
-    """List jobs with efficient DB pagination."""
-    skip = (page - 1) * size
-    total = db.query(Job).count()
-    jobs = db.query(Job).order_by(desc(Job.created_at)).offset(skip).limit(size).all()
-    return {"items": jobs, "total": total, "page": page, "size": size}
+    return response_obj
 
 
 @app.get("/jobs/{job_id}", response_model=JobResponse)
@@ -291,23 +432,27 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    return job
+
+    # Hydrate the JSON field for frontend compatibility
+    resp = JobResponse.from_orm(job)
+    resp.job_description_json = job.to_schema_json()
+    return resp
 
 
-@app.delete("/jobs/{job_id}")
-def delete_job(job_id: str, db: Session = Depends(get_db)):
-    job = db.query(Job).filter(Job.id == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+@app.get("/jobs", response_model=JobListResponse)
+def list_jobs(page: int = 1, size: int = 20, db: Session = Depends(get_db)):
+    skip = (page - 1) * size
+    total = db.query(Job).count()
+    jobs = db.query(Job).order_by(desc(Job.created_at)).offset(skip).limit(size).all()
 
-    # Delete files
-    job_dir = OUTPUT_DIR / job_id
-    if job_dir.exists():
-        shutil.rmtree(job_dir)
+    # Hydrate list items
+    items = []
+    for j in jobs:
+        r = JobResponse.from_orm(j)
+        r.job_description_json = j.to_schema_json()
+        items.append(r)
 
-    db.delete(job)
-    db.commit()
-    return {"status": "deleted"}
+    return {"items": items, "total": total, "page": page, "size": size}
 
 
 # ==========================
@@ -345,52 +490,6 @@ def download_job_file(job_id: str, filename: str):
     return FileResponse(
         path=file_path, filename=filename, media_type="application/octet-stream"
     )
-
-
-# ==========================
-# PROFILE ENDPOINTS
-# ==========================
-
-
-@app.get("/profiles")
-def list_profiles():
-    """List available career profiles."""
-    profiles = []
-    for f in PROFILES_DIR.glob("*.json"):
-        try:
-            data = json.loads(f.read_text())
-            profiles.append(
-                {
-                    "filename": f.name,
-                    "name": data.get("name", "Unknown"),
-                    "email": data.get("email", ""),
-                    "modified": datetime.fromtimestamp(f.stat().st_mtime),
-                }
-            )
-        except Exception:
-            continue
-    return profiles
-
-
-@app.post("/profiles")
-async def upload_profile(file: UploadFile = File(...)):
-    """Upload a new career profile JSON."""
-    if not file.filename.endswith(".json"):
-        raise HTTPException(status_code=400, detail="Only JSON files allowed")
-
-    file_path = PROFILES_DIR / file.filename
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    return {"filename": file.filename, "status": "uploaded"}
-
-
-@app.delete("/profiles/{filename}")
-def delete_profile(filename: str):
-    file_path = PROFILES_DIR / filename
-    if file_path.exists():
-        file_path.unlink()
-    return {"status": "deleted"}
 
 
 # ==========================

@@ -60,16 +60,17 @@ export const apiService = {
         });
     },
 
-    // Profile operations
-    listProfiles: () => api.get("/profiles"),
-    uploadProfile: (formData) => {
-        return api.post("/profiles", formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
+    // User operations
+    listUsers: () => api.get("/users"),
+    createUser: (userData) => api.post("/users", userData),
+
+    // Profile operations (Updated)
+    listProfiles: () => api.get("/profiles"), // Global list
+
+    // Create profile for specific user (Replaces uploadProfile)
+    createProfile: (userId, profileData) => {
+        return api.post(`/users/${userId}/profiles`, profileData);
     },
-    deleteProfile: (filename) => api.delete(`/profiles/${filename}`),
 
     // Job template operations
     listJobTemplates: () => api.get("/job-templates"),
