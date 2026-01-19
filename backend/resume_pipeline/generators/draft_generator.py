@@ -3,10 +3,12 @@ Resume draft generation with experience grouping.
 """
 
 import json
-from langchain_openai import ChatOpenAI
+
 from langchain_core.prompts import ChatPromptTemplate
-from ..models import JDRequirements, CareerProfile, Achievement
+from langchain_openai import ChatOpenAI
+
 from ..config import PipelineConfig
+from ..models import Achievement, CareerProfile, JDRequirements
 
 
 class DraftGenerator:
@@ -67,7 +69,7 @@ OUTPUT: Complete resume in markdown. No commentary. Strict 2-page target."""
 {jd_json}
 
 Candidate profile:
-{profile_json}
+{profile_context}
 
 Top achievements for this role:
 {achievements_json}
@@ -88,7 +90,7 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         self,
         jd: JDRequirements,
         profile: CareerProfile,
-        achievements: list[Achievement]
+        achievements: list[Achievement],
     ) -> str:
         """
         Generate resume draft.
@@ -101,25 +103,45 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         Returns:
             Resume draft in markdown format
         """
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", self.system_prompt),
-            ("user", self.user_prompt)
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", self.system_prompt), ("user", self.user_prompt)]
+        )
 
         chain = prompt | self.llm
 
-        resp = chain.invoke({
-            "jd_json": jd.model_dump_json(indent=2),
-            "profile_json": profile.model_dump_json(indent=2),
-            "achievements_json": json.dumps(
-                [a.model_dump() for a in achievements], indent=2
-            ),
-            "name": profile.full_name,
-            "email": profile.email or "",
-            "phone": profile.phone or "",
-            "location": profile.location or "",
-            "linkedin": profile.linkedin or "",
-            "current_year": self.config.current_year,
-        })
+        # --- Helper: Extract LinkedIn ---
+        linkedin_url = ""
+        if profile.basics.profiles:
+            for p in profile.basics.profiles:
+                if p.network and "linkedin" in p.network.lower():
+                    linkedin_url = p.url
+                    break
+
+        # --- Helper: Format Location ---
+        loc_str = ""
+        if profile.basics.location:
+            parts = [profile.basics.location.city, profile.basics.location.region]
+            loc_str = ", ".join([p for p in parts if p])
+
+        # --- Use .to_prompt_string() for clean LLM context ---
+        # (This matches the method we added to models.py in the previous step)
+        profile_context = profile.to_prompt_string()
+
+        resp = chain.invoke(
+            {
+                "jd_json": jd.model_dump_json(indent=2),
+                "profile_context": profile_context,
+                "achievements_json": json.dumps(
+                    [a.model_dump() for a in achievements], indent=2
+                ),
+                # Access nested basics correctly
+                "name": profile.basics.name,
+                "email": profile.basics.email or "",
+                "phone": profile.basics.phone or "",
+                "location": loc_str,
+                "linkedin": linkedin_url,
+                "current_year": self.config.current_year,
+            }
+        )
 
         return resp.content if hasattr(resp, "content") else str(resp)

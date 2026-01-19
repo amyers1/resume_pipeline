@@ -1,6 +1,6 @@
 # Core dependencies
 python-dotenv
-pydantic
+pydantic>=2.12.0
 pytz
 jinja2
 pika>=1.3.0
