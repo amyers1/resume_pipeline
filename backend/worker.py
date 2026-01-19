@@ -60,6 +60,10 @@ class DatabaseResumeWorker:
                 with open(profile_path, "w") as f:
                     json.dump(job.career_profile_json, f)
 
+                # Define persistent output
+                persistent_output = Path("output") / str(job.id)
+                persistent_output.mkdir(parents=True, exist_ok=True)
+
                 # 2. Configure Pipeline with Advanced Settings
                 # Merge basic job info with advanced settings
                 pipeline_overrides = {
