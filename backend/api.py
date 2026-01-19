@@ -12,11 +12,15 @@ from database import Base, engine, get_db
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from models import Job, JobListResponse, JobResponse, JobSubmitRequest
 from rabbitmq import RabbitMQClient, RabbitMQConfig, publish_job_request
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
+from models import (
+    Job, JobSubmitRequest, JobResponse, JobListResponse,
+    User, UserCreate, UserResponse,
+    CareerProfile, ProfileCreate, ProfileResponse
+)
 
 # Initialize Logging
 logging.basicConfig(level=logging.INFO)
@@ -146,6 +150,51 @@ async def sse_events():
 
     return EventSourceResponse(event_generator())
 
+# ==========================
+# USER ENDPOINTS
+# ==========================
+
+@app.post("/users", response_model=UserResponse)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = User(email=user.email, full_name=user.full_name)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+@app.get("/users", response_model=List[UserResponse])
+def list_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
+
+# ==========================
+# PROFILE ENDPOINTS
+# ==========================
+
+@app.post("/users/{user_id}/profiles", response_model=ProfileResponse)
+def create_profile(user_id: str, profile: ProfileCreate, db: Session = Depends(get_db)):
+    # Verify user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_profile = CareerProfile(
+        user_id=user_id,
+        name=profile.name,
+        profile_json=profile.profile_json
+    )
+    db.add(new_profile)
+    db.commit()
+    db.refresh(new_profile)
+    return new_profile
+
+@app.get("/users/{user_id}/profiles", response_model=List[ProfileResponse])
+def list_profiles(user_id: str, db: Session = Depends(get_db)):
+    return db.query(CareerProfile).filter(CareerProfile.user_id == user_id).all()
+
 
 # ==========================
 # JOB ENDPOINTS
@@ -154,33 +203,54 @@ async def sse_events():
 
 @app.post("/jobs", response_model=JobResponse, status_code=201)
 def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
-    """Submit a new job to DB and Queue."""
+    """Submit a new job. Resolves Profile ID if provided."""
     job_id = str(uuid.uuid4())
 
-    # 1. Save to Postgres
+    # 1. Resolve Profile Data
+    final_profile_json = None
+
+    if request.profile_id:
+        # Fetch from DB
+        profile_record = db.query(CareerProfile).filter(CareerProfile.id == request.profile_id).first()
+        if not profile_record:
+            raise HTTPException(status_code=404, detail="Profile ID not found")
+        final_profile_json = profile_record.profile_json
+
+        # If user_id wasn't explicit, infer it from the profile
+        if not request.user_id:
+            request.user_id = profile_record.user_id
+
+    elif request.career_profile_data:
+        # Use provided JSON (legacy mode or one-off)
+        final_profile_json = request.career_profile_data
+    else:
+        raise HTTPException(status_code=400, detail="Must provide either profile_id or career_profile_data")
+
+    # 2. Save to Postgres
     new_job = Job(
         id=job_id,
+        user_id=request.user_id, # Can be None if anonymous
         company=request.job_data.get("job_details", {}).get("company", "Unknown"),
         job_title=request.job_data.get("job_details", {}).get("job_title", "Unknown"),
         job_description_json=request.job_data,
-        career_profile_json=request.career_profile_data,
+        career_profile_json=final_profile_json, # Snapshot
         template=request.template,
         output_backend=request.output_backend,
         priority=request.priority,
-        status="queued",
+        status="queued"
     )
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
 
-    # 2. Publish ID to RabbitMQ
+    # 3. Publish ID to RabbitMQ
     publish_job_request(
         job_id=job_id,
         job_json_path="DB",
         career_profile_path="DB",
         template=request.template,
         output_backend=request.output_backend,
-        priority=request.priority,
+        priority=request.priority
     )
 
     return new_job

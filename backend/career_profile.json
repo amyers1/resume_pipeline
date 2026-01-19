@@ -1,0 +1,1011 @@
+{
+  "full_name": "Aaron T. Myers",
+  "clearance": "TS/SCI with Polygraph",
+  "core_domains": [
+    "Electronic Warfare",
+    "ISR Operations",
+    "RF Systems & SIGINT",
+    "Systems Engineering",
+    "Test & Evaluation",
+    "Cybersecurity",
+    "Program Management",
+    "Satellite Operations",
+    "Data Science & Software Development",
+    "GPS Technologies",
+    "Electrical Engineering",
+    "Technical Leadership"
+  ],
+  "roles": [
+    {
+      "title": "Deputy Division Chief, Developmental Engineer",
+      "organization": "32nd Intelligence Squadron",
+      "location": "Fort George G. Meade, MD",
+      "start_date": "2024-06",
+      "end_date": "2025-05",
+      "seniority": "Director",
+      "achievements": [
+        {
+          "description": "Led 400-member division developing next-generation radio frequency collection capabilities for contested environments worldwide, managing a $170M portfolio with on-time, on-budget delivery.",
+          "impact_metric": "Managed $170M portfolio, 400-person organization.",
+          "domain_tags": [
+            "RF",
+            "ISR",
+            "Program_Mgmt",
+            "Technical_Leadership",
+            "Executive_Leadership",
+            "Strategic_Planning",
+            "Risk_Management",
+            "Resource_Management",
+            "Supervisor",
+            "Operations",
+            "Security",
+            "Multi-Disciplinary",
+            "Collaboration",
+            "Stakeholder_Management"
+          ]
+        },
+        {
+          "description": "Drove a $70M multi-national modernization program across 7 countries, creating a dense ISR edge node architecture that enabled over-the-horizon targeting in a strategically important region.",
+          "impact_metric": "$70M program across 7 countries; 4x ISR capability expansion.",
+          "domain_tags": [
+            "ISR",
+            "Program_Mgmt",
+            "RF",
+            "Systems_Engineering",
+            "Electrical_Engineering",
+            "Technical_Leadership",
+            "Executive_Communication",
+            "Innvoation",
+            "Risk_Management",
+            "Strategic_Planning",
+            "Resource_Management",
+            "Sensors",
+            "Signal_Processing"
+          ]
+        },
+        {
+          "description": "Managed completion of 4,000 technical requirements to modernize 25-year-old collection systems, expanding regional ISR capacity fourfold.",
+          "impact_metric": "4,000 requirements completed; 4x capability expansion.",
+          "domain_tags": [
+            "ISR",
+            "RF",
+            "Systems_Engineering",
+            "Executive_Leadership",
+            "Resource_Management",
+            "Sustainment",
+            "Capitol_Investment",
+            "Strategic_Planning",
+            "Operations",
+            "Requirements_Management",
+            "Multi-Disciplinary"
+          ]
+        },
+        {
+          "description": "Directed development and in-house build of three novel antenna designs, reducing procurement time by 8 months, cutting weight by 60%, and boosting performance by 25%.",
+          "impact_metric": "8 months faster delivery; 60% lighter; 25% performance gain.",
+          "domain_tags": [
+            "RF",
+            "Engineering",
+            "Electromagnetic_Propagation",
+            "Data_Analysis",
+            "Operations",
+            "Systems_Engineering",
+            "Electrical_Engineering",
+            "Technical_Leadership",
+            "Executive_Leadership",
+            "Test_Eval"
+          ]
+        },
+        {
+          "description": "Surged RF collection operations, achieving an 800% increase in system deployments and enabling identification and geolocation of over 1 million high-priority signals from hundreds of strategic targets.",
+          "impact_metric": "800% deployment improvement; 1M+ high-priority signals processed.",
+          "domain_tags": [
+            "ISR",
+            "RF",
+            "Operations",
+            "Process_Improvement",
+            "Risk_Management",
+            "Strategic_Planning",
+            "Resource_Management",
+            "Production",
+            "Requirements_Management",
+            "Executive_Leadership"
+          ]
+        },
+        {
+          "description": "Revived RF engineering training program for 42 engineers, closing critical skills gaps and preparing 31 military personnel for high-risk overseas deployments that concluded without incident.",
+          "impact_metric": "Trained 42 engineers; enabled 6 incident-free hostile deployments.",
+          "domain_tags": [
+            "RF",
+            "Training",
+            "Leadership",
+            "ISR",
+            "Operations",
+            "Mentorship",
+            "Collaboration",
+            "Strategic_Planning",
+            "Technical_Leadership",
+            "Risk_Management"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Deputy Chief Engineer",
+      "organization": "513th Electronic Warfare Squadron",
+      "location": "Eglin AFB, FL",
+      "start_date": "2020-11",
+      "end_date": "2024-05",
+      "seniority": "Director",
+      "achievements": [
+        {
+          "description": "Served as technical lead for a 181–189 member tri-service unit providing electronic warfare combat capability to the global USAF, USN, and USMC F-35 fleet, while maintaining a $380M mission data generation and test laboratory.",
+          "impact_metric": "Led 189-person team; managed $380M laboratory.",
+          "domain_tags": [
+            "EW",
+            "Test_Eval",
+            "Leadership",
+            "Supervisor",
+            "Executive_Leadership",
+            "Strategic_Planning",
+            "Systems_Engineering",
+            "Electrical_Engineering",
+            "Production",
+            "Configuration_Management",
+            "Risk_Management",
+            "Communication",
+            "Stakeholder_Engagement",
+            "Resource_Management"
+          ]
+        },
+        {
+          "description": "Normalized and scaled F-35 crowd-sourced flight data operations, ingesting 1.2 TB of operational data and analyzing 130+ pilot debrief events across three theaters, cutting analysis timelines tenfold.",
+          "impact_metric": "1.2 TB processed; 10x faster analysis; 130+ events analyzed.",
+          "domain_tags": [
+            "Software_Dev",
+            "Data_Science",
+            "EW",
+            "ISR",
+            "Test_Eval",
+            "Agile",
+            "Quick_Reaction",
+            "Analytics",
+            "Process_Improvement",
+            "Innovation",
+            "Systems_Engineering",
+            "Leadership",
+            "Technical_Leadership",
+            "Stakeholder_Management",
+            "Electrical_Engineering",
+            "Survivability",
+            "Multi-Dimensional_Analysis",
+            "Automation",
+            "Data_Management",
+            "Risk_Management",
+            "Security",
+            "Resource_Management",
+            "Strategic_Planning",
+            "Strategic_Impact"
+          ]
+        },
+        {
+          "description": "Solved complex combat identification challenges in dense electronic warfare environments by optimizing 29 mission data files supporting 7 deployed units and 625 aircraft.",
+          "impact_metric": "29 mission data files optimized; 625 aircraft supported.",
+          "domain_tags": [
+            "EW",
+            "Systems_Engineering",
+            "Technical_Leadership",
+            "Survivability",
+            "Operations",
+            "Test_Eval",
+            "ISR",
+            "Data_Analysis",
+            "Verification_Validation"
+          ]
+        },
+        {
+          "description": "Led development of a common mission data format across platforms, reducing file sizes by 60x and enabling efficient sharing and reuse of reprogramming data across 70+ wing platforms.",
+          "impact_metric": "60x file size reduction; 70+ platforms supported.",
+          "domain_tags": [
+            "Software_Dev",
+            "EW",
+            "ISR",
+            "Data_Science",
+            "Process_Improvement",
+            "Systems_Engineering",
+            "Strategic_Planning",
+            "Stakeholder_Engagement",
+            "Enterprise_Impact",
+            "Interoperability",
+            "Open_Standards",
+            "Collaboration",
+            "Technical_Leadership"
+          ]
+        },
+        {
+          "description": "Delivered a toolset that integrated 46 GB of data from 5 squadrons into emergency reprogramming workflows during Exercise Northern Edge, advancing toward the Secretary of the Air Force 3-hour rapid response goal.",
+          "impact_metric": "46 GB integrated from 5 squadrons; enabled rapid reprogramming.",
+          "domain_tags": [
+            "Software_Dev",
+            "Data_Science",
+            "EW",
+            "ISR",
+            "Test_Eval",
+            "Agile",
+            "Quick_Reaction",
+            "Analytics",
+            "Visualization",
+            "User_Experience",
+            "UX",
+            "Design",
+            "Process_Improvement",
+            "Innovation",
+            "Systems_Engineering",
+            "Leadership",
+            "Technical_Leadership",
+            "Complexity",
+            "Data_Pileline",
+            "ML",
+            "Web",
+            "Stakeholder_Management",
+            "Electrical_Engineering",
+            "Survivability",
+            "Multi-Dimensional_Analysis"
+          ]
+        },
+        {
+          "description": "Built an F-35 crowd-sourced flight data capability from scratch, standing up a 7-person team and developing software tools to analyze terabytes of operational data, supporting 123 events and driving 35 mission data parameter updates.",
+          "impact_metric": "123 events analyzed; 35 parameter updates implemented.",
+          "domain_tags": [
+            "Software_Dev",
+            "Data_Science",
+            "EW",
+            "ISR",
+            "Test_Eval",
+            "Agile",
+            "Quick_Reaction",
+            "Analytics",
+            "Process_Improvement",
+            "Innovation",
+            "Systems_Engineering",
+            "Leadership",
+            "Technical_Leadership",
+            "Stakeholder_Management",
+            "Electrical_Engineering",
+            "Survivability",
+            "Multi-Dimensional_Analysis",
+            "Automation",
+            "Data_Management",
+            "Risk_Management",
+            "Security",
+            "Resource_Management",
+            "Strategic_Planning"
+          ]
+        },
+        {
+          "description": "Developed advanced visualization tools that improved analyst efficiency by 99% and reduced processing time twelvefold, enabling timely delivery of five urgent updates to tri-service F-35 units.",
+          "impact_metric": "99% efficiency gain; 12x faster processing; 5 urgent updates delivered.",
+          "domain_tags": [
+            "Software_Dev",
+            "Data_Science",
+            "EW",
+            "ISR",
+            "Test_Eval",
+            "Agile",
+            "Quick_Reaction",
+            "Analytics",
+            "Visualization",
+            "User_Experience",
+            "UX",
+            "Design",
+            "Process_Improvement",
+            "Innovation",
+            "Systems_Engineering",
+            "Leadership",
+            "Technical_Leadership",
+            "Complexity",
+            "Data_Pileline",
+            "ML",
+            "Web",
+            "Stakeholder_Management",
+            "Electrical_Engineering",
+            "Survivability",
+            "Multi-Dimensional_Analysis"
+          ]
+        },
+        {
+          "description": "Excelled as interim Director of Operations for a 160-member tri-service squadron, meeting 100% F-35 production requirements and delivering 104 combat-credible software releases supporting five combatant commanders.",
+          "impact_metric": "104 software releases; 100% on-time production.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "EW",
+            "Leadership",
+            "Executive_Leadership",
+            "Strategic_Planning",
+            "Resource_Management",
+            "Supervisor",
+            "Executive_Communication",
+            "Operations_Director",
+            "Technical_Leadership",
+            "Risk_Management",
+            "Process_Improvement"
+          ]
+        },
+        {
+          "description": "Orchestrated a comprehensive software production overhaul synchronizing six flights, two test lines, and a $350M laboratory, cutting production timelines by 43% and doubling mission coverage.",
+          "impact_metric": "$350M lab; 43% timeline reduction; 2x mission coverage.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Process_Optimization",
+            "Software_Development",
+            "Strategic_Planning",
+            "Leadership",
+            "Stakeholder_Management",
+            "Mentorship",
+            "Communication",
+            "Risk_Management",
+            "Operations_Director"
+          ]
+        },
+        {
+          "description": "Spearheaded strategic automation investments that increased test capacity by 80%, enabling completion of 11 critical operational change requests and significantly improving F-35 survivability.",
+          "impact_metric": "80% capacity increase; 11 critical change requests completed.",
+          "domain_tags": [
+            "Test_Eval",
+            "Automation",
+            "EW",
+            "ISR",
+            "Process_Optimization",
+            "Leadership",
+            "Innovation",
+            "Production",
+            "Software_Development",
+            "Verification_Validation",
+            "Operations",
+            "Strategic_Planning",
+            "Issue_Resolution",
+            "Risk_Management",
+            "Systems_Engineering",
+            "Electrical_Engineering",
+            "Survivability"
+          ]
+        },
+        {
+          "description": "Oversaw a $71M modernization program to equip two software test lines for Block 4 capabilities, securing conditions for 10+ years of F-35 combat software production.",
+          "impact_metric": "$71M modernization; 10+ years of production capacity.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Test_Eval",
+            "HITL",
+            "Systems_Engineering",
+            "Change_Management",
+            "Strategic_Planning",
+            "Schedule_Management",
+            "Requirements",
+            "Verification_Validation"
+          ]
+        },
+        {
+          "description": "Personally authored more than 1,500 lines of advanced Python code for an electronic warfare data visualization tool, significantly expanding the squadron’s data analysis capacity within a two-month period.",
+          "impact_metric": "1,500+ lines of code; delivered in 2 months.",
+          "domain_tags": [
+            "Software_Dev",
+            "EW",
+            "Data_Science",
+            "Python",
+            "Agile",
+            "Quick_Reaction",
+            "Operations",
+            "IT_Infrastrucure",
+            "Cloud_Computing",
+            "DevOps",
+            "Systems_Engineering",
+            "Test_Eval",
+            "Data_Pipelines",
+            "Data_Cleaning",
+            "Data_Analysis",
+            "Data_Visualization",
+            "Electrical_Engineering",
+            "Design",
+            "Innovation",
+            "Prototyping"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Assistant Director of Operations",
+      "organization": "513th Electronic Warfare Squadron",
+      "location": "Eglin AFB, FL",
+      "start_date": "2019-11",
+      "end_date": "2020-10",
+      "seniority": "Manager",
+      "achievements": [
+        {
+          "description": "Managed a 13-person staff responsible for personnel, contracting, facilities, and budget execution for a 160-member multi-service electronic warfare mission data unit.",
+          "impact_metric": "Led 13-person staff; supported 160-person unit.",
+          "domain_tags": [
+            "Leadership",
+            "Program_Mgmt",
+            "EW",
+            "Supervisor",
+            "Communication",
+            "Career_Planning",
+            "Human_Resources",
+            "Training"
+          ]
+        },
+        {
+          "description": "Built $13M budget forecasts covering laboratory, personnel, and material costs, securing two years of funding for F-35 mission data requirements.",
+          "impact_metric": "$13M budget forecast; 2-year funding secured.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Budget",
+            "Financial_Management",
+            "Contract_Management",
+            "Resource_Management"
+          ]
+        },
+        {
+          "description": "Directed a $9M facility construction project resolving critical infrastructure issues and preparing the squadron for 30% personnel growth.",
+          "impact_metric": "$9M project; 30% capacity increase.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Facilities",
+            "Capitol_Investment",
+            "Design",
+            "Specification_Compliance",
+            "Change_Management",
+            "Resource_Management",
+            "Risk_Management"
+          ]
+        },
+        {
+          "description": "Developed and executed COVID-19 response plans that sustained a 93% mission-capable rate for critical infrastructure while minimizing exposure risk for 140 personnel.",
+          "impact_metric": "Maintained 93% mission-capable rate.",
+          "domain_tags": [
+            "Operations",
+            "Risk_Mgmt",
+            "Prioritization",
+            "Planning",
+            "Innovation",
+            "Production",
+            "Stakeholder_Engagement"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chief, GPS III Launch and Mission Operations",
+      "organization": "Space and Missile Systems Center",
+      "location": "Los Angeles AFB, CA",
+      "start_date": "2018-03",
+      "end_date": "2019-10",
+      "seniority": "Director",
+      "achievements": [
+        {
+          "description": "Directed a satellite operations team deploying next-generation GPS III/IIIF spacecraft as part of a $13B acquisition program serving more than 4 billion global users.",
+          "impact_metric": "$13B program; 4B+ users; 100-person integrated product team.",
+          "domain_tags": [
+            "Satellite_Ops",
+            "Program_Mgmt",
+            "PNT",
+            "Impact",
+            "Strategic_Planning",
+            "Leadership",
+            "Systems_Engineering",
+            "Resource_Management",
+            "Supervisor",
+            "Training",
+            "Mission_Qualifications"
+          ]
+        },
+        {
+          "description": "Led flawless launch and on-orbit checkout of the first two GPS III satellites, enabling declaration of initial operational capability for next-generation positioning services.",
+          "impact_metric": "2 successful launches; IOC achieved.",
+          "domain_tags": [
+            "Satellite_Ops",
+            "PNT",
+            "Test_Eval",
+            "Anomaly_Resolution",
+            "Executive_Communication",
+            "Multi-Disciplinary",
+            "Innovation",
+            "Risk_Management",
+            "Training",
+            "MBSE",
+            "HITL"
+          ]
+        },
+        {
+          "description": "Managed and aligned two major acquisition programs totaling $16B, resolving five critical integration issues to deliver advanced positioning, navigation, and timing capabilities to warfighters.",
+          "impact_metric": "$16B in programs; 5 critical issues resolved.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Satellite_Ops",
+            "PNT",
+            "Configuration_Management",
+            "Risk_Management",
+            "Deficiency_Resolution",
+            "Executive_Communication",
+            "Stakeholder_Management"
+          ]
+        },
+        {
+          "description": "Led a multi-satellite test team verifying more than 146 technical requirements that tripled user accuracy and provided warfighters an eightfold improvement in contested RF environments.",
+          "impact_metric": "146+ requirements verified; 3x accuracy; 8x RF resilience.",
+          "domain_tags": [
+            "Test_Eval",
+            "PNT",
+            "RF",
+            "Space",
+            "Launch",
+            "Satellite_Ops",
+            "Stakeholder_Engagement",
+            "Mission_Management",
+            "Strategic_Planning"
+          ]
+        },
+        {
+          "description": "Proved a new $630M command and control system was ready for operational use by resolving 36 critical deficiencies and securing three-star general launch approval.",
+          "impact_metric": "$630M C2 system certified; 36 deficiencies resolved.",
+          "domain_tags": [
+            "Systems_Engineering",
+            "Test_Eval",
+            "C2",
+            "Operations",
+            "Mission_Management",
+            "Expediting"
+          ]
+        },
+        {
+          "description": "Deployed as Executive Plans Officer in Afghanistan, leading 65 high-visibility missions that safely moved 1,000+ distinguished visitors and senior NATO leaders to support strategic objectives for two four-star commanders.",
+          "impact_metric": "65 missions; 1,000+ VIPs transported.",
+          "domain_tags": [
+            "Operations",
+            "Leadership",
+            "Stakeholder_Engagement",
+            "Mission_Management",
+            "Executive_Leadership",
+            "NATO"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Chief, GPS Cyber Verification Section",
+      "organization": "Space and Missile Systems Center",
+      "location": "Los Angeles AFB, CA",
+      "start_date": "2016-03",
+      "end_date": "2018-03",
+      "seniority": "Director",
+      "achievements": [
+        {
+          "description": "Led a 100-member cybersecurity test team evaluating the confidentiality, integrity, and availability of the $32B GPS enterprise, directing cyber and vulnerability assessments for 26 mission systems.",
+          "impact_metric": "100-person team; $32B enterprise; 26 systems evaluated.",
+          "domain_tags": [
+            "Cyber",
+            "Test_Eval",
+            "PNT",
+            "Program_Management",
+            "Leadership",
+            "Teamwork",
+            "Communication",
+            "Collaboration",
+            "Strategic",
+            "Innovation",
+            "Supervisor",
+            "Risk_Management",
+            "Technical_Leadership"
+          ]
+        },
+        {
+          "description": "Commanded a 65-member multi-year cyber test program thoroughly evaluating a $5B command and control system, delivering accelerated reports that enabled GPS III launch.",
+          "impact_metric": "$5B system evaluated; launch enabled.",
+          "domain_tags": [
+            "Cyber",
+            "Test_Eval",
+            "C2",
+            "RMF",
+            "ATO",
+            "Configuration_Management",
+            "Verification_Validation",
+            "Risk_Management",
+            "Technical_Leadership",
+            "Resource_Management",
+            "Multi-Disciplinary",
+            "Strategic_Planning"
+          ]
+        },
+        {
+          "description": "Led the first-ever tabletop cyber evaluation of a $9B navigation system, identifying more than 75 critical security vulnerabilities and establishing a foundation for a cyber-secure GPS enterprise.",
+          "impact_metric": "$9B system; 75+ vulnerabilities identified.",
+          "domain_tags": [
+            "Cyber",
+            "Test_Eval",
+            "PNT",
+            "Systems_Engineering",
+            "Cross_Functional",
+            "Innovation",
+            "Technical_Leadership",
+            "Resource_Management",
+            "Multi-Disciplinary",
+            "Risk_Management"
+          ]
+        },
+        {
+          "description": "Directed a 35-member adversarial test team constructing a GPS ground system network replica that uncovered 15 systemic weaknesses and drove major cyber defense improvements.",
+          "impact_metric": "35-person team; 15 systemic weaknesses found.",
+          "domain_tags": [
+            "Cyber",
+            "Penetration_Testing",
+            "MBSE",
+            "Cross_Functional",
+            "HITL",
+            "Systems_Engineering",
+            "Stakeholder_Engagement",
+            "Resource_Management",
+            "Risk_Management"
+          ]
+        },
+        {
+          "description": "Supervised advanced receiver cybersecurity evaluations across 400+ tests to support certification, enabling secure GPS receivers for more than 1 million weapon systems and 540+ program offices.",
+          "impact_metric": "400+ tests; 540+ programs; 1M+ receivers supported.",
+          "domain_tags": [
+            "Cyber",
+            "Test_Eval",
+            "PNT",
+            "Anti_Tamper",
+            "Stakeholder_Engagement",
+            "Communication",
+            "Systems_Engineering",
+            "Security"
+          ]
+        },
+        {
+          "description": "Directed 16 security tests spanning the GPS portfolio, overseeing verification of 10,000 security controls and expediting Risk Management Framework transition by 80%.",
+          "impact_metric": "10,000 controls verified; 80% schedule reduction.",
+          "domain_tags": [
+            "Cyber",
+            "RMF",
+            "Test_Eval",
+            "Operations",
+            "Resource_Management",
+            "Technical_Leadership",
+            "Security"
+          ]
+        },
+        {
+          "description": "Reallocated $2.3M for advanced software analysis tools, expanding cybersecurity work capacity by 10,000 hours per year and increasing throughput by 300%.",
+          "impact_metric": "$2.3M investment; +10,000 hours/year; 300% throughput increase.",
+          "domain_tags": [
+            "Cyber",
+            "Program_Mgmt",
+            "Test_Eval",
+            "IT_Infrastrucure",
+            "Resource_Management",
+            "Technical_Leadership",
+            "Strategic_Planning",
+            "Process_Improvement"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Deputy Chief, Integration and Operations Division",
+      "organization": "Sensors Directorate, Air Force Research Laboratory",
+      "location": "Wright-Patterson AFB, OH",
+      "start_date": "2014-03",
+      "end_date": "2016-03",
+      "seniority": "Manager",
+      "achievements": [
+        {
+          "description": "Led a 124-member division aligning five mission support branches to provide continuous operational support for advanced sensor R&D, overseeing a $17M budget and managing $150M+ in capital assets.",
+          "impact_metric": "124-person division; $17M budget; $150M+ assets.",
+          "domain_tags": [
+            "Leadership",
+            "Program_Mgmt",
+            "R&D",
+            "Resource_Management",
+            "Multi-Disciplinary",
+            "Collaboration",
+            "Operations"
+          ]
+        },
+        {
+          "description": "Directed a facility reorganization that relocated 158 personnel, maximizing classified workspace utilization and increasing operational efficiency by 30%.",
+          "impact_metric": "158 personnel relocated; 30% efficiency gain.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Operations",
+            "Resource_Management",
+            "Multi-Disciplinary",
+            "Collaboration",
+            "Facility_Management"
+          ]
+        },
+        {
+          "description": "Led a 15-member rapid prototyping team developing sensor solutions, fielding three active shooter detection systems that improved crisis response and first-responder situational awareness.",
+          "impact_metric": "3 systems fielded; 15-person team.",
+          "domain_tags": [
+            "R&D",
+            "Sensors",
+            "Prototyping",
+            "Test_Eval",
+            "Mentorship"
+          ]
+        },
+        {
+          "description": "Directed flight operations for a high-visibility small UAS test program, overseeing 14 months of operations that enabled ISR technology deployment supporting neutralization of multiple high-value targets.",
+          "impact_metric": "14 months of UAS ops; multiple HVTs neutralized.",
+          "domain_tags": [
+            "ISR",
+            "Test_Eval",
+            "UAS",
+            "Operations",
+            "R&D",
+            "Quick_Reaction",
+            "Sensors",
+            "Systems_Engineering"
+          ]
+        },
+        {
+          "description": "Saved an $8M radar R&D program by renegotiating contract structures and refocusing technical objectives for anti-access/area denial environments, cutting time to IOC by 50% and reducing costs by $2.5M.",
+          "impact_metric": "$8M program preserved; 50% faster IOC; $2.5M cost reduction.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "Radar",
+            "R&D",
+            "Resource_Management",
+            "Stakeholder_Engagement",
+            "Risk_Management",
+            "Sensors",
+            "Systems_Engineering",
+            "Electrical_Engineering",
+            "Technical_Leadership"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Deputy Chief, Radar Systems Branch",
+      "organization": "Sensors Directorate, Air Force Research Laboratory",
+      "location": "Wright-Patterson AFB, OH",
+      "start_date": "2013-03",
+      "end_date": "2014-03",
+      "seniority": "Manager",
+      "achievements": [
+        {
+          "description": "Oversaw operations for a 17-member branch managing a $195M portfolio delivering innovative C4ISR and electronic warfare products for global Air Force missions.",
+          "impact_metric": "17-person branch; $195M portfolio.",
+          "domain_tags": [
+            "Program_Mgmt",
+            "EW",
+            "C4ISR",
+            "Management",
+            "Leadership",
+            "Teamwork",
+            "Resource_Management"
+          ]
+        },
+        {
+          "description": "Served as principal researcher for a $7.6M multiband imaging radar program providing advanced anti-jam, all-weather surveillance and expanding operational coverage sixteenfold.",
+          "impact_metric": "$7.6M program; 16x coverage expansion.",
+          "domain_tags": [
+            "Radar",
+            "R&D",
+            "ISR",
+            "Systems_Engineering",
+            "Electrical_Engineering",
+            "Signal_Processing",
+            "Program_Management",
+            "Resource_Management",
+            "Sensors"
+          ]
+        },
+        {
+          "description": "Led a technical team on a $40M program developing real-time onboard target identification capabilities that reduced the kill-chain timeline tenfold.",
+          "impact_metric": "$40M program; 10x faster kill-chain.",
+          "domain_tags": [
+            "ISR",
+            "R&D",
+            "Targeting",
+            "Stakeholder_Engagement",
+            "Collaboration",
+            "Test_Eval",
+            "Strategic_Planning"
+          ]
+        },
+        {
+          "description": "Oversaw rapid development of a $68M ISR upgrade for counter-IED operations, executing a rigorous 10-week flight test program and delivering results in four months.",
+          "impact_metric": "$68M program; 10-week test; 4-month delivery.",
+          "domain_tags": [
+            "ISR",
+            "Test_Eval",
+            "Flight_Test",
+            "UAS",
+            "Quick_Reaction",
+            "Sensors",
+            "Systems_Engineering",
+            "Risk_Management",
+            "Resource_Management"
+          ]
+        },
+        {
+          "description": "Shepherded a quick-reaction ISR effort for an urgent special operations requirement, achieving IOC in 19 weeks and enabling units to prosecute six high-value targets and remove 60+ IEDs in the first two months.",
+          "impact_metric": "19-week IOC; 6 HVTs prosecuted; 60+ IEDs removed.",
+          "domain_tags": [
+            "ISR",
+            "Test_Eval",
+            "Flight_Test",
+            "UAS",
+            "Quick_Reaction",
+            "Sensors",
+            "Systems_Engineering",
+            "Risk_Management",
+            "Resource_Management",
+            "Operational_Planning"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Graduate Student, Electrical Engineering",
+      "organization": "Air Force Institute of Technology",
+      "location": "Wright-Patterson AFB, OH",
+      "start_date": "2011-07",
+      "end_date": "2013-03",
+      "seniority": "IC",
+      "achievements": [
+        {
+          "description": "Completed a Master of Science in Electrical Engineering focused on low-observable technologies, conducting original research on miniaturization of the AFIT Random Noise Radar.",
+          "impact_metric": "3.66 GPA; original research completed.",
+          "domain_tags": [
+            "R&D",
+            "Radar",
+            "Low_Observables",
+            "Signal_Processing",
+            "FPGA",
+            "Prototyping",
+            "Data_Analysis",
+            "Simulation",
+            "Multi-Domain_Sensing",
+            "Software_Development",
+            "Matlab",
+            "Survibability"
+          ]
+        },
+        {
+          "description": "Developed a novel processing algorithm that improved radar computational speed 60-fold and demonstrated feasibility of a chip-based miniaturized radar, yielding an estimated $150K cost savings.",
+          "impact_metric": "60x speed increase; $150K estimated cost savings.",
+          "domain_tags": [
+            "R&D",
+            "Radar",
+            "Low_Observables",
+            "Signal_Processing",
+            "FPGA",
+            "Prototyping",
+            "Data_Analysis",
+            "Simulation",
+            "Multi-Domain_Sensing",
+            "Software_Development",
+            "Matlab",
+            "Survivability"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Executive Officer & Flight Test Engineer",
+      "organization": "413th Flight Test Squadron",
+      "location": "Hurlburt Field, FL",
+      "start_date": "2006-10",
+      "end_date": "2011-07",
+      "seniority": "IC",
+      "achievements": [
+        {
+          "description": "Served as squadron commander’s principal liaison to eight detachment and flight commanders across three bases, supporting developmental testing on 16 major weapon systems for seven major commands.",
+          "impact_metric": "Supported 130-person squadron; 16 weapon systems; 7 major commands.",
+          "domain_tags": [
+            "Test_Eval",
+            "Leadership",
+            "Flight_Test",
+            "Human_Resources",
+            "Communication",
+            "Career_Development",
+            "Project_Management"
+          ]
+        },
+        {
+          "description": "Led developmental flight test for a $339M MC-130W precision-guided munitions integration program, delivering new strike capability to special operations forces.",
+          "impact_metric": "$339M integration program delivered.",
+          "domain_tags": [
+            "Flight_Test",
+            "Test_Eval",
+            "Weapons",
+            "Quick_Reaction",
+            "Project_Management",
+            "Technical_Leadership",
+            "Risk_Management",
+            "Stakeholder_Engagement"
+          ]
+        },
+        {
+          "description": "Directed a $160M radar warning receiver test effort, recovering from a three-month delay and accelerating system fielding to improve aircrew survivability.",
+          "impact_metric": "$160M program; 3-month recovery.",
+          "domain_tags": [
+            "Test_Eval",
+            "EW",
+            "Flight_Test",
+            "Project_Management",
+            "Risk_Management",
+            "Resource_Management",
+            "Process_Improvement"
+          ]
+        },
+        {
+          "description": "Acted as lead flight test engineer for a $300M advanced technology demonstration of a tactical airborne chemical laser, executing 20 missions, increasing performance by 75%, and achieving first-ever engagement of a moving target.",
+          "impact_metric": "$300M program; 20 missions; 75% performance gain.",
+          "domain_tags": [
+            "Flight_Test",
+            "Test_Eval",
+            "Advanced_Tech",
+            "R&D",
+            "Project_Management",
+            "Risk_Management",
+            "Operations",
+            "Planning",
+            "Risk_Management",
+            "Stakeholder_Engagement"
+          ]
+        },
+        {
+          "description": "Earned advanced Design of Experiments certification and applied statistical methods to electronic support measures testing, cutting lab time by two months and saving $200K while increasing technical learning.",
+          "impact_metric": "2 months saved; $200K cost reduction.",
+          "domain_tags": [
+            "Test_Eval",
+            "Statistical_Analysis",
+            "EW",
+            "Process_Improvement",
+            "Quality_Control",
+            "Data_Analysis"
+          ]
+        },
+        {
+          "description": "Managed developmental test and evaluation for a new satellite communications capability, rapidly clearing it for use on six special operations weapon systems.",
+          "impact_metric": "6 weapon systems certified.",
+          "domain_tags": [
+            "Test_Eval",
+            "SATCOM",
+            "Flight_Test",
+            "Operations",
+            "Planning",
+            "Collaboration",
+            "Project_Management",
+            "Stakeholder_Engagement"
+          ]
+        }
+      ]
+    }
+  ],
+  "awards": [
+    "Department of the Air Force Outstanding Senior Military Scientist/Engineer Award (2023)",
+    "Arthur S. Flemming Award for Outstanding Engineer – Air Force-level winner (2018)",
+    "DoD William J. Perry Team Award (2011)",
+    "SMC Production Corps Field Grade Officer of the Year (2019)",
+    "Air Combat Command Outstanding Engineer/Scientist Team Award (2013)",
+    "Defense Meritorious Service Medal",
+    "Meritorious Service Medal with Oak Leaf Clusters",
+    "Air Force Commendation Medal with Oak Leaf Clusters",
+    "Air Force Achievement Medal with Oak Leaf Clusters"
+  ],
+  "certifications": [
+    "Project Management Professional (PMP), Project Management Institute (2025)",
+    "Engineering and Technical Management Practitioner, DAWIA (2022)",
+    "Test and Evaluation Practitioner, DAWIA (2013)"
+  ],
+  "education": [
+    "M.S., Electrical Engineering – Air Force Institute of Technology, WPAFB, OH (2013)",
+    "B.S., Electrical Engineering – University of Oklahoma, Norman, OK (2005)"
+  ]
+}
