@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import shutil
 import threading
 import uuid
 from datetime import datetime
@@ -13,8 +12,10 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from models import (
+    CareerCertification,
     CareerEducation,
     CareerExperience,
+    CareerExperienceHighlight,
     CareerProfile,
     CareerProject,
     Job,
@@ -184,7 +185,7 @@ def list_users(db: Session = Depends(get_db)):
 def create_profile(
     user_id: str, profile_req: ProfileCreate, db: Session = Depends(get_db)
 ):
-    """Create a new profile by unpacking JSON Resume data into tables."""
+    """Create profile with nested certs, awards, and structured highlights."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -193,7 +194,7 @@ def create_profile(
     basics = data.get("basics", {})
     location = basics.get("location", {})
 
-    # 1. Create Main Profile
+    # 1. Main Profile
     new_profile = CareerProfile(
         id=str(uuid.uuid4()),
         user_id=user_id,
@@ -207,23 +208,24 @@ def create_profile(
         region=location.get("region"),
         country_code=location.get("countryCode"),
         skills=[s.get("name") for s in data.get("skills", []) if s.get("name")],
-        languages=[
-            l.get("language") for l in data.get("languages", []) if l.get("language")
-        ],
+        # Awards are now an array on the profile
+        awards=data.get("awards", []),
     )
-
-    # Socials
-    for p in basics.get("profiles", []):
-        net = p.get("network", "").lower()
-        if "linkedin" in net:
-            new_profile.linkedin_url = p.get("url")
-        elif "github" in net:
-            new_profile.github_url = p.get("url")
-
     db.add(new_profile)
-    db.commit()  # Commit main profile to get ID
+    db.commit()
 
-    # 2. Add Experience
+    # 2. Certifications (New Model)
+    for cert in data.get("certifications", []):
+        c = CareerCertification(
+            id=str(uuid.uuid4()),
+            profile_id=new_profile.id,
+            name=cert.get("name") or cert,  # Handle both string and object
+            organization=cert.get("issuer") if isinstance(cert, dict) else None,
+            date=cert.get("date") if isinstance(cert, dict) else None,
+        )
+        db.add(c)
+
+    # 3. Experience & Highlights (New Model)
     for work in data.get("work", []):
         exp = CareerExperience(
             id=str(uuid.uuid4()),
@@ -233,11 +235,31 @@ def create_profile(
             start_date=work.get("startDate"),
             end_date=work.get("endDate"),
             summary=work.get("summary"),
-            highlights=work.get("highlights", []),
         )
         db.add(exp)
+        db.commit()  # Need exp.id
 
-    # 3. Add Education
+        # Add Highlights (Achievements)
+        # Supports both simple strings (old format) and objects (new format)
+        highlights = work.get("achievements") or work.get("highlights") or []
+        for h in highlights:
+            if isinstance(h, str):
+                # Simple string mode
+                hl = CareerExperienceHighlight(
+                    id=str(uuid.uuid4()), experience_id=exp.id, description=h
+                )
+            else:
+                # Structured mode
+                hl = CareerExperienceHighlight(
+                    id=str(uuid.uuid4()),
+                    experience_id=exp.id,
+                    description=h.get("description", ""),
+                    impact_metric=h.get("impact_metric"),
+                    domain_tags=h.get("domain_tags", []),
+                )
+            db.add(hl)
+
+    # 4. Education
     for edu in data.get("education", []):
         ed = CareerEducation(
             id=str(uuid.uuid4()),
@@ -252,7 +274,7 @@ def create_profile(
         )
         db.add(ed)
 
-    # 4. Add Projects
+    # 5. Projects
     for proj in data.get("projects", []):
         pr = CareerProject(
             id=str(uuid.uuid4()),
@@ -261,16 +283,12 @@ def create_profile(
             description=proj.get("description"),
             url=proj.get("url"),
             keywords=proj.get("keywords", []),
-            roles=proj.get("roles", []),
-            start_date=proj.get("startDate"),
-            end_date=proj.get("endDate"),
         )
         db.add(pr)
 
     db.commit()
     db.refresh(new_profile)
 
-    # Reconstruct JSON for response
     resp = ProfileResponse.from_orm(new_profile)
     resp.profile_json = new_profile.to_full_json()
     return resp
@@ -281,7 +299,11 @@ def list_profiles(user_id: str, db: Session = Depends(get_db)):
     profiles = (
         db.query(CareerProfile)
         .options(
-            joinedload(CareerProfile.experience), joinedload(CareerProfile.education)
+            joinedload(CareerProfile.experience).joinedload(
+                CareerExperience.highlights
+            ),
+            joinedload(CareerProfile.education),
+            joinedload(CareerProfile.certifications),
         )
         .filter(CareerProfile.user_id == user_id)
         .all()
@@ -297,7 +319,6 @@ def list_profiles(user_id: str, db: Session = Depends(get_db)):
 
 @app.get("/profiles")
 def list_all_profiles(db: Session = Depends(get_db)):
-    # Simple list for job submission dropdown
     profiles = db.query(CareerProfile).all()
     results = []
     for p in profiles:

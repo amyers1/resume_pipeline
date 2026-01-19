@@ -15,7 +15,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY  # Postgres specific array type
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -45,26 +45,25 @@ class CareerProfile(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # --- 1. BASICS ---
-    name = Column(String, nullable=False)  # Full Name
-    label = Column(String, nullable=True)  # e.g. "Senior Software Engineer"
+    # Basics
+    name = Column(String, nullable=False)
+    label = Column(String, nullable=True)
     email = Column(String, nullable=True)
     phone = Column(String, nullable=True)
-    url = Column(String, nullable=True)  # Website
-
-    # Socials
-    linkedin_url = Column(String, nullable=True)
-    github_url = Column(String, nullable=True)
+    url = Column(String, nullable=True)
+    summary = Column(Text, nullable=True)
 
     # Location
     city = Column(String, nullable=True)
-    region = Column(String, nullable=True)  # State
+    region = Column(String, nullable=True)
     country_code = Column(String, nullable=True)
 
-    # Content
-    summary = Column(Text, nullable=True)
+    # Lists
     skills = Column(ARRAY(String), default=[])
     languages = Column(ARRAY(String), default=[])
+
+    # NEW: Awards Array
+    awards = Column(ARRAY(String), default=[])
 
     # Relationships
     user = relationship("User", back_populates="profiles")
@@ -78,6 +77,11 @@ class CareerProfile(Base):
         "CareerProject", back_populates="profile", cascade="all, delete-orphan"
     )
 
+    # NEW: Certifications Relationship
+    certifications = relationship(
+        "CareerCertification", back_populates="profile", cascade="all, delete-orphan"
+    )
+
     def to_full_json(self) -> Dict[str, Any]:
         """Reconstructs standard JSON Resume format."""
         return {
@@ -85,25 +89,35 @@ class CareerProfile(Base):
                 "name": self.name,
                 "label": self.label,
                 "email": self.email,
-                "phone": self.phone,
-                "url": self.url,
                 "summary": self.summary,
                 "location": {
                     "city": self.city,
                     "region": self.region,
                     "countryCode": self.country_code,
                 },
-                "profiles": [
-                    {"network": "LinkedIn", "url": self.linkedin_url},
-                    {"network": "GitHub", "url": self.github_url},
-                ],
             },
             "work": [item.to_json() for item in self.experience],
             "education": [item.to_json() for item in self.education],
             "projects": [item.to_json() for item in self.projects],
+            "certifications": [item.to_json() for item in self.certifications],
+            "awards": [{"title": a} for a in (self.awards or [])],
             "skills": [{"name": s} for s in (self.skills or [])],
-            "languages": [{"language": l} for l in (self.languages or [])],
         }
+
+
+class CareerCertification(Base):
+    __tablename__ = "career_certifications"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    profile_id = Column(String, ForeignKey("career_profiles.id"), nullable=False)
+
+    name = Column(String, nullable=False)
+    organization = Column(String, nullable=True)
+    date = Column(String, nullable=True)  # Year or ISO date
+
+    profile = relationship("CareerProfile", back_populates="certifications")
+
+    def to_json(self):
+        return {"name": self.name, "issuer": self.organization, "date": self.date}
 
 
 class CareerExperience(Base):
@@ -113,11 +127,17 @@ class CareerExperience(Base):
 
     company = Column(String, nullable=False)
     position = Column(String, nullable=False)
-    start_date = Column(String, nullable=True)  # ISO Date or "2020-01"
+    start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)
     is_current = Column(Boolean, default=False)
-    summary = Column(Text, nullable=True)
-    highlights = Column(ARRAY(String), default=[])
+    summary = Column(Text, nullable=True)  # Can hold location/seniority info
+
+    # NEW: Relationship to structured highlights (replaces old array)
+    highlights = relationship(
+        "CareerExperienceHighlight",
+        back_populates="experience",
+        cascade="all, delete-orphan",
+    )
 
     profile = relationship("CareerProfile", back_populates="experience")
 
@@ -128,7 +148,31 @@ class CareerExperience(Base):
             "startDate": self.start_date,
             "endDate": self.end_date,
             "summary": self.summary,
-            "highlights": self.highlights or [],
+            "highlights": [
+                h.description for h in self.highlights
+            ],  # Flatten for standard JSON Resume
+            "achievements": [
+                h.to_json() for h in self.highlights
+            ],  # Keep structure for our internal use
+        }
+
+
+class CareerExperienceHighlight(Base):
+    __tablename__ = "career_experience_highlights"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    experience_id = Column(String, ForeignKey("career_experience.id"), nullable=False)
+
+    description = Column(Text, nullable=False)
+    impact_metric = Column(String, nullable=True)
+    domain_tags = Column(ARRAY(String), default=[])
+
+    experience = relationship("CareerExperience", back_populates="highlights")
+
+    def to_json(self):
+        return {
+            "description": self.description,
+            "impact_metric": self.impact_metric,
+            "domain_tags": self.domain_tags or [],
         }
 
 
@@ -138,11 +182,11 @@ class CareerEducation(Base):
     profile_id = Column(String, ForeignKey("career_profiles.id"), nullable=False)
 
     institution = Column(String, nullable=False)
-    area = Column(String, nullable=True)  # Major
-    study_type = Column(String, nullable=True)  # Degree type
+    area = Column(String, nullable=True)
+    study_type = Column(String, nullable=True)
     start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)
-    score = Column(String, nullable=True)  # GPA
+    score = Column(String, nullable=True)
     courses = Column(ARRAY(String), default=[])
 
     profile = relationship("CareerProfile", back_populates="education")
@@ -152,10 +196,7 @@ class CareerEducation(Base):
             "institution": self.institution,
             "area": self.area,
             "studyType": self.study_type,
-            "startDate": self.start_date,
             "endDate": self.end_date,
-            "score": self.score,
-            "courses": self.courses or [],
         }
 
 
@@ -178,22 +219,18 @@ class CareerProject(Base):
         return {
             "name": self.name,
             "description": self.description,
-            "url": self.url,
             "keywords": self.keywords or [],
-            "roles": self.roles or [],
-            "startDate": self.start_date,
-            "endDate": self.end_date,
         }
 
 
+# --- JOB MODEL (Unchanged) ---
 class Job(Base):
     __tablename__ = "jobs"
-
     id = Column(String, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=True)
     status = Column(String, default="queued", index=True)
 
-    # --- 1. JOB DETAILS ---
+    # 1. DETAILS
     company = Column(String, index=True)
     job_title = Column(String, index=True)
     source = Column(String, nullable=True)
@@ -215,7 +252,7 @@ class Job(Base):
     work_model = Column(String, nullable=True)
     work_model_notes = Column(String, nullable=True)
 
-    # URLs & Meta
+    # URLs
     job_post_url = Column(String, nullable=True)
     apply_url = Column(String, nullable=True)
     posting_age = Column(String, nullable=True)
@@ -224,37 +261,35 @@ class Job(Base):
     security_clearance_required = Column(String, nullable=True)
     security_clearance_preferred = Column(String, nullable=True)
 
-    # Search Context (from job_board_list_context)
+    # Search Context
     search_keywords = Column(String, nullable=True)
     search_location = Column(String, nullable=True)
     search_radius = Column(Integer, nullable=True)
 
-    # --- 2. BENEFITS ---
-    # Using PostgreSQL ARRAY for lists
+    # 2. BENEFITS
     benefits_listed = Column(ARRAY(String), default=[])
     benefits_text = Column(Text, nullable=True)
     benefits_eligibility = Column(String, nullable=True)
     benefits_relocation = Column(String, nullable=True)
     benefits_sign_on_bonus = Column(String, nullable=True)
 
-    # --- 3. JOB DESCRIPTION ---
+    # 3. DESCRIPTION
     jd_headline = Column(String, nullable=True)
     jd_short_summary = Column(String, nullable=True)
-    jd_full_text = Column(Text, nullable=True)  # The raw text
+    jd_full_text = Column(Text, nullable=True)
     jd_experience_min = Column(Integer, nullable=True)
     jd_education = Column(String, nullable=True)
-
-    # Skills
     jd_must_have_skills = Column(ARRAY(String), default=[])
     jd_nice_to_have_skills = Column(ARRAY(String), default=[])
 
-    # --- CONFIGURATION & METRICS ---
-    career_profile_json = Column(JSON)  # We still keep this as a snapshot
+    # 4. CONFIG
+    career_profile_json = Column(JSON)
     template = Column(String)
     output_backend = Column(String)
     priority = Column(Integer, default=5)
     advanced_settings = Column(JSON, default={})
 
+    # Metrics
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     started_at = Column(DateTime(timezone=True), nullable=True)
@@ -268,57 +303,27 @@ class Job(Base):
     user = relationship("User", back_populates="jobs")
 
     def to_schema_json(self) -> Dict[str, Any]:
-        """Reconstructs the original schema.json structure from DB columns."""
         return {
             "job_details": {
                 "source": self.source,
                 "platform": self.platform,
                 "job_title": self.job_title,
                 "company": self.company,
-                "company_rating": self.company_rating,
                 "location": self.location,
-                "location_detail": self.location_detail,
-                "employment_type": self.employment_type,
-                "pay_currency": self.pay_currency,
-                "pay_min_annual": self.pay_min_annual,
-                "pay_max_annual": self.pay_max_annual,
-                "pay_rate_type": self.pay_rate_type,
                 "pay_display": self.pay_display,
                 "remote_type": self.remote_type,
                 "job_post_url": self.job_post_url,
-                "apply_url": self.apply_url,
                 "security_clearance_required": self.security_clearance_required,
-                "security_clearance_preferred": self.security_clearance_preferred,
-                "work_model": self.work_model,
-                "work_model_notes": self.work_model_notes,
-                "posting_age": self.posting_age,
-                "job_board_list_context": {
-                    "search_keywords": self.search_keywords,
-                    "search_location": self.search_location,
-                    "search_radius_miles": self.search_radius,
-                },
-            },
-            "benefits": {
-                "listed_benefits": self.benefits_listed or [],
-                "benefits_text": self.benefits_text,
-                "eligibility_notes": self.benefits_eligibility,
-                "relocation": self.benefits_relocation,
-                "sign_on_bonus": self.benefits_sign_on_bonus,
             },
             "job_description": {
-                "headline": self.jd_headline,
-                "short_summary": self.jd_short_summary,
                 "full_text": self.jd_full_text,
-                "required_experience_years_min": self.jd_experience_min,
-                "required_education": self.jd_education,
                 "must_have_skills": self.jd_must_have_skills or [],
-                "nice_to_have_skills": self.jd_nice_to_have_skills or [],
             },
         }
 
 
 # ==========================
-# PYDANTIC MODELS (API)
+# PYDANTIC MODELS
 # ==========================
 
 
@@ -331,7 +336,6 @@ class AdvancedSettings(BaseModel):
     enable_cover_letter: bool = False
 
 
-# Job Models
 class JobSubmitRequest(BaseModel):
     profile_id: Optional[str] = None
     job_data: Dict[str, Any]
@@ -349,7 +353,6 @@ class JobResponse(BaseModel):
     job_title: str
     status: str
     created_at: datetime
-    # We populate these from the reconstructor
     job_description_json: Optional[Dict[str, Any]] = None
     final_score: Optional[float] = None
     output_files: Optional[Dict[str, str]] = None
@@ -359,10 +362,8 @@ class JobResponse(BaseModel):
         from_attributes = True
 
 
-# Profile Models
 class ProfileBase(BaseModel):
-    # We accept a loose dictionary for creation to handle the JSON Resume format
-    profile_json: Dict[str, Any] | None
+    profile_json: Dict[str, Any]
 
 
 class ProfileCreate(ProfileBase):
@@ -374,7 +375,6 @@ class ProfileResponse(ProfileBase):
     name: str
     user_id: str
     created_at: datetime
-    # We populate this from .to_full_json()
     profile_json: Optional[Dict[str, Any]] = None
 
     class Config:

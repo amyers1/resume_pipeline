@@ -17,6 +17,28 @@ export default function SettingsStep({
         }));
     };
 
+    // Define Model Options
+    const BASE_MODELS = [
+        { value: "gpt-5-mini", label: "GPT-5 Mini (OpenAI)" },
+        { value: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)" },
+        {
+            value: "gemini-3.0-flash-preview",
+            label: "Gemini 3.0 Flash Preview (Google)",
+        },
+        { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Google)" },
+        {
+            value: "gemini-2.5-flash-lite",
+            label: "Gemini 2.5 Flash-Lite (Google)",
+        },
+    ];
+
+    const STRONG_MODELS = [
+        ...BASE_MODELS, // Include base models as options for strong model too
+        { value: "gpt-5", label: "GPT-5 (OpenAI)" },
+        { value: "gpt-4o", label: "GPT-4o (OpenAI)" },
+        { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Google)" },
+    ];
+
     return (
         <div className="space-y-8">
             {/* 1. Basic Output Settings */}
@@ -80,7 +102,7 @@ export default function SettingsStep({
                     {/* Model Selection */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Base Model (Analysis)
+                            Base Model (Analysis & Fast Tasks)
                         </label>
                         <select
                             value={formData.advanced_settings.base_model}
@@ -89,16 +111,16 @@ export default function SettingsStep({
                             }
                             className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
-                            <option value="gpt-4o">GPT-4o</option>
-                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            <option value="gemini-1.5-pro">
-                                Gemini 1.5 Pro
-                            </option>
+                            {BASE_MODELS.map((m) => (
+                                <option key={m.value} value={m.value}>
+                                    {m.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Strong Model (Drafting)
+                            Strong Model (Reasoning & Drafting)
                         </label>
                         <select
                             value={formData.advanced_settings.strong_model}
@@ -107,10 +129,11 @@ export default function SettingsStep({
                             }
                             className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
-                            <option value="gpt-4o">GPT-4o</option>
-                            <option value="o1-preview">
-                                O1 Preview (Reasoning)
-                            </option>
+                            {STRONG_MODELS.map((m) => (
+                                <option key={m.value} value={m.value}>
+                                    {m.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
