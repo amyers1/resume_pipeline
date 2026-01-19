@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 from pathlib import Path
 
@@ -13,6 +14,44 @@ PROFILE_PATH = BASE_DIR / "career_profile.json"
 DEFAULT_EMAIL = "aaron.t.myers@gmail.com"
 
 
+def parse_education_string(edu_str):
+    """
+    Parses strings like:
+    "M.S., Electrical Engineering – Air Force Institute of Technology, WPAFB, OH (2013)"
+    into dictionary fields.
+    """
+    try:
+        # Split by the dash to separate Degree/Major from School/Location/Year
+        parts = edu_str.split(" – ")
+        if len(parts) < 2:
+            return {"institution": edu_str}
+
+        degree_part = parts[0].strip()
+        school_part = parts[1].strip()
+
+        # Parse Degree and Major (e.g., "M.S., Electrical Engineering")
+        degree_split = degree_part.split(", ", 1)
+        study_type = degree_split[0]
+        area = degree_split[1] if len(degree_split) > 1 else None
+
+        # Parse Year (e.g., "... (2013)")
+        year_match = re.search(r"\((\d{4})\)", school_part)
+        end_date = year_match.group(1) if year_match else None
+
+        # Remove year from school string
+        institution = school_part.split(" (")[0].strip()
+
+        return {
+            "institution": institution,
+            "study_type": study_type,
+            "area": area,
+            "end_date": end_date,
+        }
+    except Exception:
+        # Fallback if format doesn't match
+        return {"institution": edu_str}
+
+
 def migrate_profile():
     print(f"📂 Reading profile from: {PROFILE_PATH}")
 
@@ -25,12 +64,12 @@ def migrate_profile():
     db = SessionLocal()
 
     try:
-        # 1. Get Default User
+        # 1. Get/Create Default User
         user = db.query(User).filter(User.email == DEFAULT_EMAIL).first()
         if not user:
             print(f"👤 Creating default user: {DEFAULT_EMAIL}")
             user = User(
-                id=str(uuid.uuid4()), email=DEFAULT_EMAIL, full_name="Default User"
+                id=str(uuid.uuid4()), email=DEFAULT_EMAIL, full_name="Aaron T. Myers"
             )
             db.add(user)
             db.commit()
@@ -40,16 +79,32 @@ def migrate_profile():
         with open(PROFILE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        basics = data.get("basics", {})
-        location = basics.get("location", {})
+        # 3. Construct Profile Summary
+        # Since the JSON has separate lists for awards/certs, we combine them into the text summary
+        # so they are visible to the LLM when it reads the profile.
+        summary_lines = []
+        if data.get("clearance"):
+            summary_lines.append(f"Clearance: {data['clearance']}")
 
-        # 3. Create Main Profile Record
-        # Check for existing profile to avoid duplicates (optional logic)
+        if data.get("certifications"):
+            summary_lines.append("\nCertifications:")
+            for c in data["certifications"]:
+                summary_lines.append(f"- {c}")
+
+        if data.get("awards"):
+            summary_lines.append("\nAwards:")
+            for a in data["awards"]:
+                summary_lines.append(f"- {a}")
+
+        full_summary = "\n".join(summary_lines)
+
+        # 4. Create Main Profile Record
+        # Check for existing profile to avoid duplicates
         existing = (
             db.query(CareerProfile).filter(CareerProfile.user_id == user.id).first()
         )
         if existing:
-            print("⚠️  Profile already exists for this user. Deleting old one...")
+            print("⚠️  Profile already exists. Deleting old one to refresh data...")
             db.delete(existing)
             db.commit()
 
@@ -57,80 +112,63 @@ def migrate_profile():
         profile = CareerProfile(
             id=str(uuid.uuid4()),
             user_id=user.id,
-            name=basics.get("name", "Unknown"),
-            label=basics.get("label"),
-            email=basics.get("email"),
-            phone=basics.get("phone"),
-            url=basics.get("url"),
-            summary=basics.get("summary"),
-            city=location.get("city"),
-            region=location.get("region"),
-            country_code=location.get("countryCode"),
-            skills=[s.get("name") for s in data.get("skills", []) if s.get("name")],
-            languages=[
-                l.get("language")
-                for l in data.get("languages", [])
-                if l.get("language")
-            ],
+            name=data.get("full_name", "Aaron T. Myers"),
+            label=data.get(
+                "clearance"
+            ),  # Storing clearance in label as a quick reference
+            email=DEFAULT_EMAIL,
+            summary=full_summary,
+            # Map "core_domains" to skills
+            skills=data.get("core_domains", []),
         )
-
-        # Handle Socials
-        for p in basics.get("profiles", []):
-            net = p.get("network", "").lower()
-            if "linkedin" in net:
-                profile.linkedin_url = p.get("url")
-            elif "github" in net:
-                profile.github_url = p.get("url")
-
         db.add(profile)
 
-        # 4. Insert Work Experience
-        print(f"   ↳ Importing {len(data.get('work', []))} work records...")
-        for work in data.get("work", []):
+        # 5. Insert Work Experience (Roles)
+        roles = data.get("roles", [])
+        print(f"   ↳ Importing {len(roles)} work roles...")
+
+        for role in roles:
+            # Flatten achievements into bullet points
+            highlights = []
+            for ach in role.get("achievements", []):
+                # Format: Description [Impact: Metric]
+                text = ach.get("description", "")
+                metric = ach.get("impact_metric")
+                if metric:
+                    text += f" [Impact: {metric}]"
+                highlights.append(text)
+
             exp = CareerExperience(
                 id=str(uuid.uuid4()),
                 profile_id=profile.id,
-                company=work.get("name", ""),
-                position=work.get("position", ""),
-                start_date=work.get("startDate"),
-                end_date=work.get("endDate"),
-                summary=work.get("summary"),
-                highlights=work.get("highlights", []),
+                company=role.get("organization", ""),
+                position=role.get("title", ""),
+                start_date=role.get("start_date"),
+                end_date=role.get("end_date"),
+                # Store location and seniority in summary since they don't have dedicated columns
+                summary=f"Location: {role.get('location')} | Seniority: {role.get('seniority')}",
+                highlights=highlights,
             )
             db.add(exp)
 
-        # 5. Insert Education
-        print(f"   ↳ Importing {len(data.get('education', []))} education records...")
-        for edu in data.get("education", []):
+        # 6. Insert Education
+        education_list = data.get("education", [])
+        print(f"   ↳ Importing {len(education_list)} education records...")
+
+        for edu_str in education_list:
+            parsed = parse_education_string(edu_str)
+
             ed = CareerEducation(
                 id=str(uuid.uuid4()),
                 profile_id=profile.id,
-                institution=edu.get("institution", ""),
-                area=edu.get("area"),
-                study_type=edu.get("studyType"),
-                start_date=edu.get("startDate"),
-                end_date=edu.get("endDate"),
-                score=edu.get("score"),
-                courses=edu.get("courses", []),
+                institution=parsed.get("institution", ""),
+                area=parsed.get("area"),
+                study_type=parsed.get("study_type"),
+                end_date=parsed.get("end_date"),
             )
             db.add(ed)
 
-        # 6. Insert Projects
-        print(f"   ↳ Importing {len(data.get('projects', []))} projects...")
-        for proj in data.get("projects", []):
-            pr = CareerProject(
-                id=str(uuid.uuid4()),
-                profile_id=profile.id,
-                name=proj.get("name", ""),
-                description=proj.get("description"),
-                url=proj.get("url"),
-                keywords=proj.get("keywords", []),
-                roles=proj.get("roles", []),
-                start_date=proj.get("startDate"),
-                end_date=proj.get("endDate"),
-            )
-            db.add(pr)
-
+        # 7. Commit Transaction
         db.commit()
         print("✅ Profile Migration Successful!")
 
