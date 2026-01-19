@@ -1,0 +1,21 @@
+{
+    "job_id": "api-job-2bf25e0e-5b0b-4641-af8d-de412d764043",
+    "created_at": "2026-01-17T19:11:13.956311Z",
+    "company": "Booz Allen",
+    "job_title": "Digital Engineer, Senior",
+    "template": "awesome-cv",
+    "output_backend": "weasyprint",
+    "priority": 5,
+    "status": "completed",
+    "output_dir": "/app/output/20260117/run_185259",
+    "completed_at": "2026-01-17T23:55:22.708408+00:00Z",
+    "processing_time_seconds": 149.37,
+    "final_score": null,
+    "error": null,
+    "started_at": "2026-01-17T23:52:53.333544+00:00",
+    "error_trace": "Traceback (most recent call last):\n  File \"/app/resume_worker.py\", line 265, in process_job\n    structured_resume, output_artifact, pdf_path = pipeline.run()\n                                                   ~~~~~~~~~~~~^^\n  File \"/app/resume_pipeline/pipeline.py\", line 239, in run\n    self._print_summary(critique, latex_filename, pdf_path)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/app/resume_pipeline/pipeline.py\", line 327, in _print_summary\n    print(f\"Company: {self.config.company}\")\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.14/site-packages/pydantic/main.py\", line 1026, in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nAttributeError: 'PipelineConfig' object has no attribute 'company'\n",
+    "output_files": {
+        "output_dir": "/app/output/20260117/run_185259",
+        "pdf": "Booz Allen_Digital Engineer, Senior.pdf"
+    }
+}

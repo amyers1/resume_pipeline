@@ -38,8 +38,8 @@ class PipelineConfig(BaseModel):
     strong_model: str = Field(default="gpt-5-mini")
 
     # Input paths
-    job_json_path: Path
-    career_profile_path: Path = Field(default=Path("career_profile.json"))
+    job_json_path: Optional[Path]
+    career_profile_path: Optional[Path]
 
     # Output configuration
     output_dir: Path = Field(default=Path("./output"))
@@ -87,11 +87,7 @@ class PipelineConfig(BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_env(
-        cls,
-        base_file_name: str,
-        job_json_path: Optional[str] = None,
-    ) -> "PipelineConfig":
+    def from_env(cls, job_json_path: str = None, **overrides) -> "PipelineConfig":
         """Create configuration from environment variables."""
 
         # Get job path from parameter or environment
@@ -103,55 +99,60 @@ class PipelineConfig(BaseModel):
                 raise ValueError("JOB_JSON_PATH must be set")
             job_path = Path(job_path_str)
 
-        return cls(
-            # Pipeline Configuration
-            base_file_name=base_file_name,
-            top_k_heuristic=int(os.getenv("TOP_K_HEURISTIC", "20")),
-            top_k_final=int(os.getenv("TOP_K_FINAL", "12")),
-            critique_threshold=float(os.getenv("CRITIQUE_THRESHOLD", "0.80")),
-            max_critique_loops=int(os.getenv("MAX_CRITIQUE_LOOPS", "2")),
-            escalate_on_second_pass=(
+        config_dict = {
+            "base_file_name": os.getenv("BASE_FILE_NAME", "resume"),
+            "top_k_heuristic": int(os.getenv("TOP_K_HEURISTIC", "20")),
+            "top_k_final": int(os.getenv("TOP_K_FINAL", "12")),
+            "critique_threshold": float(os.getenv("CRITIQUE_THRESHOLD", "0.80")),
+            "max_critique_loops": int(os.getenv("MAX_CRITIQUE_LOOPS", "2")),
+            "escalate_on_second_pass": (
                 os.getenv("ESCALATE_ON_SECOND_PASS", "false").lower() == "true"
             ),
             # API Keys
-            openai_api_key=os.getenv("OPENAI_API_KEY"),
-            google_api_key=os.getenv("GOOGLE_API_KEY"),
+            "openai_api_key": os.getenv("OPENAI_API_KEY"),
+            "google_api_key": os.getenv("GOOGLE_API_KEY"),
             # Models
-            base_model=os.getenv("MODEL", "gpt-5-mini"),
-            strong_model=os.getenv("STRONG_MODEL", "gpt-5-mini"),
+            "base_model": os.getenv("MODEL", "gpt-5-mini"),
+            "strong_model": os.getenv("STRONG_MODEL", "gpt-5-mini"),
             # Paths
-            job_json_path=job_path,
-            career_profile_path=Path(
+            "job_json_path": job_path,
+            "career_profile_path": Path(
                 os.getenv("CAREER_PROFILE_PATH", "career_profile.json")
             ),
-            output_dir=Path(os.getenv("OUTPUT_DIR", "./output")),
+            "output_dir": Path(os.getenv("OUTPUT_DIR", "./output")),
             # Output backend
-            output_backend=os.getenv("OUTPUT_BACKEND", "weasyprint"),
-            latex_template=os.getenv("LATEX_TEMPLATE", "modern-deedy"),
-            compile_pdf=os.getenv("COMPILE_PDF", "false").lower() == "true",
-            template_name=os.getenv("TEMPLATE_NAME", "resume.html.j2"),
-            css_file=os.getenv("CSS_FILE", "resume.css"),
+            "output_backend": os.getenv("OUTPUT_BACKEND", "weasyprint"),
+            "latex_template": os.getenv("LATEX_TEMPLATE", "modern-deedy"),
+            "compile_pdf": os.getenv("COMPILE_PDF", "false").lower() == "true",
+            "template_name": os.getenv("TEMPLATE_NAME", "resume.html.j2"),
+            "css_file": os.getenv("CSS_FILE", "resume.css"),
             # Caching
-            use_cache=os.getenv("USE_CACHE", "true").lower() == "true",
-            redis_host=os.getenv("REDIS_HOST", "localhost"),
-            redis_port=int(os.getenv("REDIS_PORT", "6379")),
-            redis_db=int(os.getenv("REDIS_DB", "0")),
-            redis_password=os.getenv("REDIS_PASSWORD") or None,
-            redis_cache_ttl_days=int(os.getenv("REDIS_CACHE_TTL_DAYS", "30")),
-            cache_dir=Path(os.getenv("CACHE_DIR", "./output/.cache")),
+            "use_cache": os.getenv("USE_CACHE", "true").lower() == "true",
+            "redis_host": os.getenv("REDIS_HOST", "localhost"),
+            "redis_port": int(os.getenv("REDIS_PORT", "6379")),
+            "redis_db": int(os.getenv("REDIS_DB", "0")),
+            "redis_password": os.getenv("REDIS_PASSWORD") or None,
+            "redis_cache_ttl_days": int(os.getenv("REDIS_CACHE_TTL_DAYS", "30")),
+            "cache_dir": Path(os.getenv("CACHE_DIR", "./output/.cache")),
             # Timezone
-            timezone_str=os.getenv("TIMEZONE", "America/New_York"),
+            "timezone_str": os.getenv("TIMEZONE", "America/New_York"),
             # Cloud uploads
-            enable_minio=os.getenv("ENABLE_MINIO", "false").lower() == "true",
-            minio_endpoint=os.getenv("MINIO_ENDPOINT", ""),
-            minio_access_key=os.getenv("MINIO_ACCESS_KEY", ""),
-            minio_secret_key=os.getenv("MINIO_SECRET_KEY", ""),
-            minio_bucket=os.getenv("MINIO_BUCKET", "resumes"),
-            enable_nextcloud=os.getenv("ENABLE_NEXTCLOUD", "false").lower() == "true",
-            nextcloud_endpoint=os.getenv("NEXTCLOUD_URL", ""),
-            nextcloud_user=os.getenv("NEXTCLOUD_USERNAME", ""),
-            nextcloud_password=os.getenv("NEXTCLOUD_PASSWORD", ""),
-        )
+            "enable_minio": os.getenv("ENABLE_MINIO", "false").lower() == "true",
+            "minio_endpoint": os.getenv("MINIO_ENDPOINT", ""),
+            "minio_access_key": os.getenv("MINIO_ACCESS_KEY", ""),
+            "minio_secret_key": os.getenv("MINIO_SECRET_KEY", ""),
+            "minio_bucket": os.getenv("MINIO_BUCKET", "resumes"),
+            "enable_nextcloud": os.getenv("ENABLE_NEXTCLOUD", "false").lower()
+            == "true",
+            "nextcloud_endpoint": os.getenv("NEXTCLOUD_URL", ""),
+            "nextcloud_user": os.getenv("NEXTCLOUD_USERNAME", ""),
+            "nextcloud_password": os.getenv("NEXTCLOUD_PASSWORD", ""),
+        }
+        if overrides:
+            clean_overrides = {k: v for k, v in overrides.items() if v is not None}
+            config_dict.update(clean_overrides)
+
+        return cls(**config_dict)
 
     @property
     def timezone(self) -> pytz.timezone:

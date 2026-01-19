@@ -10,7 +10,7 @@ sse-starlette
 
 # Database (NEW)
 sqlalchemy>=2.0.0
-psycopg2-binary
+psycopg
 
 # LLM libraries
 langchain>=1.2.3

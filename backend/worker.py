@@ -57,24 +57,28 @@ class DatabaseResumeWorker:
                 with open(profile_path, "w") as f:
                     json.dump(job.career_profile_json, f)
 
-                # 2. Configure Pipeline
-                # We use the existing Pipeline logic but point it to temp files
-                config = PipelineConfig.from_env(
-                    base_file_name=f"{job.company}_{job.job_title}".replace(" ", "_"),
-                    job_json_path=str(jd_path),
-                )
-
-                # Override with Job specific settings
-                config.career_profile_path = profile_path
-                config.latex_template = job.template
-                config.output_backend = job.output_backend
-
-                # Point output to a persistent location (e.g., volume mount or S3)
-                # For now, we assume a local 'output' dir is mounted
                 persistent_output = Path("output") / str(job.id)
                 persistent_output.mkdir(parents=True, exist_ok=True)
-                config.use_flat_structure = True  # <--- Add this
-                config.output_dir = persistent_output
+
+                # 2. Configure Pipeline with Advanced Settings
+                # Merge basic job info with advanced settings
+                pipeline_overrides = {
+                    "company_name": job.company,
+                    "job_title": job.job_title,
+                    "base_filename": f"{job.company}_{job.job_title}".replace(" ", "_"),
+                    "job_json_path": str(jd_path),
+                    "career_profile_path": str(profile_path),
+                    "latex_template": job.template,
+                    "output_backend": job.output_backend,
+                    "output_dir": persistent_output,
+                    "use_flat_structure": True,
+                }
+
+                # Inject Advanced Settings from DB if they exist
+                if job.advanced_settings:
+                    pipeline_overrides.update(job.advanced_settings)
+
+                config = PipelineConfig.from_env(**pipeline_overrides)
 
                 # 3. Run Pipeline
                 pipeline = ResumePipeline(config)

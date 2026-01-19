@@ -1,106 +1,105 @@
-import { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { HEALTH_COLORS } from '../utils/constants';
-import { formatDate } from '../utils/helpers';
+import { useState, useEffect, useRef } from "react";
+import { apiService } from "../services/api";
+import { HEALTH_COLORS } from "../utils/constants";
 
 export default function HealthBadge() {
-  const { state } = useApp();
-  const [showDetails, setShowDetails] = useState(false);
-  const { status, checks, version, lastChecked } = state.health;
+    const [health, setHealth] = useState({ status: "unknown" });
+    const [isOpen, setIsOpen] = useState(false);
+    const [lastChecked, setLastChecked] = useState(null);
+    const dropdownRef = useRef(null);
 
-  const getStatusDot = () => {
-    const colors = {
-      healthy: 'bg-green-500',
-      degraded: 'bg-yellow-500',
-      unhealthy: 'bg-red-500',
-      unknown: 'bg-gray-500',
+    const checkHealth = async () => {
+        try {
+            const response = await apiService.checkHealth();
+            setHealth(response.data);
+            setLastChecked(new Date());
+        } catch (error) {
+            setHealth({ status: "unhealthy", error: error.message });
+        }
     };
-    return colors[status] || colors.unknown;
-  };
 
-  const getStatusText = () => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
+    useEffect(() => {
+        checkHealth();
+        // Poll every 30 seconds
+        const interval = setInterval(checkHealth, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setShowDetails(!showDetails)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-          HEALTH_COLORS[status] || 'bg-gray-100 text-gray-600'
-        } hover:opacity-80`}
-      >
-        <span className={`w-2 h-2 rounded-full ${getStatusDot()} animate-pulse`}></span>
-        <span>{getStatusText()}</span>
-      </button>
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target)
+            ) {
+                setIsOpen(false);
+            }
+        };
 
-      {showDetails && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setShowDetails(false)}
-          ></div>
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-          {/* Modal */}
-          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                System Health
-              </h3>
-              <button
-                onClick={() => setShowDetails(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
+    const statusColor = HEALTH_COLORS[health.status] || HEALTH_COLORS.unhealthy;
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
-                <span className={`text-sm font-medium px-2 py-1 rounded ${HEALTH_COLORS[status]}`}>
-                  {getStatusText()}
-                </span>
-              </div>
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${statusColor}`}
+            >
+                <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                <span className="capitalize">{health.status}</span>
+            </button>
 
-              {version && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Version</span>
-                  <span className="text-sm text-gray-900 dark:text-gray-100">{version}</span>
-                </div>
-              )}
-
-              {lastChecked && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Last Checked</span>
-                  <span className="text-sm text-gray-900 dark:text-gray-100">
-                    {formatDate(lastChecked.toISOString())}
-                  </span>
-                </div>
-              )}
-
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Component Status
-                </h4>
-                <div className="space-y-2">
-                  {Object.entries(checks).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                        {key.replace(/_/g, ' ')}
-                      </span>
-                      <span className="text-sm">
-                        {value ? '✅' : '❌'}
-                      </span>
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            System Status
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Last checked:{" "}
+                            {lastChecked
+                                ? lastChecked.toLocaleTimeString()
+                                : "Never"}
+                        </p>
                     </div>
-                  ))}
+
+                    <div className="px-4 py-2">
+                        {/* Safe rendering check to prevent crash */}
+                        {health.details ? (
+                            <div className="space-y-2">
+                                {Object.entries(health.details).map(
+                                    ([key, value]) => (
+                                        <div
+                                            key={key}
+                                            className="flex justify-between text-sm"
+                                        >
+                                            <span className="text-gray-600 dark:text-gray-400 capitalize">
+                                                {key.replace("_", " ")}
+                                            </span>
+                                            <span className="text-gray-900 dark:text-white font-medium">
+                                                {value}
+                                            </span>
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                System is operational.
+                            </p>
+                        )}
+
+                        {health.error && (
+                            <p className="text-xs text-red-500 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                Error: {health.error}
+                            </p>
+                        )}
+                    </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+            )}
+        </div>
+    );
 }

@@ -1,0 +1,74 @@
+{
+    "job_details": {
+        "source": "Indeed",
+        "platform": "indeed",
+        "job_title": "Digital Engineer, Senior",
+        "company": "Booz Allen",
+        "company_rating": "3.9 out of 5 stars",
+        "location": "Oklahoma City, OK 73102",
+        "location_detail": "211 N Robinson Ave Ste 720, Oklahoma City, OK 73102 (Central Business District area)",
+        "employment_type": "Full-time",
+        "pay_currency": "USD",
+        "pay_min_annual": 86800,
+        "pay_max_annual": 198000,
+        "pay_rate_type": "year",
+        "pay_display": "$86,800 - $198,000 a year",
+        "remote_type": "onsite",
+        "job_post_url": "https://www.indeed.com/viewjob?jk=1f6cf8eb3a1f414f",
+        "apply_url": "https://www.indeed.com/cmp/Booz-Allen-Hamilton?campaignid=mobvjcmp&from=mobviewjob&tk=1je4itb2sjn17801&fromjk=1f6cf8eb3a1f414f",
+        "security_clearance_required": "Secret",
+        "security_clearance_preferred": null,
+        "work_model": "onsite",
+        "work_model_notes": "Work with colleagues and clients in person, as needed for the specific role.",
+        "posting_age": null,
+        "job_board_list_context": {
+            "search_keywords": "booz allen",
+            "search_location": "Oklahoma City, OK",
+            "search_radius_miles": 25,
+            "employer_group_page": "Booz Allen Jobs near Oklahoma City, OK"
+        }
+    },
+    "benefits": {
+        "listed_benefits": [
+            "Tuition reimbursement",
+            "Health insurance",
+            "Retirement plan",
+            "Flexible spending account"
+        ],
+        "benefits_text": "Our offerings include health, life, disability, financial, and retirement benefits, as well as paid leave, professional development, tuition assistance, work-life programs, and dependent care.",
+        "eligibility_notes": "Full-time and part-time employees working at least 20 hours a week on a regular basis are eligible to participate in Booz Allen's benefit programs; others eligible only for select offerings.",
+        "relocation": null,
+        "sign_on_bonus": null
+    },
+    "job_description": {
+        "headline": "Digital Engineer, Senior",
+        "short_summary": "Create critical systems to support customer's Digital Engineering transformation, working on Government Reference Architecture ecosystem for weapons and test systems design and integration using MBSE and Agile methods.",
+        "full_text": "Digital Engineer, Senior\n\nThe Opportunity:\n\nAs a Digital Engineer on our team, you have the chance to create critical systems to support our customer's Digital Engineering (DE) transformation. Your technical expertise will be vital as you work with the government on the Government Reference Architecture (GRA) ecosystem being developed to support weapons and test systems design and integration approaches.\n\nYou will use your system engineering expertise to develop enterprise architectures, description system models, engineering analysis, and reports as needed. Come develop your skills in DE and Model-Based Systems Engineering (MBSE) while gaining experience with new systems development. Grow your skills by merging DE and MBSE and Agile systems engineering methods provide creative solutions for development, implementation, testing, and sustainment of new and legacy systems. Join our team and help turn requirements into accomplishments that drive change.\n\nJoin us. The world can't wait.\n\nYou Have:\n\n-  5+ years of experience with DE and MBSE related to DoD enterprise and systems development\n-  Experience with system engineering life cycle, including requirements, design, development, integration, testing, and deployment for major DoD weapons and test systems\n-  Experience with DE and MBSE tools and processes to create and manage tailored mode-based artifacts that capture analysis and the resulting engineering decisions and trades made during acquisition and development\n-  Experience with conducting model-based performance simulations to determine the impact of requirements changes on enterprise and system performance and behaviors\n-  Experience with System Modeling Language (SysML) for weapon system modeling and Unified Architecture Framework (UAF) for C5I networks and test systems modeling\n-  Experience with MagicDraw and Cameo, Teamcenter, and DOORS, and SBE Vision\n-  Knowledge of Weapon Open System Architecture (WOSA) design principles and technologies\n-  Ability to work effectively in a multi-disciplinary, dynamic team environment, including internal staff, external contractors, and government customers\n-  Secret clearance\n-  Bachelor's degree in an Engineering, Science, Technology, or Mathematics field\n\nNice If You Have:\n\n-  Knowledge of systems engineering standard: IEEE 15288\n-  Knowledge of using enterprise and system models during government programs and engineering reviews\n-  Knowledge of configuration management, risk management, and cybersecurity\n-  Knowledge of object-oriented programming languages, including C++, Java, or Python\n-  Ability to plan and deliver capability and demonstrations using Agile Project Management\n-  Ability to produce solutions independently or with a team\n-  Possession of excellent verbal and written communication skills\n-  Master's degree in an Engineering, Science, Technology, or Mathematics field preferred\n-  SysML OMG Certified Systems Modelling Professional (OCSMP) Certification\n-  INCOSE Systems Engineering Professional Certification, including CSEP or ASEP Certification\n\nClearance:\n\nApplicants selected will be subject to a security investigation and may need to meet eligibility requirements for access to classified information; Secret clearance is required.\n\nCompensation\n\nAt Booz Allen, we celebrate your contributions, provide you with opportunities and choices, and support your total well-being. Our offerings include health, life, disability, financial, and retirement benefits, as well as paid leave, professional development, tuition assistance, work-life programs, and dependent care. Our recognition awards program acknowledges employees for exceptional performance and superior demonstration of our values. Full-time and part-time employees working at least 20 hours a week on a regular basis are eligible to participate in Booz Allen's benefit programs. Individuals that do not meet the threshold are only eligible for select offerings, not inclusive of health benefits. We encourage you to learn more about our total benefits by visiting the Resource page on our Careers site and reviewing Our Employee Benefits page.\n\nSalary at Booz Allen is determined by various factors, including but not limited to location, the individual's particular combination of education, knowledge, skills, competencies, and experience, as well as contract-specific affordability and organizational requirements. The projected compensation range for this position is $86,800.00 to $198,000.00 (annualized USD). The estimate displayed represents the typical salary range for this position and is just one component of Booz Allen's total compensation package for employees. This posting will close within 90 days from the Posting Date.\n\nIdentity Statement\n\nAs part of the application process, you are expected to be on camera during interviews and assessments. We reserve the right to take your picture to verify your identity and prevent fraud.\n\nWork Model\n\nOur people-first culture prioritizes the benefits of flexibility and collaboration, whether that happens in person or remotely.\n\n-  If this position is listed as remote or hybrid, you'll periodically work from a Booz Allen or client site facility.\n-  If this position is listed as onsite, you'll work with colleagues and clients in person, as needed for the specific role.\n\nCommitment to Non-Discrimination\n\nAll qualified applicants will receive consideration for employment without regard to disability, status as a protected veteran or any other status protected by applicable federal, state, local, or international law.",
+        "required_experience_years_min": 5,
+        "required_education": "Bachelor's degree in an Engineering, Science, Technology, or Mathematics field",
+        "must_have_skills": [
+            "DE and MBSE experience related to DoD enterprise and systems development (5+ years)",
+            "System engineering life cycle experience (requirements, design, development, integration, testing, deployment)",
+            "DE and MBSE tools and processes for tailored mode-based artifacts",
+            "Model-based performance simulations experience",
+            "System Modeling Language (SysML) for weapon system modeling",
+            "Unified Architecture Framework (UAF) for C5I networks and test systems modeling",
+            "MagicDraw and Cameo, Teamcenter, DOORS, and SBE Vision experience",
+            "Weapon Open System Architecture (WOSA) design principles and technologies knowledge",
+            "Ability to work in multi-disciplinary, dynamic team environment",
+            "Secret clearance"
+        ],
+        "nice_to_have_skills": [
+            "Systems engineering standard: IEEE 15288 knowledge",
+            "Enterprise and system models during government programs and engineering reviews",
+            "Configuration management, risk management, and cybersecurity knowledge",
+            "Object-oriented programming (C++, Java, Python)",
+            "Agile Project Management for capability demonstrations",
+            "Ability to produce solutions independently or with a team",
+            "Excellent verbal and written communication skills",
+            "Master's degree in Engineering, Science, Technology, or Mathematics",
+            "SysML OMG Certified Systems Modelling Professional (OCSMP) Certification",
+            "INCOSE Systems Engineering Professional Certification (CSEP or ASEP)"
+        ]
+    }
+}

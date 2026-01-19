@@ -1,0 +1,68 @@
+{
+    "job_details": {
+        "source": "Indeed",
+        "platform": "indeed",
+        "jobtitle": "Acquisition Program Manager - B-2 Division (Tinker)",
+        "company": "DCS Corp",
+        "companyrating": "4.3 out of 5 stars",
+        "location": "Oklahoma City, OK",
+        "locationdetail": "Tinker AFB, Oklahoma City, Oklahoma",
+        "employmenttype": "Full-time",
+        "paycurrency": "USD",
+        "payminannual": null,
+        "paymaxannual": null,
+        "payratetype": null,
+        "paydisplay": "Pay information not provided",
+        "remotetype": "onsite",
+        "jobposturl": "https://www.indeed.com/jobs?q=dcs+corp&latLong=35.46756%2C-97.51643&locString=Oklahoma+City%2C+OK&radius=25&from=searchOnDesktopSerp&vjk=4e470dbb92ab1c22",
+        "applyurl": null,
+        "securityclearancerequired": "Top Secret",
+        "securityclearancepreferred": null,
+        "workmodel": "onsite",
+        "workmodelnotes": "Position at Tinker AFB in Oklahoma City, Oklahoma. Top Secret clearance must be adjudicated within the past 5 years on first day of employment.",
+        "postingage": null
+    },
+    "jobboardlistcontext": {
+        "searchkeywords": "dcs corp",
+        "searchlocation": "Oklahoma City, OK",
+        "searchradiusmiles": 25,
+        "employergrouppage": null
+    },
+    "benefits": {
+        "listedbenefits": [],
+        "benefitstext": null,
+        "eligibilitynotes": null,
+        "relocation": null,
+        "signonbonus": null
+    },
+    "jobdescription": {
+        "headline": "Acquisition Program Manager - B-2 Division (Tinker)",
+        "shortsummary": "Provide full-spectrum Acquisition Program Management Support to US Air Force B-2 Systems acquisition programs within the Bombers Directorate, Air Force Life Cycle Management Center (AFLCMC) at Tinker AFB.",
+        "fulltext": "In this position you will provide full-spectrum Acquisition Program Management Support to the US Air Force B-2 Systems acquisition programs within the Bombers Directorate, Air Force Life Cycle Management Center (AFLCMC) at Tinker AFB in Oklahoma City, Oklahoma.\n\nEssential Job Functions:\n\n• Apply the full range of acquisition program management principles, policies, and procedures to perform a wide range of acquisition management activities to include pre- and post-contract award and milestone reviews in support of the existing and future B-2 programs.\n• Assist in the identification of requirements to support the acquisition, sustainment and supportability improvements required from program initiation through initial operational capability and continued sustainment to bed down of the weapon system.\n• Support management of the acquisition and modifications thereof as well as all associated requirements as they pertain to other functional areas including logistics, contracting, engineering, finance, and configuration management.\n• Apply the principles, criteria, and procedures of the DoD to include DoD 5000.01 and DoD 5000.02 as well as the policies and processes of USAF, AFMC, AFLCMC, Bombers Directorate, through the B-2 Division level to all tasks.\n\nRequired Skills:\n\n• Due to the sensitivity of customer related requirements, U.S. Citizenship is required.\n• A minimum of a Bachelor's degree plus 15 years of relevant experience is required.\n• Requires a Top Secret security clearance (adjudicated within the past 5 years) on the first day of employment.\n• Applicant selected will be subject to a U.S. Government background investigation and must meet eligibility requirements for access to classified information.\n• Post-secondary education may be substituted for work experience requirements.\n• Of the total relevant experience, a minimum of 5 years managing programs in a DoD acquisition environment.\n• Possess the ability to understand and assimilate highly complex technical information, and assist in the assessment, operational planning, testing, and transition of technology to support new USAF programs of record.",
+        "requiredexperienceyearsmin": 15,
+        "requirededucation": "Bachelor's degree (post-secondary education may be substituted for work experience)",
+        "musthaveskills": [
+            "U.S. Citizenship",
+            "Bachelor's degree plus 15 years relevant experience",
+            "Top Secret security clearance (adjudicated within past 5 years)",
+            "Minimum 5 years managing programs in DoD acquisition environment",
+            "Acquisition program management principles, policies, and procedures",
+            "DoD 5000.01 and DoD 5000.02 knowledge",
+            "USAF, AFMC, AFLCMC, Bombers Directorate policies and processes",
+            "Pre- and post-contract award experience",
+            "Milestone reviews",
+            "Requirements identification",
+            "Sustainment and supportability improvements",
+            "Cross-functional management (logistics, contracting, engineering, finance, configuration management)",
+            "Ability to understand and assimilate highly complex technical information",
+            "Operational planning",
+            "Testing and transition of technology",
+            "DoD experience"
+        ],
+        "nicetohaveskills": [
+            "B-2 bomber experience",
+            "Air Force Life Cycle Management Center (AFLCMC) experience",
+            "Bombers Directorate experience"
+        ]
+    }
+}

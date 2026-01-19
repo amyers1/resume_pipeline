@@ -1,7 +1,7 @@
 services:
     # PostgreSQL Database (New)
     db:
-        image: postgres:15-alpine
+        image: postgres
         container_name: resume-postgres
         environment:
             - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -10,7 +10,7 @@ services:
         ports:
             - "5432:5432" # Expose to host for local inspection tools
         volumes:
-            - ./data/postgres:/var/lib/postgresql/data
+            - pg_data:/var/lib/postgresql
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U postgres"]
             interval: 10s
@@ -46,12 +46,14 @@ services:
             - .env
         environment:
             # Ensure DB URL uses the service name 'db'
-            - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
+            - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
         volumes:
             # Map the entire backend directory for hot-reloading
             - ./backend:/app
             # Persist output outside the container if needed
             - ./backend/output:/app/output
+            # For one time migration of legacy data
+            - ./backend/jobs:/app/jobs
         command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
         depends_on:
             redis:
@@ -68,7 +70,7 @@ services:
         env_file:
             - .env
         environment:
-            - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
+            - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
         volumes:
             - ./backend:/app
             - ./backend/output:/app/output
@@ -94,6 +96,9 @@ services:
         environment:
             - VITE_API_URL=${VITE_API_URL}
         restart: unless-stopped
+
+volumes:
+    pg_data:
 
 networks:
     default:

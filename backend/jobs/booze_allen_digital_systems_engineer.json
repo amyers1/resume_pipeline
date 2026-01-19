@@ -1,0 +1,65 @@
+{
+    "job_details": {
+        "source": "Indeed",
+        "platform": "indeed",
+        "job_title": "Digital System Engineer",
+        "company": "Booz Allen",
+        "company_rating": "3.9 out of 5 stars",
+        "location": "Tinker AFB, OK",
+        "employment_type": "Full-time",
+        "pay_currency": "USD",
+        "pay_min_annual": 99000,
+        "pay_max_annual": 225000,
+        "pay_rate_type": "year",
+        "pay_display": "$99,000 - $225,000 a year",
+        "remote_type": "onsite",
+        "job_post_url": "https://www.indeed.com/viewjob?jk=a7c234fa70067cca",
+        "apply_url": "https://www.indeed.com/cmp/Booz-Allen-Hamilton?campaignid=mobvjcmp&from=mobviewjob&tk=1je4im6bujn1f802&fromjk=a7c234fa70067cca",
+        "security_clearance_required": "Secret",
+        "security_clearance_preferred": "Top Secret",
+        "work_model": "onsite",
+        "work_model_notes": "Work with colleagues and clients in person, as needed for the specific role.",
+        "posting_age": null,
+        "job_board_list_context": {
+            "search_keywords": "booz allen",
+            "search_location": "Oklahoma City, OK",
+            "search_radius_miles": 25,
+            "employer_group_page": "Booz Allen Jobs near Oklahoma City, OK"
+        }
+    },
+    "benefits": {
+        "listed_benefits": [
+            "Tuition reimbursement",
+            "Health insurance",
+            "Retirement plan",
+            "Flexible spending account"
+        ],
+        "benefits_text": "Our offerings include health, life, disability, financial, and retirement benefits, as well as paid leave, professional development, tuition assistance, work-life programs, and dependent care.",
+        "eligibility_notes": "Full-time and part-time employees working at least 20 hours a week on a regular basis are eligible to participate in Booz Allen's benefit programs; others eligible only for select offerings.",
+        "relocation": null,
+        "sign_on_bonus": null
+    },
+    "job_description": {
+        "headline": "Digital System Engineer",
+        "short_summary": "Create, integrate, and apply interdisciplinary digital models of products from concept throughout the product lifecycle. Shape the client's acquisition process by leading engineering projects and processes for aircraft acquisition and sustainment.",
+        "full_text": "Digital System Engineer\n\nKey Role:\n\nCreate, integrate, and apply interdisciplinary digital models of products from concept throughout the product lifecycle. Apply leading-edge principles, theories, and concepts, and contribute to the development of new principles and concepts. Work on unusually complex problems and provide highly innovative solutions. Shape the client's acquisition process by leading engineering projects and processes. Design and develop systems and evolve them with advanced technology solutions. Broaden your skillset into areas like aircraft acquisition. Grow your skills by merging legacy aircraft and current or new technology equipment to create solutions for the client's program office. Join our team and create the future of aircraft acquisition and sustainment.\n\nBasic Qualifications:\n\n-  10+ years of experience in the aerospace industry\n-  Experience in Model-Based Systems Engineering\n-  Experience using Microsoft Office programs, including Word, Excel, and PowerPoint\n-  Experience mapping and optimizing office processes\n-  Knowledge of Microsoft SharePoint\n-  Ability to work confidently with and present to senior ranking officials\n-  Secret clearance\n-  Bachelor's degree in Engineering\n\nAdditional Qualifications:\n\n-  Experience in life cycle management\n-  Experience with Cameo Systems Modeler\n-  Experience with airworthiness\n-  Top Secret clearance\n-  Master's degree in Engineering\n\nClearance:\n\nApplicants selected will be subject to a security investigation and may need to meet eligibility requirements for access to classified information; Secret clearance is required.\n\nCompensation\n\nAt Booz Allen, we celebrate your contributions, provide you with opportunities and choices, and support your total well-being. Our offerings include health, life, disability, financial, and retirement benefits, as well as paid leave, professional development, tuition assistance, work-life programs, and dependent care. Our recognition awards program acknowledges employees for exceptional performance and superior demonstration of our values. Full-time and part-time employees working at least 20 hours a week on a regular basis are eligible to participate in Booz Allen's benefit programs. Individuals that do not meet the threshold are only eligible for select offerings, not inclusive of health benefits. We encourage you to learn more about our total benefits by visiting the Resource page on our Careers site and reviewing Our Employee Benefits page.\n\nSalary at Booz Allen is determined by various factors, including but not limited to location, the individual's particular combination of education, knowledge, skills, competencies, and experience, as well as contract-specific affordability and organizational requirements. The projected compensation range for this position is $99,000.00 to $225,000.00 (annualized USD). The estimate displayed represents the typical salary range for this position and is just one component of Booz Allen's total compensation package for employees. This posting will close within 90 days from the Posting Date.\n\nIdentity Statement\n\nAs part of the application process, you are expected to be on camera during interviews and assessments. We reserve the right to take your picture to verify your identity and prevent fraud.\n\nWork Model\n\nOur people-first culture prioritizes the benefits of flexibility and collaboration, whether that happens in person or remotely.\n\n-  If this position is listed as remote or hybrid, you'll periodically work from a Booz Allen or client site facility.\n-  If this position is listed as onsite, you'll work with colleagues and clients in person, as needed for the specific role.\n\nCommitment to Non-Discrimination\n\nAll qualified applicants will receive consideration for employment without regard to disability, status as a protected veteran or any other status protected by applicable federal, state, local, or international law.",
+        "required_experience_years_min": 10,
+        "required_education": "Bachelor's degree in Engineering",
+        "must_have_skills": [
+            "Aerospace industry experience (10+ years)",
+            "Model-Based Systems Engineering experience",
+            "Microsoft Office (Word, Excel, PowerPoint)",
+            "Experience mapping and optimizing office processes",
+            "Microsoft SharePoint knowledge",
+            "Ability to work confidently with and present to senior ranking officials",
+            "Secret clearance"
+        ],
+        "nice_to_have_skills": [
+            "Life cycle management experience",
+            "Cameo Systems Modeler experience",
+            "Airworthiness experience",
+            "Top Secret clearance",
+            "Master's degree in Engineering"
+        ]
+    }
+}

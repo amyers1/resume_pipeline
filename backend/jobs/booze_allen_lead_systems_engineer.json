@@ -1,0 +1,60 @@
+{
+    "job_details": {
+        "source": "Indeed",
+        "platform": "indeed",
+        "job_title": "Systems Engineer, Lead",
+        "company": "Booz Allen",
+        "company_rating": "3.9 out of 5 stars",
+        "location": "Tinker AFB, OK",
+        "employment_type": "Full-time",
+        "pay_currency": "USD",
+        "pay_min_annual": 86800,
+        "pay_max_annual": 198000,
+        "pay_rate_type": "year",
+        "pay_display": "$86,800 - $198,000 a year",
+        "remote_type": "onsite",
+        "job_post_url": "https://www.indeed.com/viewjob?jk=fd0d8c3087d30e22",
+        "apply_url": "https://www.indeed.com/cmp/Booz-Allen-Hamilton?campaignid=mobvjcmp&from=mobviewjob&tk=1je4huhsggqq88a4&fromjk=fd0d8c3087d30e22",
+        "security_clearance_required": "Secret",
+        "security_clearance_preferred": "Top Secret",
+        "work_model": "onsite",
+        "work_model_notes": "Work with colleagues and clients in person, as needed for the specific role.",
+        "posting_age": null,
+        "job_board_list_context": {
+            "search_keywords": "booz allen",
+            "search_location": "Oklahoma City, OK",
+            "search_radius_miles": 25,
+            "employer_group_page": "Booz Allen Jobs near Oklahoma City, OK"
+        }
+    },
+    "benefits": {
+        "listed_benefits": [
+            "Tuition reimbursement",
+            "Health insurance",
+            "Retirement plan",
+            "Flexible spending account"
+        ],
+        "benefits_text": "Our offerings include health, life, disability, financial, and retirement benefits, as well as paid leave, professional development, tuition assistance, work-life programs, and dependent care.",
+        "eligibility_notes": "Full-time and part-time employees working at least 20 hours a week on a regular basis are eligible to participate in Booz Allen’s benefit programs; others eligible only for select offerings.",
+        "relocation": null,
+        "sign_on_bonus": null
+    },
+    "job_description": {
+        "headline": "Systems Engineer, Lead",
+        "short_summary": "Lead systems engineering projects in support of USAF aircraft acquisition, merging legacy tanker aircraft with current and new technology equipment for a client program office.",
+        "full_text": "Systems Engineer, Lead\n\nThe Opportunity:\n\nAre you looking for an opportunity to combine your technical skills with big picture thinking to make an impact in national security, including US Air Force (USAF) aircraft? You understand your customer’s environment and how to develop the right systems for their mission. Your ability to translate real-world needs into technical specifications makes you an integral part of delivering a customer-focused engineering solution.\n\nAs a systems engineer on our team, you have the chance to shape the client's acquisition process by leading engineering projects and processes. Your client will trust you to not only design and develop these systems, but also evolve them with advanced technology solutions. On our team, you’ll be able to broaden your skillset into areas like aircraft acquisition. Grow your skills by merging legacy tanker aircraft and current or new technology equipment to create solutions for the client's program office. Join our team and create the future of aircraft acquisition.\n\nJoin us. The world can't wait.\n\nYou Have:\n\n- 5+ years of experience with aerospace or aircraft\n- Experience with the DoD acquisition process\n- Experience with Microsoft Office, including Word, Excel, and PowerPoint\n- Knowledge of FAA Airworthiness\n- Knowledge of Microsoft SharePoint\n- Ability to read and understand technical engineering drawings\n- Ability to work with and present to senior ranking officials\n- Secret clearance\n- Bachelor's degree in Engineering\n\nNice If You Have:\n\n- Top Secret clearance\n\nClearance:\n\nApplicants selected will be subject to a security investigation and may need to meet eligibility requirements for access to classified information; Secret clearance is required.\n\nCompensation\n\nAt Booz Allen, we celebrate your contributions, provide you with opportunities and choices, and support your total well-being. Our offerings include health, life, disability, financial, and retirement benefits, as well as paid leave, professional development, tuition assistance, work-life programs, and dependent care. Our recognition awards program acknowledges employees for exceptional performance and superior demonstration of our values. Full-time and part-time employees working at least 20 hours a week on a regular basis are eligible to participate in Booz Allen’s benefit programs. Individuals that do not meet the threshold are only eligible for select offerings, not inclusive of health benefits. We encourage you to learn more about our total benefits by visiting the Resource page on our Careers site and reviewing Our Employee Benefits page.\n\nSalary at Booz Allen is determined by various factors, including but not limited to location, the individual’s particular combination of education, knowledge, skills, competencies, and experience, as well as contract-specific affordability and organizational requirements. The projected compensation range for this position is $86,800.00 to $198,000.00 (annualized USD). The estimate displayed represents the typical salary range for this position and is just one component of Booz Allen’s total compensation package for employees. This posting will close within 90 days from the Posting Date.\n\nIdentity Statement\n\nAs part of the application process, you are expected to be on camera during interviews and assessments. We reserve the right to take your picture to verify your identity and prevent fraud.\n\nWork Model\n\nOur people-first culture prioritizes the benefits of flexibility and collaboration, whether that happens in person or remotely.\n\n- If this position is listed as remote or hybrid, you’ll periodically work from a Booz Allen or client site facility.\n- If this position is listed as onsite, you’ll work with colleagues and clients in person, as needed for the specific role.\n\nCommitment to Non-Discrimination\n\nAll qualified applicants will receive consideration for employment without regard to disability, status as a protected veteran or any other status protected by applicable federal, state, local, or international law.",
+        "required_experience_years_min": 5,
+        "required_education": "Bachelor's degree in Engineering",
+        "must_have_skills": [
+            "Aerospace or aircraft experience (5+ years)",
+            "DoD acquisition process experience",
+            "Microsoft Office (Word, Excel, PowerPoint)",
+            "FAA Airworthiness knowledge",
+            "Microsoft SharePoint",
+            "Ability to read and understand technical engineering drawings",
+            "Ability to work with and present to senior ranking officials",
+            "Secret clearance"
+        ],
+        "nice_to_have_skills": ["Top Secret clearance"]
+    }
+}

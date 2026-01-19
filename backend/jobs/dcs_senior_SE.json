@@ -1,0 +1,75 @@
+{
+    "job_details": {
+        "source": "Indeed",
+        "platform": "indeed",
+        "job_title": "Senior Systems Engineer",
+        "company": "DCS Corp",
+        "company_rating": "4.3 out of 5 stars",
+        "location": "Oklahoma City, OK",
+        "location_detail": "Tinker AFB, OK",
+        "employment_type": "Full-time",
+        "pay_currency": "USD",
+        "pay_minannual": null,
+        "pay_maxannual": null,
+        "pay_ratetype": null,
+        "pay_display": "Pay information not provided",
+        "remote_type": "onsite",
+        "job_post_url": "https://www.indeed.com/jobs?q=dcs+corp&latLong=35.46756%2C-97.51643&locString=Oklahoma+City%2C+OK&radius=25&from=searchOnDesktopSerp&vjk=b9a9661e3c18ec9a",
+        "apply_url": null,
+        "security_clearance_required": "Secret",
+        "security_clearance_preferred": null,
+        "work_model": "onsite",
+        "work_model_notes": "Full time position at Tinker AFB, OK",
+        "posting_age": null
+    },
+    "job_board_list_context": {
+        "search_keywords": "dcs corp",
+        "search_location": "Oklahoma City, OK",
+        "search_radiusmiles": 25,
+        "employer_group_page": null
+    },
+    "benefits": {
+        "listed_benefits": [],
+        "benefits_text": null,
+        "eligibility_notes": null,
+        "relocation": null,
+        "sign_on_bonus": null
+    },
+    "job_description": {
+        "headline": "Systems Engineer, Senior - Secret",
+        "shortsummary": "Senior Systems Engineer providing support to the Air Force Life Cycle Management Center/PEO Digital Directorate (AFLCMC/WIW), applying systems engineering to acquisition processes and supporting design, operation, and sustainment of systems throughout the acquisition life cycle.",
+        "fulltext": "DCS has an exciting opportunity for a Senior Systems Engineer providing support to the Air Force Life Cycle Management Center/PEO Digital Directorate (AFLCMC/WIW). The Air Force Program Execution Office for PEO ISR (AFPEO/HBS) has the collective Air Force Materiel Command (AFMC) mission responsibility to manage and execute the modernization, development, testing, production, fielding, and sustainment of the PEO ISR portfolio, which includes over 130 programs for the United States Air Force (USAF) and foreign allies. AFLCMC/WIW is headquartered at Hanscom Air Force Base, MA with geographically separated operating units CONUS and OCONUS.\n\nThe candidate will provide Systems Engineering assistance that applies a broad theoretical and practical knowledge of system engineering to the acquisition process. The candidate will also provide engineering support in the design, operation, and sustainment of systems and components that cover tasks throughout the acquisition life cycle (requirements analysis through system disposal).\n\nThis is a full time position at Tinker AFB, OK.\n\nEssential Job Functions:\n\n• Conduct comprehensive program portfolio reviews to evaluate and recommend alternative plans, enhance systems engineering processes, manage and sustain technical baselines, and design/perform system-level tests to ensure subsystem and system performance aligns with approved specifications.\n• Review and evaluate alternative plans, systems engineering programs, designs, and test results to verify subsystem and system performance compliance with program specifications.\n• Prepare technical documentation defining and recommending system/subsystem characteristics, management reports, and technical presentations for planning, implementation, and corrective actions, applying engineering economy principles.\n• Perform system validations, including criteria and procedure development, and analyze/evaluate major engineering system results.\n• Provide engineering, technical support, and training for programs/initiatives, including acquisition, development, integration, sustainment, evolution, deployment, fielding, installation, and operations oversight.\n• Support risk management activities in alignment with Air Force Systems Engineering Assessment Model (AF SEAM) processes.\n• Conduct formal trade studies considering engineering performance, effectiveness, cost-performance balance, lifecycle cost, reliability, maintainability, risk, and schedule.\n• Offer technical recommendations through reviews, studies, audits, evaluations, analyses, procedural guidance, and documentation, supporting engineering Integrated Product Teams (IPTs).\n• Analyze proposals to compare and quantify technical feasibility, compatibility, and cost-effectiveness of proposed systems and components.\n\nConcepts and Requirements Analysis:\n• Review and analyze key documents, including Initial Capabilities Documents (ICDs), Capability Development Documents (CDDs), Capability Production Documents (CPDs), and Analyses of Alternatives (AoAs).\n• Conduct assessments of military utility, operational concepts (CONOPs), technology development strategies, functional configuration audits (FCAs), physical configuration audits (PCAs), and technology standards profiles.\n• Analyze system concepts and user requirements entered into system requirements baselines (functional, allocated, and product).\n\nEngineering Process Support:\n• Assist in material solution analysis, technology development, engineering, manufacturing, production, deployment, and operations support.\n• Provide support for engineering technical processes, including version/configuration control, requirements analysis, architecture design, implementation, integration, verification, validation, and decision analysis.\n• Perform risk, configuration, technical data, and interface management, as well as technical planning and assessments.\n\nTechnical Reviews and Documentation:\n• Support planning and execution of technical reviews (e.g., System Requirements Review, Technology Readiness Assessments) and develop associated documentation (e.g., Systems Engineering Plan, Risk Management Plan).\n• Develop systems engineering documentation, ensuring understanding of systems-of-systems interactions, configuration management, technical data packages, and acquisition/sustainment engineering processes.\n\nRequired Skills:\n• Due to the sensitivity of customer related requirements, U.S. Citizenship is required.\n• Must have an Active Secret Clearance.\n• Bachelor's degree in a professional engineering discipline from an ABET-accredited educational program and at least 12 years of experience in the respective technical/professional discipline being performed, 5 of which must be in the DoD.\n• Electrical Engineering background preferred, or Mechanical Engineering background.\n• Experience working sustainment programs, and modernization efforts.\n• Experienced in requirements development, production and deployment, and operation and support, architectures development & implementation, modeling & simulation including but not limited to Model Based Systems Engineering principles, verification & validation, technical data package development and sustainment, and principles of configuration management.\n• Experience with network architectures, embedded systems and application deployment across a variety of systems and hardware, to include cloud deployment and virtualization.\n• Familiarity with DoD Acquisition processes including Technology Maturation, Risk Reduction, Engineering Manufacturing and Development, Production and Deployment activities.\n• Familiarity with Electronic Warfare and/or Air Combat operations including live aircrew training/development of tactics, techniques, and procedures and Range Infrastructure architectures and systems are desired.\n\nDesired Skills:\n• Master's degree in a professional engineering discipline from an ABET-accredited educational program along with at least 10 years of experience in the respective technical/professional discipline being performed, 5 of which must be in the DoD.",
+        "required_experience_years_min": 12,
+        "required_education": "Bachelor's degree in a professional engineering discipline from an ABET-accredited educational program",
+        "must_have_skills": [
+            "U.S. Citizenship",
+            "Active Secret Clearance",
+            "Bachelor's degree in engineering from ABET-accredited program",
+            "12 years of experience in technical/professional discipline",
+            "5 years DoD experience",
+            "Electrical Engineering or Mechanical Engineering background",
+            "Sustainment programs and modernization efforts experience",
+            "Requirements development",
+            "Production and deployment experience",
+            "Operation and support experience",
+            "Architectures development and implementation",
+            "Modeling and simulation (Model Based Systems Engineering principles)",
+            "Verification and validation",
+            "Technical data package development and sustainment",
+            "Configuration management principles",
+            "Network architectures experience",
+            "Embedded systems and application deployment",
+            "Cloud deployment and virtualization",
+            "DoD Acquisition processes (Technology Maturation, Risk Reduction, EMD, Production and Deployment)"
+        ],
+        "nice_to_have_skills": [
+            "Master's degree in professional engineering from ABET-accredited program",
+            "10 years of experience with Master's degree (5 years in DoD)",
+            "Electronic Warfare experience",
+            "Air Combat operations familiarity",
+            "Live aircrew training/development of tactics, techniques, and procedures",
+            "Range Infrastructure architectures and systems",
+            "Manufacturing experience"
+        ]
+    }
+}

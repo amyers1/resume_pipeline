@@ -1,0 +1,70 @@
+{
+    "job_details": {
+        "source": "ZipRecruiter",
+        "platform": "ziprecruiter",
+        "jobtitle": "Systems Engineer: B-1 Mission Planning",
+        "company": "Leidos",
+        "companyrating": "8.5 out of 10",
+        "location": "Oklahoma City, OK",
+        "locationdetail": "Primary job location is Fort Walton Beach, FL (Eglin AFB area). Applicants in other areas will be considered with the areas of Oklahoma City, OK (Tinker AFB area) or Massachusetts and New Hampshire (Hanscom AFB area) preferred.",
+        "employmenttype": "Full-time",
+        "paycurrency": "USD",
+        "payminannual": 107900,
+        "paymaxannual": 195050,
+        "payratetype": "year",
+        "paydisplay": "$107.90K - $195.05K/yr",
+        "remotetype": "hybrid",
+        "jobposturl": "https://www.ziprecruiter.com/jobs-search?search=program+manager&location=Oklahoma+City%2C+OK&refine_by_employment=employment_type%3Afull_time&refine_by_salary=120000&page=1&lk=x0T5nWg0Q1QT7MgmESlqDw",
+        "applyurl": "https://www.ziprecruiter.com/job-redirect?match_token=eyJKb2JLZXkiOnsibGlzdGluZ19rZXkiOiJ4MFQ1bldnMFExUVQ3TWdtRVNscUR3IiwibWF0Y2hfaWQiOiIwMTliODk4MS04MTYxLTc1NzItOTc0OS0wOGE4ZDNmMzM0MTQiLCJiaWRfdHJhY2tpbmdfZGF0YSI6IkFBSGRLRmk3MGdoZldHdmw2bEFBaGM0Z0ZzN0x4UmFkVnF4YVpwdzZMbnJvLTYyZ094NlJJdWw1TXE0ZVlJVmkxZlJZd0diLUw2R2cifSwiRGVzdGluYXRpb24iOjIsIkV4dGVybmFsQXBwbHlVcmwiOiJodHRwczovL2NsaWNrLmFwcGNhc3QuaW8vdC9fbUp2eHZOcDZUS2ZidnFYRkVmQlhCbEJ2U05VN3BCVjFxQ3RhTGZhdWJ6MWlyX3FJeXFHQUMzYXZVS2NfcHF6P2NpZD1bY2xpY2tfaWRdIiwiUGxhY2VtZW50SWQiOjQ0MDcxfQ%3D%3D",
+        "securityclearancerequired": "Secret",
+        "securityclearancepreferred": "TS/SCI",
+        "workmodel": "hybrid",
+        "workmodelnotes": "This position does offer the ability to work remote, but the chosen candidate must be comfortable with being on site at one of the above-mentioned locations as needed.",
+        "postingage": "2 days ago"
+    },
+    "jobboardlistcontext": {
+        "searchkeywords": "program manager",
+        "searchlocation": "Oklahoma City, OK",
+        "searchradiusmiles": 25,
+        "employergrouppage": null
+    },
+    "benefits": {
+        "listedbenefits": [
+            "Medical",
+            "Retirement",
+            "PTO",
+            "Health and Wellness programs",
+            "Income Protection",
+            "Paid Leave",
+            "Competitive compensation"
+        ],
+        "benefitstext": "Employment benefits include competitive compensation, Health and Wellness programs, Income Protection, Paid Leave and Retirement.",
+        "eligibilitynotes": null,
+        "relocation": null,
+        "signonbonus": null
+    },
+    "jobdescription": {
+        "headline": "Systems Engineer: B-1 Mission Planning",
+        "shortsummary": "Leidos is seeking a B-1 Mission Planning Systems Engineer to serve as SME providing leadership to engineers, testers, and end users with solutions to complex engineering and integration problems using Agile and SAFe methodologies.",
+        "fulltext": "Description\n\nLeidos has an immediate opportunity for a B-1 Mission Planning Systems Engineer. You will be part of a highly focused and diverse team of systems engineers, government program managers, software development teams, and security test engineers. In this opportunity you will also serve as subject matter expert (SME) providing leadership to peer engineers, testers, and end users with proposed solutions to complex engineering and integration problems. The enterprise utilizes leading edge methodologies for Agile and Scaled Agile Framework (SAFe). Leidos provides a real work-life balance with options for compressed work schedules and flexible hours.\n\nPrimary job location is Fort Walton Beach, FL (Eglin AFB area). Applicants in other areas will be considered with the areas of Oklahoma City, OK (Tinker AFB area) or Massachusetts and New Hampshire (Hanscom AFB area) preferred. This position does offer the ability to work remote, but the chosen candidate must be comfortable with being on site at one of the above-mentioned locations as needed.\n\nPrimary Responsibilities:\n• The successful candidate will be energetic, organized, eager to learn and comfortable working & speaking in a team environment, placing a high value on collaboration and team success.\n• Serve as a SE and SME for Mission Planning software development.\n• Serve as an Agile Product Manager/Systems Engineer/Release Train Manager with a collection of products representing the client stakeholders to the development team to include product vision, design, development, testing and sustainment.\n• Create Technical Requirements Backlogs, Statements of Work, Contract Data Requirements Lists and other documentation in support of new Mission Planning Delivery Orders.\n• Coordinate with enterprise stakeholders to prioritize product backlogs for sprints and releases.\n• Generate Mission Threads, use cases and requirements packages as applicable and managing those requirements and their traceability.\n• Identify and manage internal and external dependencies.\n• Analyze software development metrics, report results, and recommend corrective actions.\n• Utilize common Mission Planning processes while facilitating a continuous learning culture to help drive improvement of those processes. Understanding and leveraging an Enterprise Product approach to identify requirements that represent a gap in capabilities and opportunities for reuse.\n• Report on the technical status of product development to the key stakeholders.\n• Evaluate technical proposals and other technical data items, to include architecture, requirements documents, designs, test plans/reports, and process descriptions.\n• Represent the Government customer in Product Management (with content authority for the Program Backlog), responsible for identifying Customer needs, prioritizing Features, guiding the work through the Program level processes, and developing the program Vision and Roadmap consistent with the Solution Intent and Context.\n• Collaborating to ensure appropriate value is being provided via working software and products (including documentation).\n• Attend Product Owner Scrum meetings and participate in Program Increment (PI) planning events. Also, support the Engineering role as an individual or part of a small team that defines a shared technical and architectural vision for the System/Solution under development.\n• Participate in determining the system, subsystems, and interfaces, validate technology assumptions and evaluate alternatives while working closely with other Agile Release Trains (ARTs) and Solution Trains.\n\nBasic Qualifications:\n• US Citizen with at least an active DoD Secret clearance and be eligible to obtain and maintain a TS/SCI clearance.\n• Bachelor's degree with 8+ years of prior relevant experience or Master's with 6+ years of prior relevant experience. Additional experience may be considered in lieu of a degree.\n• Expertise in B-1 or bomber mission planning at the unit level, wing level, or AOC level.\n• Strong written and verbal communication skills to collaborate with customer representatives, domain experts, and other systems engineers in the development of complex software systems.\n• Proficiency in using Microsoft Office products (Word, Excel, PowerPoint, Project).\n\nPreferred Qualifications:\n• US Citizen with an active DoD TS/SCI security clearance.\n• Experience with Scrum at Scale or SAFe Agile processes is highly desired.\n• Experience with Jira, Jira Align, and Confluence is highly desired.\n• Experience with bomber aircraft operations preferred.\n• Knowledge of software testing concepts.\n• Knowledge of software and systems engineering processes for the software development life cycle.\n• General familiarity of the DoD system development and acquisition processes.\n• General familiarity with DoD technical order systems and processes.",
+        "requiredexperienceyearsmin": 6,
+        "requirededucation": "Bachelor's degree or Master's degree",
+        "musthaveskills": [
+            "Active DoD Secret clearance",
+            "Expertise in B-1 or bomber mission planning",
+            "Strong written and verbal communication skills",
+            "Proficiency in Microsoft Office products",
+            "US Citizenship"
+        ],
+        "nicetohaveskills": [
+            "Active DoD TS/SCI security clearance",
+            "Experience with Scrum at Scale or SAFe Agile processes",
+            "Experience with Jira, Jira Align, and Confluence",
+            "Experience with bomber aircraft operations",
+            "Knowledge of software testing concepts",
+            "Knowledge of software and systems engineering processes",
+            "Familiarity with DoD system development and acquisition processes",
+            "Familiarity with DoD technical order systems and processes"
+        ]
+    }
+}

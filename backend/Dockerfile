@@ -1,5 +1,5 @@
 # Use a stable Python version (3.13 is recommended for 2026)
-FROM python:3.13-slim
+FROM python:3
 
 # Install uv from the official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
@@ -34,6 +34,7 @@ RUN uv pip install --system --no-cache -r requirements.txt
 # Ensure 'templates' is a sibling of 'resume_pipeline' in your backend folder
 COPY resume_pipeline/ /app/resume_pipeline/
 COPY templates/ /app/templates/
+COPY jobs/ /app/jobs/
 
 # Copy root Python scripts (worker.py, api.py, etc.)
 COPY *.py /app/

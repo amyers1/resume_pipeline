@@ -1,0 +1,67 @@
+{
+    "job_details": {
+        "source": "ZipRecruiter",
+        "platform": "ziprecruiter",
+        "job_title": "Operations Site Team Lead",
+        "company": "Peraton",
+        "company_rating": "8.4 out of 10",
+        "location": "Oklahoma City, OK",
+        "location_detail": "On-site support position at a government facility",
+        "employment_type": "Full-time",
+        "pay_currency": "USD",
+        "pay_minannual": 104000,
+        "pay_maxannual": 166000,
+        "pay_rate_type": "year",
+        "pay_display": "$104K - $166K/yr",
+        "remote_type": "onsite",
+        "job_post_url": "https://www.ziprecruiter.com/jobs-search?search=program+manager&location=Oklahoma+City%2C+OK&refine_by_location_type=&radius=25&refine_by_employment=employment_type%3Afull_time&refine_by_salary=150000&page=2&lk=oUXRAufkBzebn0v-TMo6hw",
+        "apply_url": "https://careers-peraton.icims.com/jobs/161852/operations-site-team-lead/job?mode=job&iis=Job+Board&iisn=ZipRecruiter",
+        "security_clearance_required": "Top-Secret",
+        "security_clearance_preferred": "TS/SCI",
+        "work_model": "onsite",
+        "work_model_notes": "This is a full-time, hands-on, on-site support position at a government facility",
+        "posting_age": "26 days ago"
+    },
+    "job_board_list_context": {
+        "search_keywords": "program manager",
+        "search_location": "Oklahoma City, OK",
+        "search_radius_miles": 25,
+        "employer_group_page": null
+    },
+    "benefits": {
+        "listed_benefits": [
+            "PTO",
+            "Heavily subsidized employee benefits coverage for dependents",
+            "25 days of PTO accrued annually",
+            "Attractive bonus plan",
+            "Shift differential",
+            "Discretionary bonus",
+            "Overtime eligible"
+        ],
+        "benefits_text": "Peraton offers enhanced benefits to employees working on this critical National Security program, which include heavily subsidized employee benefits coverage for you and your dependents, 25 days of PTO accrued annually up to a generous PTO cap and eligible to participate in an attractive bonus plan. Depending on the position, employees may be eligible for overtime, shift differential, and a discretionary bonus in addition to base pay.",
+        "eligibility_notes": "Enhanced benefits for employees working on this critical National Security program",
+        "relocation": null,
+        "sign_on_bonus": null
+    },
+    "job_description": {
+        "headline": "Operations Site Team Lead",
+        "short_summary": "Peraton is seeking an Operations Site Team Lead in Oklahoma City, OK to support DoD customer, reporting to the Operations Program Manager and responsible for local management and operations oversight of a private cloud infrastructure at a data center facility.",
+        "full_text": "Peraton is seeking an Operations Site Team Lead in Oklahoma City, OK to support our Department of Defense (DoD) customer as part of a highly talented, highly motivated and high-performing team. As part of the team, you will support an exciting program and contribute to mission success for a variety of national security stakeholders. This position will report to the Operations Program Manager and be responsible for local management and operations oversite of a private cloud infrastructure at a data center facility. Join us and be part of the next generation of innovators as we blaze a trail forward for our profession.\n\nResponsibilities:\n• This is a full-time, hands-on, on-site support position at a government facility requiring the ability to provide first-level system and network support along with problem resolution identification in support of a private cloud-based infrastructure\n• Lead a small team to maintain reliability and resiliency of the cloud infrastructure services and networks at an on-site data center facility\n• Lead the execution of tasks in support of the daily management of a cloud infrastructure hardware ensuring smooth operations, maintenance and support. This may include working with local government site processes for scheduling maintenance, ingress / egress of hardware to the site, supporting COMSEC, and help with the disposition of equipment, as required.\n• Manage small-to-medium impact projects from conception to completion\n• Coordinate with the host organization for any facilities requirements and other needs that could impact the cloud infrastructure or network\n• Serve as the primary liaison with the operations program manager and factory support personnel on the East Coast.\n• Assist in the interview, training and onboarding of all new site team members, if applicable\n• Assist in the collection of metrics for analysis, briefings, or other needs as directed by the Program Director or government customer\n• Be on call, with shared responsibility, for any contingent maintenance support to the data center infrastructure\n\nRequired Qualifications:\n• This position requires the candidate to possess a minimum of Top-Secret clearance with the ability to obtain TS/SCI. The candidate must maintain the clearance.\n• Minimum of ten (10) years of relevant experience\n• You have at least 5-7 years of experience in a leadership role leading teams or as a project / program manager\n• Minimum of five (5) years experience managing projects in data centers or comparable critical infrastructure in an operational space. This role requires both independent contribution as well as the ability to work within multi-disciplinary teams\n• Strong ability to communicate with business / technical staff and comprehend complex technical concepts\n• Meet DoD 8140 foundational requirements for an IT Project Manager or Technical Support Specialist with intermediate or advanced proficiency\n\nDesired Qualifications:\n• Bachelor's degree in engineering, management or related field\n• Have prior experience with Intelligence or DoD programs, either within the military or as a civilian contractor\n• Experience managing and / or handling communication security devices, keys, etc., in support of cloud infrastructure services",
+        "required_experience_years_min": 10,
+        "required_education": "Bachelor's degree preferred but not required",
+        "must_have_skills": [
+            "Top-Secret clearance with ability to obtain TS/SCI",
+            "10+ years of relevant experience",
+            "5-7 years leadership experience leading teams or as project/program manager",
+            "5+ years managing projects in data centers or critical infrastructure",
+            "Strong communication skills with business/technical staff",
+            "DoD 8140 foundational requirements for IT Project Manager or Technical Support Specialist"
+        ],
+        "nice_to_have_skills": [
+            "Bachelor's degree in engineering, management or related field",
+            "Prior experience with Intelligence or DoD programs",
+            "Military or civilian contractor experience",
+            "Experience managing/handling COMSEC devices and keys"
+        ]
+    }
+}

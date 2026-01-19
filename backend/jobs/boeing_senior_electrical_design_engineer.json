@@ -1,0 +1,95 @@
+{
+    "job_details": {
+        "title": "Senior Electrical Design and Analysis Engineer",
+        "company": "BOEING",
+        "location": "Oklahoma City, OK",
+        "salary": {
+            "min": 127550,
+            "max": 172500,
+            "period": "year",
+            "currency": "USD"
+        },
+        "url": "https://www.indeed.com/jobs?q=boeing&latLong=35.46756%2C-97.51643&locString=Oklahoma+City%2C+OK&radius=25&from=searchOnDesktopSerp&vjk=45a89e12309e881f",
+        "job_id": "45a89e12309e881f",
+        "posted_date": "2026-01-04",
+        "application_deadline": "2026-01-23",
+        "work_arrangement": "100% onsite",
+        "travel_requirement": "Up to 25%",
+        "shift": "1st shift",
+        "security_clearance": "U.S. Secret Clearance required (interim and/or final post-start)",
+        "signing_bonus": "Up to $15,000 based on candidate eligibility",
+        "relocation": "Offered based on candidate eligibility"
+    },
+    "benefits": {
+        "insurance": [
+            "Health insurance",
+            "Disability insurance",
+            "Vision insurance (contractors)",
+            "Dental insurance (contractors)"
+        ],
+        "retirement": ["Retirement plan", "401(k)", "401(k) matching"],
+        "accounts": ["Health savings account", "Flexible spending account"],
+        "other": ["Total Rewards package", "Paid and unpaid time off programs"]
+    },
+    "job_description": {
+        "summary": "The Boeing Defense, Space & Security (BDS) organization is seeking a Senior Electrical Design and Analysis Engineer to support the AWE&C team in Oklahoma City, OK. This position requires serving as a technical lead avionics engineer with expertise in flight deck avionics domains.",
+        "position_responsibilities": [
+            "Serve as a technical lead avionics engineer with expertise in one or more flight deck avionics domains such as autoflight, communications, indication, recording, or navigation (FMS, ELT, TACAN, ADIRS, WXR, RNSS, EGPWS, EDFCS, CDS, or FDR/CVR)",
+            "Lead and review the work of engineering teams, ensuring technical accuracy, adherence to standards, and alignment with project goals",
+            "Mentor and develop early career engineers by fostering their technical growth in avionics communication, navigation, indication, and recording systems",
+            "Act as the primary technical point of contact for the AEW&C platform in high-level technical discussions, design reviews, and certification decision-making",
+            "Provide expert troubleshooting and technical support for fielded avionics hardware and software throughout the product lifecycle",
+            "Collaborate with program managers, customers, and cross-functional teams to define, review, and validate detailed flight deck avionics system and subsystem requirements",
+            "Translate requirements into robust system, subsystem, hardware, and software designs and interface specifications",
+            "Oversee and coordinate aircraft testing activities, including avionics functional test and installation and checkout procedures",
+            "Manage supplier technical performance and integration efforts, reviewing supplier deliverables for compliance",
+            "Research, evaluate, and recommend emerging technologies for potential integration into company avionics systems"
+        ],
+        "required_qualifications": {
+            "education": "Bachelor of Science degree in Engineering (with focus in Electrical, Mechanical or Aeronautical), Computer Science, Data Science, Mathematics, Physics, or Chemistry",
+            "experience": "8 or more years' related work experience or an equivalent combination of technical education and experience in avionics system design, integration, testing, and certification",
+            "citizenship": "U.S. Citizenship required for security clearance"
+        },
+        "preferred_qualifications": [
+            "Extensive experience in flight deck avionics integration, testing, and certification, including hands-on work with flight deck avionics systems",
+            "In-depth knowledge of civilian and/or military aircraft certification processes and FAA regulations related to avionics systems",
+            "Experience with relevant standards such as DO-178C, DO-254, ARINC 429/664, MIL-STD-1553, or RTCA/DO-160",
+            "Master's degree or higher (e.g., PhD) in Electrical Engineering from an ABET-accredited institution or equivalent technical education specializing in avionics or aerospace systems"
+        ],
+        "key_standards_and_systems": [
+            "DO-178C",
+            "DO-254",
+            "ARINC 429/664",
+            "MIL-STD-1553",
+            "RTCA/DO-160",
+            "FMS",
+            "ELT",
+            "TACAN",
+            "ADIRS",
+            "WXR",
+            "RNSS",
+            "EGPWS",
+            "EDFCS",
+            "CDS",
+            "FDR/CVR"
+        ],
+        "additional_requirements": [
+            "Drug Free Workplace - subject to testing for marijuana, cocaine, opioids, amphetamines, PCP, and alcohol",
+            "Export Control compliance - U.S. Person required",
+            "No visa sponsorship available"
+        ]
+    },
+    "metadata": {
+        "source": "Indeed",
+        "extraction_date": "2026-01-04",
+        "job_board_compatibility": ["Indeed", "ZipRecruiter"],
+        "profile_match": {
+            "skills": [
+                "System design",
+                "Engineering testing",
+                "Electrical system design"
+            ],
+            "education": "Bachelor of Science"
+        }
+    }
+}
