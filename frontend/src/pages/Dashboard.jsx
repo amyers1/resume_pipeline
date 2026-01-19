@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../contexts/AppContext";
-import { apiService } from "../services/api";
+import { apiService, createAllJobsStatusSSE } from "../services/api";
 import JobCard from "../components/JobCard";
 import { debounce } from "../utils/helpers";
 
@@ -18,18 +18,23 @@ export default function Dashboard() {
     const fetchJobs = async (page = 1) => {
         try {
             setLoading(true);
-            const response = await apiService.listJobs({
+            console.log("Fetching jobs with params:", {
                 page,
-                page_size: 20,
-                company: filters.company,
-                sort_by: filters.sortBy,
-                sort_order: filters.sortOrder,
+                size: 20,
             });
 
-            // The API returns { items: [], total: 0, page: 1, size: 20 }
+            const response = await apiService.listJobs({
+                page,
+                size: 20, // FIX: Backend expects "size", not "page_size"
+            });
+
+            console.log("API Response:", response.data);
+
+            // Backend returns { items: [], total: 0, page: 1, size: 20 }
             dispatch({ type: actionTypes.SET_JOBS, payload: response.data });
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
+            console.error("Error details:", error.response?.data);
             dispatch({
                 type: actionTypes.SET_JOBS_ERROR,
                 payload: "Failed to load jobs",
@@ -38,6 +43,36 @@ export default function Dashboard() {
             setLoading(false);
         }
     };
+
+    // Listen to SSE updates for real-time status changes
+    useEffect(() => {
+        const cleanup = createAllJobsStatusSSE({
+            onMessage: (payload) => {
+                console.log("Dashboard SSE update:", payload);
+                // Update job status in real-time
+                if (payload.job_id && payload.status) {
+                    dispatch({
+                        type: actionTypes.UPDATE_JOB,
+                        payload: {
+                            job_id: payload.job_id,
+                            status:
+                                payload.status === "job_completed"
+                                    ? "completed"
+                                    : payload.status === "job_failed"
+                                      ? "failed"
+                                      : payload.status === "job_started"
+                                        ? "processing"
+                                        : "processing",
+                        },
+                    });
+                }
+            },
+        });
+
+        return () => {
+            if (cleanup) cleanup();
+        };
+    }, [dispatch, actionTypes]);
 
     useEffect(() => {
         fetchJobs(currentPage);
@@ -53,11 +88,21 @@ export default function Dashboard() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    // FIXED: API returns 'items', not 'list'.
-    // We normalize it here so the rest of the component works.
-    const jobsList = state.jobs.items || state.jobs.list || [];
+    // CHANGED: Show ALL jobs (no deduplication) - user can see all runs
+    const rawJobs = state.jobs.items || state.jobs.list || [];
+    console.log("Jobs from state:", rawJobs);
+
+    // Normalize job IDs to ensure consistency
+    const jobsList = rawJobs.map((job) => ({
+        ...job,
+        id: job.id || job.job_id,
+        job_id: job.id || job.job_id,
+    }));
+
+    console.log("Normalized jobs:", jobsList);
+
     const pagination = {
-        page: state.jobs.page || 1,
+        page: state.jobs.page || currentPage,
         totalCount: state.jobs.total || 0,
         totalPages: Math.ceil(
             (state.jobs.total || 0) / (state.jobs.size || 20),
@@ -75,6 +120,11 @@ export default function Dashboard() {
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 mt-1">
                             Manage and monitor your resume generation jobs
+                        </p>
+                        {/* Debug info */}
+                        <p className="text-xs text-gray-400 mt-1">
+                            Showing {jobsList.length} of {pagination.totalCount}{" "}
+                            total jobs
                         </p>
                     </div>
                     <Link
