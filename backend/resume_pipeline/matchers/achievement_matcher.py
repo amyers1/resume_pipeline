@@ -1,190 +1,290 @@
 """
-Achievement matching and ranking against job requirements.
+Achievement matching for resume tailoring.
+
+Updated for Python 3.14 compatibility.
 """
 
-from typing import Any, Dict, List, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
 
-from ..config import PipelineConfig
-from ..models import (
-    Achievement,
-    CareerProfile,
-    JDRequirements,
-    ProfileWork,
-    RankedAchievementsResponse,
-)
+from ..models import Achievement, CareerProfile, JDRequirements
 
 
 class AchievementMatcher:
-    """Matches and ranks candidate achievements against job requirements."""
+    """Matches candidate achievements to job requirements."""
 
-    def __init__(
-        self, base_llm: ChatOpenAI, strong_llm: ChatOpenAI, config: PipelineConfig
-    ):
-        self.base_llm = base_llm
-        self.strong_llm = strong_llm
-        self.config = config
+    def __init__(self, llm: ChatOpenAI):
+        self.llm = llm
         self._setup_prompts()
 
-    def _setup_prompts(self):
-        """Initialize LLM prompts."""
-        self.rerank_prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You match candidate achievements to job requirements. "
-                    "Select and rank the top 10-12 achievements that best demonstrate "
-                    "the candidate's fit for the role. Consider relevance, impact, and "
-                    "recency. Return JSON with 'items' array containing 'index' and 'reason' fields.",
-                ),
-                (
-                    "user",
-                    "Job requirements:\n{jd_json}\n\n"
-                    "Candidate achievements:\n{achievements_text}\n\n"
-                    "Select top {top_k} achievements by index with brief reasoning.",
-                ),
-            ]
-        )
+    def _setup_prompts(self) -> None:
+        """Initialize matching prompts."""
+        self.system_prompt = """You are an expert at matching candidate achievements to job requirements.
 
-    def match(self, jd: JDRequirements, profile: CareerProfile) -> List[Achievement]:
+Your task:
+1. Analyze the job requirements and identify key domains, skills, and experience needs
+2. Review the candidate's work history and extract relevant achievements
+3. Score and rank achievements by relevance to this specific role
+4. Return the top 15-20 most relevant achievements
+
+Scoring criteria:
+- Domain match (aerospace, defense, software, etc.)
+- Skill alignment (technical skills, tools, methodologies)
+- Seniority fit (leadership, scope, team size)
+- Impact relevance (metrics that matter for this role)
+- Recency (prefer recent achievements unless older ones are highly relevant)
+
+Output format:
+Return a JSON array of achievement objects, each with:
+{
+  "description": "Full achievement description",
+  "impact_metric": "Quantified impact (optional)",
+  "domain_tags": ["relevant", "domain", "tags"],
+  "relevance_score": 0.95  // 0.0 to 1.0
+}
+
+Sort by relevance_score descending. Include 15-20 achievements."""
+
+        self.user_prompt = """Job Requirements:
+{jd_json}
+
+Candidate Profile:
+{profile_summary}
+
+Return top 15-20 achievements as JSON array, sorted by relevance."""
+
+    def match(self, jd: JDRequirements, profile: CareerProfile) -> list[Achievement]:
         """
-        Match and rank achievements against job requirements.
+        Match and rank achievements for a specific job.
 
         Args:
-            jd: Structured job requirements
-            profile: Candidate career profile
+            jd: Job requirements
+            profile: Candidate's career profile
 
         Returns:
-            List of top-ranked achievements
+            List of top achievements ranked by relevance
         """
-        # Step 1: Heuristic scoring
-        scored = self._score_all_achievements(profile, jd)
-        candidates = [a for a, _ in scored[: self.config.top_k_heuristic]]
+        print(f"\n{'=' * 80}")
+        print("ACHIEVEMENT MATCHING")
+        print(f"{'=' * 80}\n")
 
-        # Step 2: LLM re-ranking
-        ranked = self._rerank_with_llm(candidates, jd)
+        # Extract all achievements from profile
+        all_achievements = self._extract_all_achievements(profile)
+        print(f"  Found {len(all_achievements)} total achievements")
 
-        return ranked
+        # Use LLM to match and rank
+        matched = self._rank_achievements_with_llm(jd, profile, all_achievements)
+        print(f"  Selected {len(matched)} top achievements\n")
 
-    def _score_all_achievements(
-        self, profile: CareerProfile, jd: JDRequirements
-    ) -> List[Tuple[Achievement, float]]:
-        """Score all achievements using heuristic method."""
-        scored = []
+        return matched
 
-        # --- UPDATE START: Handle New 'work' Structure ---
-        for work in profile.work:
-            # We iterate through structured achievements if available, or highlights
-            source_list = work.achievements if work.achievements else work.highlights
+    def _extract_all_achievements(self, profile: CareerProfile) -> list[Achievement]:
+        """
+        Extract all achievements from career profile.
 
-            for item in source_list:
-                # Normalize item to Achievement object
-                ach = self._normalize_achievement(item, work)
+        Args:
+            profile: Career profile
 
-                score = self._score_achievement(ach, jd)
-                if score > 0:
-                    scored.append((ach, score))
-        # --- UPDATE END ---
+        Returns:
+            List of all Achievement objects from work history
+        """
+        achievements = []
 
-        scored.sort(key=lambda x: x[1], reverse=True)
-        return scored
+        for job in profile.work:
+            # Process highlights as achievements
+            if job.highlights:
+                for highlight in job.highlights:
+                    # Infer domain tags from job context
+                    domain_tags = self._infer_domain_tags(job.name, job.position)
 
-    def _normalize_achievement(self, item: Any, work: ProfileWork) -> Achievement:
-        """Helper to convert string or dict to Achievement model."""
-        if isinstance(item, str):
-            return Achievement(
-                description=item,
-                impact_metric="",
-                domain_tags=[],
-                role_title=work.position,
-                organization=work.name,
+                    achievements.append(
+                        Achievement(
+                            description=highlight,
+                            impact_metric=None,  # Extract if present in text
+                            domain_tags=domain_tags,
+                        )
+                    )
+
+            # Process structured achievements if present
+            if job.achievements:
+                for achievement in job.achievements:
+                    if isinstance(achievement, dict):
+                        # Structured achievement
+                        domain_tags = achievement.get("domain_tags", [])
+                        if not domain_tags:
+                            domain_tags = self._infer_domain_tags(
+                                job.name, job.position
+                            )
+
+                        achievements.append(
+                            Achievement(
+                                description=achievement.get("description", ""),
+                                impact_metric=achievement.get("impact_metric"),
+                                domain_tags=domain_tags,
+                            )
+                        )
+                    elif isinstance(achievement, str):
+                        # Legacy string format
+                        domain_tags = self._infer_domain_tags(job.name, job.position)
+                        achievements.append(
+                            Achievement(
+                                description=achievement,
+                                impact_metric=None,
+                                domain_tags=domain_tags,
+                            )
+                        )
+
+        return achievements
+
+    def _rank_achievements_with_llm(
+        self,
+        jd: JDRequirements,
+        profile: CareerProfile,
+        achievements: Sequence[Achievement],
+    ) -> list[Achievement]:
+        """
+        Use LLM to intelligently rank achievements by relevance.
+
+        Args:
+            jd: Job requirements
+            profile: Career profile
+            achievements: All achievements to rank
+
+        Returns:
+            Top-ranked achievements
+        """
+        if not achievements:
+            return []
+
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", self.system_prompt), ("user", self.user_prompt)]
+        )
+
+        chain = prompt | self.llm
+
+        # Create profile summary
+        profile_summary = self._create_profile_summary(profile)
+
+        # Invoke LLM
+        try:
+            response = chain.invoke(
+                {
+                    "jd_json": jd.model_dump_json(indent=2),
+                    "profile_summary": profile_summary,
+                }
             )
 
-        # Handle Pydantic model or Dict
-        if hasattr(item, "model_dump"):
-            data = item.model_dump()
-        elif isinstance(item, dict):
-            data = item
-        else:
-            data = {}
+            # Parse response
+            ranked = self._parse_achievement_response(response.content)
+            return ranked[:20]  # Top 20 max
 
-        return Achievement(
-            description=data.get("description", ""),
-            impact_metric=data.get("impact_metric", ""),
-            domain_tags=data.get("domain_tags", []),
-            role_title=work.position,
-            organization=work.name,
-        )
+        except Exception as e:
+            print(f"  ⚠ LLM ranking failed: {e}")
+            # Fallback: return recent achievements
+            return list(achievements[:15])
 
-    def _score_achievement(self, ach: Achievement, jd: JDRequirements) -> float:
+    def _create_profile_summary(self, profile: CareerProfile) -> str:
         """
-        Heuristic scoring of single achievement.
+        Create concise profile summary for LLM matching.
 
-        Scoring weights:
-        - Must-have skills: 3.0
-        - Nice-to-have skills: 1.5
-        - Domain alignment: 2.5
-        - Keywords: 0.5
+        Args:
+            profile: Career profile
+
+        Returns:
+            Formatted summary string
         """
-        text = (ach.description + " " + (ach.impact_metric or "")).lower()
-        score = 0.0
+        parts = [f"Name: {profile.basics.name}"]
 
-        # Must-have skills (high weight)
-        for skill in jd.must_have_skills:
-            if skill.lower().split()[0] in text:
-                score += 3.0
+        # Work history
+        if profile.work:
+            parts.append("\nWork History:")
+            for job in profile.work[:5]:  # Recent 5 jobs
+                date_range = f"{job.startDate or ''} - {job.endDate or 'Present'}"
+                parts.append(f"  {job.position} at {job.name} ({date_range})")
 
-        # Nice-to-have skills
-        for skill in jd.nice_to_have_skills:
-            if skill.lower().split()[0] in text:
-                score += 1.5
+                # Include highlights
+                if job.highlights:
+                    for highlight in job.highlights[:3]:  # Top 3 per job
+                        parts.append(f"    • {highlight}")
 
-        # Keywords
-        for kw in jd.keywords:
-            if kw.lower() in text:
-                score += 0.5
+        # Skills
+        if profile.skills:
+            skill_names = [s.name for s in profile.skills[:15]]
+            parts.append(f"\nKey Skills: {', '.join(skill_names)}")
 
-        # Domain alignment (high weight)
-        # Handle cases where domain_tags might be strings or list
-        if ach.domain_tags:
-            for tag in ach.domain_tags:
-                if tag.lower() in [d.lower() for d in jd.domain_focus]:
-                    score += 2.5
+        return "\n".join(parts)
 
-        return score
+    def _infer_domain_tags(self, company: str, position: str) -> list[str]:
+        """
+        Infer domain tags from job context.
 
-    def _rerank_with_llm(
-        self, candidates: List[Achievement], jd: JDRequirements
-    ) -> List[Achievement]:
-        """Use LLM to re-rank top candidates."""
-        # Format achievements for LLM
-        achievements_text = "\n".join(
-            [
-                f"[{i}] {ach.description}\n"
-                f"    Impact: {ach.impact_metric or 'N/A'}\n"
-                f"    Domains: {', '.join(ach.domain_tags)}"
-                for i, ach in enumerate(candidates)
-            ]
-        )
+        Args:
+            company: Company name
+            position: Job position/title
 
-        # Get LLM ranking
-        chain = self.rerank_prompt | self.strong_llm.with_structured_output(
-            RankedAchievementsResponse
-        )
-        resp = chain.invoke(
-            {
-                "jd_json": jd.model_dump_json(),
-                "achievements_text": achievements_text,
-                "top_k": self.config.top_k_final,
-            }
-        )
+        Returns:
+            List of inferred domain tags
+        """
+        tags = []
 
-        # Extract ranked achievements
-            r.index
-            for r in resp.items[: self.config.top_k_final]
-            r.index for r in resp.items[:self.config.top_k_final]
-            if 0 <= r.index < len(candidates)
-        ]
+        # Combine company and position for analysis
+        context = f"{company} {position}".lower()
 
-        return [candidates[i] for i in ranked_indices]
+        # Domain keywords
+        domain_map = {
+            "aerospace": ["aerospace", "aircraft", "aviation", "flight"],
+            "defense": ["defense", "military", "raytheon", "lockheed", "northrop"],
+            "software": ["software", "developer", "engineer", "programming"],
+            "hardware": ["hardware", "embedded", "firmware", "fpga"],
+            "ml_ai": ["machine learning", "ai", "data science"],
+            "cloud": ["cloud", "aws", "azure", "devops"],
+            "cybersecurity": ["security", "cybersecurity", "infosec"],
+        }
+
+        for domain, keywords in domain_map.items():
+            if any(kw in context for kw in keywords):
+                tags.append(domain)
+
+        return tags if tags else ["general"]
+
+    def _parse_achievement_response(self, content: str) -> list[Achievement]:
+        """
+        Parse LLM response into Achievement objects.
+
+        Args:
+            content: LLM response text
+
+        Returns:
+            List of Achievement objects
+        """
+        import json
+        import re
+
+        # Remove markdown code fences
+        content = re.sub(r"```json\s*", "", content)
+        content = re.sub(r"```\s*$", "", content)
+        content = content.strip()
+
+        try:
+            data = json.loads(content)
+
+            # Handle both array and object responses
+            if isinstance(data, dict):
+                data = data.get("achievements", [])
+
+            achievements = []
+            for item in data:
+                # Skip relevance_score field (not in Achievement model)
+                if "relevance_score" in item:
+                    del item["relevance_score"]
+
+                achievements.append(Achievement.model_validate(item))
+
+            return achievements
+
+        except Exception as e:
+            print(f"  ⚠ Failed to parse achievements: {e}")
+            return []

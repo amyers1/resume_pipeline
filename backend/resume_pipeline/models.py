@@ -1,135 +1,162 @@
 """
 Data models for resume pipeline.
+
+Updated for Python 3.14 and PostgreSQL backend compatibility.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 
 class Achievement(BaseModel):
+    """Individual achievement with impact metrics."""
+
     description: str
-    impact_metric: Optional[str] = None
-    domain_tags: List[str] = Field(default_factory=list)
+    impact_metric: str | None = None
+    domain_tags: list[str] = Field(default_factory=list)
 
 
 class Role(BaseModel):
+    """Work role with achievements."""
+
     title: str
     organization: str
-    location: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    seniority: Optional[str] = None
-    achievements: List[Achievement] = Field(default_factory=list)
+    location: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    seniority: str | None = None
+    achievements: list[Achievement] = Field(default_factory=list)
 
 
 class ProfileLocation(BaseModel):
-    city: Optional[str] = None
-    region: Optional[str] = None
-    countryCode: Optional[str] = None
+    """Location information."""
+
+    city: str | None = None
+    region: str | None = None
+    countryCode: str | None = None
 
 
 class ProfileProfile(BaseModel):
-    network: Optional[str] = None
-    url: Optional[str] = None
+    """Social media profile."""
+
+    network: str | None = None
+    url: str | None = None
 
 
 class ProfileBasics(BaseModel):
+    """Basic profile information."""
+
     name: str
-    label: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    url: Optional[str] = None
-    summary: Optional[str] = None
-    location: Optional[ProfileLocation] = None
-    profiles: List[ProfileProfile] = []
+    label: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    url: str | None = None
+    summary: str | None = None
+    location: ProfileLocation | None = None
+    profiles: list[ProfileProfile] = Field(default_factory=list)
 
 
 class ProfileExperienceHighlight(BaseModel):
+    """Structured experience highlight."""
+
     description: str
-    impact_metric: Optional[str] = None
-    domain_tags: List[str] = []
+    impact_metric: str | None = None
+    domain_tags: list[str] = Field(default_factory=list)
 
 
 class ProfileWork(BaseModel):
+    """Work experience entry."""
+
     name: str
     position: str
-    startDate: Optional[str] = None
-    endDate: Optional[str] = None
-    summary: Optional[str] = None
-    highlights: List[str] = []
-    # Support the structured achievements as well
-    achievements: Optional[
-        List[Union[str, ProfileExperienceHighlight, Dict[str, Any]]]
-    ] = None
+    startDate: str | None = None
+    endDate: str | None = None
+    summary: str | None = None
+    highlights: list[str] = Field(default_factory=list)
+    # Support both structured achievements and legacy string highlights
+    achievements: list[str | ProfileExperienceHighlight | dict[str, Any]] | None = None
 
 
 class ProfileEducation(BaseModel):
+    """Education entry."""
+
     institution: str
-    area: Optional[str] = None
-    studyType: Optional[str] = None
-    startDate: Optional[str] = None
-    endDate: Optional[str] = None
-    score: Optional[str] = None
-    courses: List[str] = []
+    area: str | None = None
+    studyType: str | None = None
+    startDate: str | None = None
+    endDate: str | None = None
+    score: str | None = None
+    courses: list[str] = Field(default_factory=list)
 
 
 class ProfileAward(BaseModel):
+    """Award or recognition."""
+
     title: str
-    date: Optional[str] = None
-    awarder: Optional[str] = None
-    summary: Optional[str] = None
+    date: str | None = None
+    awarder: str | None = None
+    summary: str | None = None
 
 
 class ProfileCertification(BaseModel):
+    """Professional certification."""
+
     name: str
-    date: Optional[str] = None
-    issuer: Optional[str] = None
-    url: Optional[str] = None
+    date: str | None = None
+    issuer: str | None = None
+    url: str | None = None
 
 
 class ProfileSkill(BaseModel):
+    """Skill with proficiency level."""
+
     name: str
-    level: Optional[str] = None
-    keywords: List[str] = []
+    level: str | None = None
+    keywords: list[str] = Field(default_factory=list)
 
 
 class ProfileProject(BaseModel):
+    """Project entry."""
+
     name: str
-    description: Optional[str] = None
-    highlights: List[str] = []
-    keywords: List[str] = []
-    startDate: Optional[str] = None
-    endDate: Optional[str] = None
-    url: Optional[str] = None
-    roles: List[str] = []
-
-
-# --- Main CareerProfile Model ---
+    description: str | None = None
+    highlights: list[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
+    startDate: str | None = None
+    endDate: str | None = None
+    url: str | None = None
+    roles: list[str] = Field(default_factory=list)
 
 
 class CareerProfile(BaseModel):
+    """
+    Complete career profile in JSON Resume format.
+
+    This model is compatible with both:
+    - Direct JSON Resume format files
+    - PostgreSQL backend CareerProfile.to_full_json() output
+    """
+
     basics: ProfileBasics
-    work: List[ProfileWork] = []
-    education: List[ProfileEducation] = []
-    skills: List[ProfileSkill] = []
+    work: list[ProfileWork] = Field(default_factory=list)
+    education: list[ProfileEducation] = Field(default_factory=list)
+    skills: list[ProfileSkill] = Field(default_factory=list)
+    awards: list[ProfileAward] = Field(default_factory=list)
+    certifications: list[ProfileCertification] = Field(default_factory=list)
+    projects: list[ProfileProject] = Field(default_factory=list)
+    languages: list[dict[str, str]] = Field(default_factory=list)
 
-    # These match the DB's new output structure
-    awards: List[ProfileAward] = []
-    certifications: List[ProfileCertification] = []
-    projects: List[ProfileProject] = []
-    languages: List[Dict[str, str]] = []
-
-    # --- Backward Compatibility / Convenience Properties ---
-    # These allow the rest of the pipeline (like prompts) to access fields
-    # cleanly without needing to rewrite every single Jinja2 template.
+    # --- Convenience Properties for Template Access ---
 
     @property
     def full_name(self) -> str:
+        """Get full name from basics."""
         return self.basics.name
 
     @property
     def contact_info(self) -> str:
+        """Format contact information as single string."""
         parts = []
         if self.basics.email:
             parts.append(self.basics.email)
@@ -137,155 +164,185 @@ class CareerProfile(BaseModel):
             parts.append(self.basics.phone)
         if self.basics.location and self.basics.location.city:
             loc = self.basics.location
-            parts.append(f"{loc.city}, {loc.region or ''}")
+            city_region = f"{loc.city}, {loc.region}" if loc.region else loc.city
+            parts.append(city_region)
         return " | ".join(parts)
+
+    # --- Field Validators for Backward Compatibility ---
 
     @field_validator("awards", mode="before")
     @classmethod
-    def validate_awards(cls, v):
-        """Handle case where awards might be strings (legacy) vs objects (new)."""
+    def validate_awards(cls, v: Any) -> list[dict[str, Any]]:
+        """
+        Handle legacy awards format where awards might be simple strings.
+        Converts string awards to structured format.
+        """
+        if not isinstance(v, list):
+            return []
+
         clean = []
         for item in v:
             if isinstance(item, str):
+                # Legacy format: simple string
                 clean.append({"title": item})
-            else:
+            elif isinstance(item, dict):
+                # Already structured
                 clean.append(item)
+            else:
+                # Unknown format, try to convert
+                clean.append({"title": str(item)})
         return clean
 
     @field_validator("certifications", mode="before")
     @classmethod
-    def validate_certs(cls, v):
-        """Handle case where certs might be strings (legacy) vs objects (new)."""
+    def validate_certs(cls, v: Any) -> list[dict[str, Any]]:
+        """
+        Handle legacy certifications format where certs might be simple strings.
+        Converts string certifications to structured format.
+        """
+        if not isinstance(v, list):
+            return []
+
         clean = []
         for item in v:
             if isinstance(item, str):
+                # Legacy format: simple string
                 clean.append({"name": item})
-            else:
+            elif isinstance(item, dict):
+                # Already structured
                 clean.append(item)
+            else:
+                # Unknown format, try to convert
+                clean.append({"name": str(item)})
         return clean
 
     def to_prompt_string(self) -> str:
-        """Helper to flatten the structured profile for LLM Context."""
-        lines = []
-        lines.append(f"Name: {self.basics.name}")
-        lines.append(f"Summary: {self.basics.summary}")
+        """
+        Flatten the structured profile for LLM context.
 
-        lines.append("\nEXPERIENCE:")
-        for w in self.work:
-            lines.append(f"- {w.position} at {w.name} ({w.startDate} - {w.endDate})")
-            if w.summary:
-                lines.append(f"  Summary: {w.summary}")
+        Creates a readable text representation suitable for including
+        in LLM prompts without overwhelming token count.
+        """
+        parts = []
 
-            # Handle structured achievements vs string highlights
-            if w.achievements:
-                for ach in w.achievements:
-                    if isinstance(ach, dict) or hasattr(ach, "description"):
-                        desc = (
-                            ach.get("description")
-                            if isinstance(ach, dict)
-                            else ach.description
-                        )
-                        metric = (
-                            ach.get("impact_metric")
-                            if isinstance(ach, dict)
-                            else ach.impact_metric
-                        )
-                        line = f"  * {desc}"
-                        if metric:
-                            line += f" [Impact: {metric}]"
-                        lines.append(line)
-                    else:
-                        lines.append(f"  * {str(ach)}")
-            elif w.highlights:
-                for h in w.highlights:
-                    lines.append(f"  * {h}")
+        # Basic info
+        parts.append(f"Name: {self.basics.name}")
+        if self.basics.label:
+            parts.append(f"Title: {self.basics.label}")
+        if self.basics.summary:
+            parts.append(f"Summary: {self.basics.summary}")
 
-        lines.append("\nEDUCATION:")
-        for edu in self.education:
-            lines.append(
-                f"- {edu.studyType} in {edu.area} at {edu.institution} ({edu.endDate})"
-            )
+        # Work experience
+        if self.work:
+            parts.append("\nWork Experience:")
+            for job in self.work:
+                date_range = f"{job.startDate or ''} - {job.endDate or 'Present'}"
+                parts.append(f"  - {job.position} at {job.name} ({date_range})")
+                if job.highlights:
+                    for highlight in job.highlights[:3]:  # Limit to top 3
+                        parts.append(f"    • {highlight}")
 
-        lines.append("\nCERTIFICATIONS:")
-        for c in self.certifications:
-            lines.append(f"- {c.name}" + (f" ({c.date})" if c.date else ""))
+        # Education
+        if self.education:
+            parts.append("\nEducation:")
+            for edu in self.education:
+                parts.append(
+                    f"  - {edu.studyType or ''} {edu.area or ''} from {edu.institution}"
+                )
 
-        lines.append("\nAWARDS:")
-        for a in self.awards:
-            lines.append(f"- {a.title}")
+        # Skills
+        if self.skills:
+            skill_names = [s.name for s in self.skills[:10]]  # Top 10 skills
+            parts.append(f"\nKey Skills: {', '.join(skill_names)}")
 
-        return "\n".join(lines)
+        # Certifications
+        if self.certifications:
+            cert_names = [c.name for c in self.certifications[:5]]  # Top 5 certs
+            parts.append(f"Certifications: {', '.join(cert_names)}")
+
+        return "\n".join(parts)
 
 
 class JDRequirements(BaseModel):
+    """Structured job description requirements."""
+
     role_title: str
-    seniority: str
-    location: Optional[str] = None
-    must_have_skills: List[str] = Field(default_factory=list)
-    nice_to_have_skills: List[str] = Field(default_factory=list)
-    responsibilities: List[str] = Field(default_factory=list)
-    clearance_or_eligibility: Optional[str] = None
-    domain_focus: List[str] = Field(default_factory=list)
-    keywords: List[str] = Field(default_factory=list)
-
-
-class RankedAchievement(BaseModel):
-    index: int
-    reason: str
-
-
-class RankedAchievementsResponse(BaseModel):
-    items: List[RankedAchievement]
+    company: str
+    location: str | None = None
+    seniority_level: str | None = None
+    domain_focus: list[str] = Field(default_factory=list)
+    must_have_skills: list[str] = Field(default_factory=list)
+    nice_to_have_skills: list[str] = Field(default_factory=list)
+    required_experience_years: int | None = None
+    required_education: str | None = None
+    key_responsibilities: list[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
 
 
 class ExperienceEntry(BaseModel):
-    title: str
+    """Single experience entry in formatted resume."""
+
     organization: str
-    location: Optional[str] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    bullets: List[str] = Field(default_factory=list)
-    is_grouped: bool = False  # For "Other Relevant Experience"
+    role_title: str
+    location: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    bullets: list[str] = Field(default_factory=list)
+    is_grouped: bool = False  # For "Other Relevant Experience" section
 
 
 class EducationEntry(BaseModel):
+    """Single education entry in formatted resume."""
+
     institution: str
     degree: str
-    location: Optional[str] = None
-    graduation_date: Optional[str] = None
+    location: str | None = None
+    graduation_date: str | None = None
 
 
 class StructuredResume(BaseModel):
+    """
+    Final structured resume ready for template rendering.
+
+    This is the output format used by templates (Jinja2, LaTeX).
+    """
+
     full_name: str
     email: str
     phone: str
     location: str
     linkedin: str
-    role_title: Optional[str] = None
-    professional_summary: List[str] = Field(default_factory=list)
-    core_competencies: List[str] = Field(default_factory=list)
-    experience: List[ExperienceEntry] = Field(default_factory=list)
-    education: List[EducationEntry] = Field(default_factory=list)
-    certifications: List[str] = Field(default_factory=list)
-    awards: List[str] = Field(default_factory=list)
+    role_title: str | None = None
+    professional_summary: list[str] = Field(default_factory=list)
+    core_competencies: list[str] = Field(default_factory=list)
+    experience: list[ExperienceEntry] = Field(default_factory=list)
+    education: list[EducationEntry] = Field(default_factory=list)
+    certifications: list[str] = Field(default_factory=list)
+    awards: list[str] = Field(default_factory=list)
 
 
 class CritiqueResult(BaseModel):
+    """Resume critique evaluation results."""
+
     score: float = Field(..., ge=0.0, le=1.0)
     ats_ok: bool
     length_ok: bool
     jd_keyword_coverage: float = Field(..., ge=0.0, le=1.0)
-    strengths: List[str] = Field(default_factory=list)
-    weaknesses: List[str] = Field(default_factory=list)
-    suggestions: List[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
 
 
 class CachedPipelineState(BaseModel):
-    """Cached state to avoid redundant API calls."""
+    """
+    Cached state to avoid redundant API calls.
+
+    Stored in Redis with TTL. Keyed by hash of (job + career profile).
+    """
 
     job_hash: str
     career_hash: str
     jd_requirements: JDRequirements
-    matched_achievements: List[Achievement]
+    matched_achievements: list[Achievement]
     draft_resume: str
     timestamp: str

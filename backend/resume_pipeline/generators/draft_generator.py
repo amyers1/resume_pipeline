@@ -1,8 +1,11 @@
 """
 Resume draft generation with experience grouping.
+
+Updated for Python 3.14 compatibility.
 """
 
 import json
+from collections.abc import Sequence
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
@@ -19,7 +22,7 @@ class DraftGenerator:
         self.config = config
         self._setup_prompts()
 
-    def _setup_prompts(self):
+    def _setup_prompts(self) -> None:
         """Initialize generation prompts."""
         self.system_prompt = """You are an expert ATS-optimized resume writer for senior defense/aerospace engineers.
 
@@ -90,15 +93,15 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         self,
         jd: JDRequirements,
         profile: CareerProfile,
-        achievements: list[Achievement],
+        achievements: Sequence[Achievement],
     ) -> str:
         """
         Generate resume draft.
 
         Args:
-            jd: Job requirements
-            profile: Career profile
-            achievements: Matched achievements
+            jd: Job requirements extracted from job description
+            profile: Candidate's career profile
+            achievements: Matched achievements relevant to this job
 
         Returns:
             Resume draft in markdown format
@@ -109,39 +112,68 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
 
         chain = prompt | self.llm
 
-        # --- Helper: Extract LinkedIn ---
-        linkedin_url = ""
-        if profile.basics.profiles:
-            for p in profile.basics.profiles:
-                if p.network and "linkedin" in p.network.lower():
-                    linkedin_url = p.url
-                    break
+        # Extract LinkedIn URL from profile
+        linkedin_url = self._extract_linkedin(profile)
 
-        # --- Helper: Format Location ---
-        loc_str = ""
-        if profile.basics.location:
-            parts = [profile.basics.location.city, profile.basics.location.region]
-            loc_str = ", ".join([p for p in parts if p])
+        # Format location string
+        location_str = self._format_location(profile)
 
-        # --- Use .to_prompt_string() for clean LLM context ---
-        # (This matches the method we added to models.py in the previous step)
+        # Use profile's to_prompt_string() method for clean LLM context
         profile_context = profile.to_prompt_string()
 
-        resp = chain.invoke(
+        # Invoke LLM with structured data
+        response = chain.invoke(
             {
                 "jd_json": jd.model_dump_json(indent=2),
                 "profile_context": profile_context,
                 "achievements_json": json.dumps(
                     [a.model_dump() for a in achievements], indent=2
                 ),
-                # Access nested basics correctly
+                # Contact information
                 "name": profile.basics.name,
                 "email": profile.basics.email or "",
                 "phone": profile.basics.phone or "",
-                "location": loc_str,
+                "location": location_str,
                 "linkedin": linkedin_url,
                 "current_year": self.config.current_year,
             }
         )
 
-        return resp.content if hasattr(resp, "content") else str(resp)
+        # Extract content from response
+        return response.content if hasattr(response, "content") else str(response)
+
+    def _extract_linkedin(self, profile: CareerProfile) -> str:
+        """
+        Extract LinkedIn URL from profile.
+
+        Returns:
+            LinkedIn URL or empty string if not found
+        """
+        if not profile.basics.profiles:
+            return ""
+
+        for social_profile in profile.basics.profiles:
+            if social_profile.network and "linkedin" in social_profile.network.lower():
+                return social_profile.url or ""
+
+        return ""
+
+    def _format_location(self, profile: CareerProfile) -> str:
+        """
+        Format location as "City, State" string.
+
+        Returns:
+            Formatted location string or empty string
+        """
+        if not profile.basics.location:
+            return ""
+
+        loc = profile.basics.location
+        parts = []
+
+        if loc.city:
+            parts.append(loc.city)
+        if loc.region:
+            parts.append(loc.region)
+
+        return ", ".join(parts)
