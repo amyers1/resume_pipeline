@@ -8,12 +8,7 @@ import LiveLog from "../components/LiveLog";
 import ArtifactList from "../components/ArtifactList";
 import ResubmitModal from "../components/ResubmitModal";
 import { STATUS_COLORS } from "../utils/constants";
-import {
-    formatDate,
-    formatDuration,
-    getStatusIcon,
-    estimateTimeRemaining,
-} from "../utils/helpers";
+import { formatDate, getStatusIcon } from "../utils/helpers";
 
 export default function JobDetailPage() {
     const { jobId } = useParams();
@@ -29,6 +24,10 @@ export default function JobDetailPage() {
     const [showResubmitModal, setShowResubmitModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [resubmitting, setResubmitting] = useState(false);
+
+    // Viewer State
+    const [viewingFile, setViewingFile] = useState(null); // { name, url, type }
+    const [loadingFile, setLoadingFile] = useState(false);
 
     // Use ref to track if we've already fetched to avoid double-fetching
     const hasFetchedRef = useRef(false);
@@ -156,6 +155,44 @@ export default function JobDetailPage() {
         }
     };
 
+    // Handle File Viewing
+    const handleViewFile = async (file) => {
+        try {
+            setLoadingFile(true);
+
+            // Determine MIME type
+            let mimeType = "text/plain";
+            if (file.name.endsWith(".pdf")) mimeType = "application/pdf";
+            else if (file.name.endsWith(".json")) mimeType = "application/json";
+            else if (file.name.endsWith(".html")) mimeType = "text/html";
+
+            // Fetch blob from API
+            const response = await apiService.downloadFile(jobId, file.name);
+
+            // Create object URL
+            const blob = new Blob([response.data], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+
+            setViewingFile({
+                name: file.name,
+                url: url,
+                type: mimeType,
+            });
+        } catch (error) {
+            console.error("Failed to load file for viewing:", error);
+            alert("Could not load file preview.");
+        } finally {
+            setLoadingFile(false);
+        }
+    };
+
+    const closeViewer = () => {
+        if (viewingFile?.url) {
+            window.URL.revokeObjectURL(viewingFile.url);
+        }
+        setViewingFile(null);
+    };
+
     // Initial fetch on mount
     useEffect(() => {
         if (!hasFetchedRef.current) {
@@ -185,6 +222,15 @@ export default function JobDetailPage() {
             if (cleanup) cleanup();
         };
     }, [job?.id, jobId]);
+
+    // Cleanup blob URL on unmount
+    useEffect(() => {
+        return () => {
+            if (viewingFile?.url) {
+                window.URL.revokeObjectURL(viewingFile.url);
+            }
+        };
+    }, [viewingFile]);
 
     if (loading) {
         return (
@@ -217,7 +263,7 @@ export default function JobDetailPage() {
     const isFailed = job.status === "failed";
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
             {/* Header */}
             <div className="mb-8">
                 <button
@@ -278,7 +324,7 @@ export default function JobDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* FIX #6: Progress Card - Show for processing AND queued */}
+                    {/* Progress Card */}
                     {(isProcessing || job.status === "queued") && (
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -295,7 +341,7 @@ export default function JobDetailPage() {
                         </div>
                     )}
 
-                    {/* FIX #7: Results Card - Only show when completed AND files exist */}
+                    {/* Results Card */}
                     {isCompleted && files.length > 0 && (
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -304,7 +350,12 @@ export default function JobDetailPage() {
                             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Generated Files
                             </h3>
-                            <ArtifactList jobId={jobId} files={files} />
+                            {/* Pass handleViewFile to enable in-page viewing */}
+                            <ArtifactList
+                                jobId={jobId}
+                                files={files}
+                                onFileSelect={handleViewFile}
+                            />
                         </div>
                     )}
 
@@ -331,7 +382,7 @@ export default function JobDetailPage() {
                         </div>
                     )}
 
-                    {/* Live Log - Show for all active jobs */}
+                    {/* Live Log */}
                     {events.length > 0 && (
                         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <LiveLog events={events} />
@@ -341,7 +392,7 @@ export default function JobDetailPage() {
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    {/* FIX #8: Pipeline Stages - Show for all non-failed jobs */}
+                    {/* Pipeline Stages */}
                     {(isProcessing ||
                         job.status === "queued" ||
                         isCompleted) && (
@@ -405,6 +456,52 @@ export default function JobDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Document Viewer Modal */}
+            {(viewingFile || loadingFile) && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm p-4 sm:p-6">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                                {loadingFile ? "Loading..." : viewingFile?.name}
+                            </h3>
+                            <button
+                                onClick={closeViewer}
+                                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                            >
+                                <span className="text-2xl">×</span>
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 relative">
+                            {loadingFile ? (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                                        <p className="text-gray-500 dark:text-gray-400">
+                                            Fetching document...
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : viewingFile?.type === "application/pdf" ? (
+                                <iframe
+                                    src={viewingFile.url}
+                                    className="w-full h-full border-0"
+                                    title="PDF Viewer"
+                                />
+                            ) : (
+                                <iframe
+                                    src={viewingFile.url}
+                                    className="w-full h-full border-0 bg-white"
+                                    title="Document Viewer"
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (

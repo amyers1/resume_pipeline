@@ -18,23 +18,34 @@ export default function Dashboard() {
     const fetchJobs = async (page = 1) => {
         try {
             setLoading(true);
-            console.log("Fetching jobs with params:", {
+
+            // Build query params
+            const params = {
                 page,
                 size: 20,
-            });
+                // Pass filters to API (even if backend support is partial)
+                ...(filters.company && { company: filters.company }),
+                ...(filters.sortBy && { sort_by: filters.sortBy }),
+                ...(filters.sortOrder && { sort_order: filters.sortOrder }),
+            };
 
-            const response = await apiService.listJobs({
-                page,
-                size: 20, // FIX: Backend expects "size", not "page_size"
-            });
+            const response = await apiService.listJobs(params);
+            const data = response.data;
 
-            console.log("API Response:", response.data);
+            // FIX: Transform API response to match AppContext reducer expectations
+            // API returns: { items, total, page, size }
+            // Reducer expects: { jobs, total_count, total_pages, page_size, page }
+            const payload = {
+                jobs: data.items,
+                total_count: data.total,
+                page: data.page,
+                page_size: data.size,
+                total_pages: Math.ceil(data.total / data.size),
+            };
 
-            // Backend returns { items: [], total: 0, page: 1, size: 20 }
-            dispatch({ type: actionTypes.SET_JOBS, payload: response.data });
+            dispatch({ type: actionTypes.SET_JOBS, payload });
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
-            console.error("Error details:", error.response?.data);
             dispatch({
                 type: actionTypes.SET_JOBS_ERROR,
                 payload: "Failed to load jobs",
@@ -48,11 +59,10 @@ export default function Dashboard() {
     useEffect(() => {
         const cleanup = createAllJobsStatusSSE({
             onMessage: (payload) => {
-                console.log("Dashboard SSE update:", payload);
                 // Update job status in real-time
                 if (payload.job_id && payload.status) {
                     dispatch({
-                        type: actionTypes.UPDATE_JOB,
+                        type: actionTypes.UPDATE_JOB_STATUS, // FIX: Correct action type
                         payload: {
                             job_id: payload.job_id,
                             status:
@@ -88,25 +98,24 @@ export default function Dashboard() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    // CHANGED: Show ALL jobs (no deduplication) - user can see all runs
-    const rawJobs = state.jobs.items || state.jobs.list || [];
-    console.log("Jobs from state:", rawJobs);
+    // FIX: Correctly access state from reducer structure
+    // Reducer stores list in state.jobs.list
+    const rawJobs = state.jobs.list || [];
 
-    // Normalize job IDs to ensure consistency
+    // Normalize job IDs to ensure consistency (handle id vs job_id)
     const jobsList = rawJobs.map((job) => ({
         ...job,
         id: job.id || job.job_id,
         job_id: job.id || job.job_id,
     }));
 
-    console.log("Normalized jobs:", jobsList);
-
+    // FIX: Correctly access pagination from reducer structure
+    // Reducer stores pagination in state.jobs.pagination
+    const paginationState = state.jobs.pagination || {};
     const pagination = {
-        page: state.jobs.page || currentPage,
-        totalCount: state.jobs.total || 0,
-        totalPages: Math.ceil(
-            (state.jobs.total || 0) / (state.jobs.size || 20),
-        ),
+        page: paginationState.page || currentPage,
+        totalCount: paginationState.totalCount || 0,
+        totalPages: paginationState.totalPages || 0,
     };
 
     return (
@@ -179,7 +188,7 @@ export default function Dashboard() {
             </div>
 
             {/* Job List */}
-            {loading ? (
+            {loading && jobsList.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
                     <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
@@ -220,19 +229,20 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() =>
-                                        handlePageChange(currentPage - 1)
+                                        handlePageChange(pagination.page - 1)
                                     }
-                                    disabled={currentPage === 1}
+                                    disabled={pagination.page === 1}
                                     className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
                                     Previous
                                 </button>
                                 <button
                                     onClick={() =>
-                                        handlePageChange(currentPage + 1)
+                                        handlePageChange(pagination.page + 1)
                                     }
                                     disabled={
-                                        currentPage === pagination.totalPages
+                                        pagination.page ===
+                                        pagination.totalPages
                                     }
                                     className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >

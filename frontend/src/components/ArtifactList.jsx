@@ -3,7 +3,7 @@ import { apiService } from "../services/api";
 import { FILE_ICONS } from "../utils/constants";
 import { formatFileSize } from "../utils/helpers";
 
-export default function ArtifactList({ jobId, files = [] }) {
+export default function ArtifactList({ jobId, files = [], onFileSelect }) {
     const [downloading, setDownloading] = useState(null);
 
     const handleDownload = async (filename) => {
@@ -37,7 +37,9 @@ export default function ArtifactList({ jobId, files = [] }) {
         return (
             filename.endsWith(".json") ||
             filename.endsWith(".pdf") ||
-            filename.endsWith(".txt")
+            filename.endsWith(".txt") ||
+            filename.endsWith(".md") ||
+            filename.endsWith(".html")
         );
     };
 
@@ -84,14 +86,18 @@ export default function ArtifactList({ jobId, files = [] }) {
                             {isPreviewable(file.name) && (
                                 <button
                                     onClick={() => {
-                                        window.open(
-                                            getPreviewUrl(file.name),
-                                            "_blank",
-                                        );
+                                        if (onFileSelect) {
+                                            onFileSelect(file);
+                                        } else {
+                                            window.open(
+                                                getPreviewUrl(file.name),
+                                                "_blank",
+                                            );
+                                        }
                                     }}
                                     className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                                 >
-                                    Preview
+                                    View
                                 </button>
                             )}
                             <button
