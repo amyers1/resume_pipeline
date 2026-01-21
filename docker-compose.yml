@@ -67,6 +67,14 @@ services:
         restart: unless-stopped
         networks:
             - default
+            - proxy
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.resume_api.rule=Host(`api.resume-pipeline.myerslab.me`)"
+            - "traefik.http.routers.resume_api.entrypoints=websecure"
+            - "traefik.http.routers.resume_api.tls.certresolver=cloudflare"
+            - "traefik.http.services.resume_api.loadbalancer.server.port=8000"
+            - "traefik.docker.network=proxy"
 
     # Worker Service
     worker:

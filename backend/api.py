@@ -45,7 +45,12 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://resume-pipeline.myerslab.me",
+        "https://api.resume-pipeline.myerslab.me",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
