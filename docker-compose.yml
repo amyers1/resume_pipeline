@@ -17,6 +17,8 @@ services:
             timeout: 5s
             retries: 5
         restart: unless-stopped
+        networks:
+            - default
 
     # Redis Cache Server
     redis:
@@ -33,6 +35,8 @@ services:
             timeout: 3s
             retries: 3
         restart: unless-stopped
+        networks:
+            - default
 
     # API Service
     api:
@@ -61,6 +65,8 @@ services:
             db:
                 condition: service_healthy
         restart: unless-stopped
+        networks:
+            - default
 
     # Worker Service
     worker:
@@ -84,6 +90,8 @@ services:
         deploy:
             replicas: 2
         restart: unless-stopped
+        networks:
+            - default
 
     # Frontend
     frontend:
@@ -96,6 +104,16 @@ services:
         environment:
             - VITE_API_URL=${VITE_API_URL}
         restart: unless-stopped
+        networks:
+            - default
+            - proxy
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.resume_pipeline.rule=Host(`resume-pipeline.myerslab.me`)"
+            - "traefik.http.routers.resume_pipeline.entrypoints=websecure"
+            - "traefik.http.routers.resume_pipeline.tls.certresolver=cloudflare"
+            - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
+            - "traefik.docker.network=proxy"
 
 volumes:
     pg_data:
@@ -103,3 +121,5 @@ volumes:
 networks:
     default:
         name: resume-pipeline-network
+    proxy:
+        external: true
