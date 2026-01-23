@@ -48,8 +48,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://resume-pipeline.myerslab.me",
+        "https://app.resume-pipeline.myerslab.me",
         "https://api.resume-pipeline.myerslab.me",
+        "http://frontend:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
