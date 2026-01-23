@@ -21,8 +21,8 @@ from .generators.draft_generator import DraftGenerator
 from .generators.latex_generator import LaTeXGenerator, StructuredResumeParser
 from .matchers.achievement_matcher import AchievementMatcher
 from .models import CachedPipelineState, CareerProfile, StructuredResume
-from .uploaders.minio_uploader import MinioUploader
 from .uploaders.nextcloud_uploader import NextcloudUploader
+from .uploaders.s3_uploader import S3Uploader
 
 # Configure Logger
 logger = logging.getLogger(__name__)
@@ -91,13 +91,13 @@ class ResumePipeline:
             )
 
         # Initialize uploaders
-        self.minio = None
-        if config.enable_minio:
-            self.minio = MinioUploader(
-                config.minio_endpoint,
-                config.minio_access_key,
-                config.minio_secret_key,
-                config.minio_bucket,
+        self.s3 = None
+        if config.enable_s3:
+            self.s3 = S3Uploader(
+                config.s3_endpoint,
+                config.s3_access_key,
+                config.s3_secret_key,
+                config.s3_bucket,
             )
 
         self.nextcloud = None
@@ -291,11 +291,10 @@ class ResumePipeline:
 
         print(f"\n  [Upload] Processing {file_path.name}...")
 
-        # MinIO upload
-        if self.minio and self.minio.enabled:
-            # NEW: Include run timestamp in MinIO path
+        # S3 upload
+        if self.s3 and self.s3.enabled:
             remote_path = f"{self.config.date_stamp}/run_{self.config.time_stamp}/{file_path.name}"
-            self.minio.upload_file(file_path, remote_path)
+            self.s3.upload_file(file_path, remote_path)
 
         # Nextcloud upload
         if self.nextcloud and self.nextcloud.enabled:

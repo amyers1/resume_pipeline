@@ -70,11 +70,11 @@ class PipelineConfig(BaseModel):
     timezone_str: str = Field(default="America/New_York")
 
     # Cloud uploads
-    enable_minio: bool = Field(default=False)
-    minio_endpoint: str = Field(default="")
-    minio_access_key: str = Field(default="")
-    minio_secret_key: str = Field(default="")
-    minio_bucket: str = Field(default="resumes")
+    enable_s3: bool = Field(default=False)  # Renamed from enable_minio
+    s3_endpoint: str = Field(default="")
+    s3_access_key: str = Field(default="")
+    s3_secret_key: str = Field(default="")
+    s3_bucket: str = Field(default="resume-pipeline")
 
     enable_nextcloud: bool = Field(default=False)
     nextcloud_endpoint: str = Field(default="")
@@ -137,11 +137,11 @@ class PipelineConfig(BaseModel):
             # Timezone
             "timezone_str": os.getenv("TIMEZONE", "America/New_York"),
             # Cloud uploads
-            "enable_minio": os.getenv("ENABLE_MINIO", "false").lower() == "true",
-            "minio_endpoint": os.getenv("MINIO_ENDPOINT", ""),
-            "minio_access_key": os.getenv("MINIO_ACCESS_KEY", ""),
-            "minio_secret_key": os.getenv("MINIO_SECRET_KEY", ""),
-            "minio_bucket": os.getenv("MINIO_BUCKET", "resumes"),
+            "enable_s3": os.getenv("ENABLE_S3", "false").lower() == "true",
+            "s3_endpoint": os.getenv("S3_ENDPOINT", ""),
+            "s3_access_key": os.getenv("S3_ACCESS_KEY", ""),
+            "s3_secret_key": os.getenv("S3_SECRET_KEY", ""),
+            "s3_bucket": os.getenv("S3_BUCKET", "resume-pipeline"),
             "enable_nextcloud": os.getenv("ENABLE_NEXTCLOUD", "false").lower()
             == "true",
             "nextcloud_endpoint": os.getenv("NEXTCLOUD_URL", ""),
