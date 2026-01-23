@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import shutil
 import threading
 import uuid
 from datetime import datetime
@@ -479,6 +480,31 @@ def list_jobs(page: int = 1, size: int = 20, db: Session = Depends(get_db)):
         items.append(r)
 
     return {"items": items, "total": total, "page": page, "size": size}
+
+
+@app.delete("/jobs/{job_id}", status_code=204)
+def delete_job(job_id: str, db: Session = Depends(get_db)):
+    """
+    Deletes a job from the database and removes its generated artifacts from disk.
+    """
+    # 1. Find the job in the database
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # 2. Delete the record from the database
+    db.delete(job)
+    db.commit()
+
+    # 3. Clean up the file system (Output Directory)
+    job_dir = OUTPUT_DIR / job_id
+    if job_dir.exists() and job_dir.is_dir():
+        try:
+            shutil.rmtree(job_dir)
+        except Exception as e:
+            logger.error(f"Failed to delete directory {job_dir}: {e}")
+
+    return None
 
 
 # ==========================
