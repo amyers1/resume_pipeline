@@ -121,7 +121,7 @@ services:
             - "traefik.http.routers.resume_pipeline.entrypoints=websecure"
             - "traefik.http.routers.resume_pipeline.tls.certresolver=cloudflare"
             - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
-            - "traefik.http.routers.myapp.middlewares=authentik-external@file"
+            - "traefik.http.routers.resume_pipeline.middlewares=authentik-external@file"
             - "traefik.docker.network=proxy"
 
 volumes:
