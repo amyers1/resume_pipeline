@@ -74,7 +74,6 @@ services:
             - "traefik.http.routers.resume_api.entrypoints=websecure"
             - "traefik.http.routers.resume_api.tls.certresolver=cloudflare"
             - "traefik.http.services.resume_api.loadbalancer.server.port=8000"
-            - "traefik.http.routers.myapp.middlewares=authentik-external@file"
             - "traefik.docker.network=proxy"
 
     # Worker Service
@@ -122,6 +121,7 @@ services:
             - "traefik.http.routers.resume_pipeline.entrypoints=websecure"
             - "traefik.http.routers.resume_pipeline.tls.certresolver=cloudflare"
             - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
+            - "traefik.http.routers.myapp.middlewares=authentik-external@file"
             - "traefik.docker.network=proxy"
 
 volumes:
