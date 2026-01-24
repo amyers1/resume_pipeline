@@ -348,7 +348,19 @@ def list_user_profiles(user_id: str, db: Session = Depends(get_db)):
         .order_by(desc(CareerProfile.updated_at))
         .all()
     )
-    return profiles
+
+    results = []
+    for p in profiles:
+        result = ProfileResponse(
+            id=p.id,
+            name=p.name,
+            user_id=p.user_id,
+            created_at=p.created_at,
+            updated_at=p.updated_at,
+            profile_json=p.to_full_json(),
+        )
+        results.append(result)
+    return results
 
 
 @app.get("/users/{user_id}/profiles/{profile_id}", response_model=ProfileResponse)
@@ -371,7 +383,14 @@ def get_profile(user_id: str, profile_id: str, db: Session = Depends(get_db)):
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    return profile
+    return ProfileResponse(
+        id=profile.id,
+        name=profile.name,
+        user_id=profile.user_id,
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
+        profile_json=profile.to_full_json(),
+    )
 
 
 @app.put("/users/{user_id}/profiles/{profile_id}", response_model=ProfileResponse)
@@ -495,7 +514,14 @@ def update_profile(
 
     db.commit()
     db.refresh(profile)
-    return profile
+    return ProfileResponse(
+        id=profile.id,
+        name=profile.name,
+        user_id=profile.user_id,
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
+        profile_json=profile.to_full_json(),
+    )
 
 
 @app.delete("/users/{user_id}/profiles/{profile_id}")
