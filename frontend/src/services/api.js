@@ -83,46 +83,83 @@ export const apiService = {
 
 let globalEventSource = null;
 const globalListeners = new Set();
+let reconnectTimer = null;
+
+// Internal function to establish connection
+const connectSSE = () => {
+    // Prevent duplicate connections
+    if (
+        globalEventSource &&
+        globalEventSource.readyState !== EventSource.CLOSED
+    ) {
+        return;
+    }
+
+    // Clean up existing closed connection if needed
+    if (globalEventSource) {
+        globalEventSource.close();
+    }
+
+    console.log("Connecting to SSE stream...");
+    globalEventSource = new EventSource("/api/events");
+
+    globalEventSource.onmessage = (event) => {
+        try {
+            // Heartbeats (comments) are automatically ignored by EventSource
+            // We only process "data" messages
+            const raw = JSON.parse(event.data);
+
+            // Handle double-encoded data if present
+            const payload = raw.data
+                ? typeof raw.data === "string"
+                    ? JSON.parse(raw.data)
+                    : raw.data
+                : raw;
+
+            // Broadcast to all active listeners
+            globalListeners.forEach((listener) => listener(payload));
+        } catch (error) {
+            console.error("Failed to parse SSE message:", error);
+        }
+    };
+
+    globalEventSource.onerror = (error) => {
+        console.error("SSE connection error:", error);
+
+        // If the connection is closed, attempt to reconnect after a delay
+        if (globalEventSource.readyState === EventSource.CLOSED) {
+            globalEventSource = null;
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                console.log("Attempting SSE reconnection...");
+                connectSSE();
+            }, 3000); // Retry after 3 seconds
+        }
+    };
+
+    // Explicitly handle open to clear any reconnect timers
+    globalEventSource.onopen = () => {
+        console.log("SSE Connected");
+        clearTimeout(reconnectTimer);
+    };
+};
 
 const getGlobalEventSource = () => {
-    if (!globalEventSource) {
-        // Connect to the new single broadcast endpoint
-        // Nginx will proxy '/api/events' -> 'http://api:8000/events'
-        globalEventSource = new EventSource("/api/events");
-
-        globalEventSource.onmessage = (event) => {
-            try {
-                // The data might be double-encoded depending on the backend serializer
-                const raw = JSON.parse(event.data);
-                // If the backend wraps it in {"data": ...}, unwrap it
-                const payload = raw.data
-                    ? typeof raw.data === "string"
-                        ? JSON.parse(raw.data)
-                        : raw.data
-                    : raw;
-
-                // Broadcast to all active listeners
-                globalListeners.forEach((listener) => listener(payload));
-            } catch (error) {
-                console.error("Failed to parse SSE message:", error);
-            }
-        };
-
-        globalEventSource.onerror = (error) => {
-            console.error("SSE connection lost or error:", error);
-            // EventSource automatically retries, so we just log it
-        };
+    if (
+        !globalEventSource ||
+        globalEventSource.readyState === EventSource.CLOSED
+    ) {
+        connectSSE();
     }
     return globalEventSource;
 };
 
 // SSE connection for a SPECIFIC job
 export const createJobStatusSSE = (jobId, callbacks) => {
-    // Ensure the global connection is active
+    // Ensure connection exists
     getGlobalEventSource();
 
     const listener = (payload) => {
-        // Only trigger callback if the message is for THIS job
         if (payload && payload.job_id === jobId) {
             callbacks.onMessage?.(payload);
         }
@@ -133,8 +170,7 @@ export const createJobStatusSSE = (jobId, callbacks) => {
     // Return cleanup function
     return () => {
         globalListeners.delete(listener);
-        // Note: We intentionally do NOT close the global connection
-        // so other components (like the Dashboard) keep receiving updates.
+        // We do NOT close the connection here as it is shared
     };
 };
 

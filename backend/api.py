@@ -152,8 +152,15 @@ async def sse_events():
     async def event_generator():
         try:
             while True:
-                msg = await queue.get()
-                yield {"data": msg}
+                try:
+                    # Wait for a message for up to 15 seconds
+                    # If no message arrives, raise TimeoutError to send a heartbeat
+                    msg = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    yield {"data": msg}
+                except asyncio.TimeoutError:
+                    # Send a comment line ": keep-alive" to keep proxy connections open
+                    # Browsers ignore lines starting with ":", so this won't break the frontend JSON parser
+                    yield {"comment": "keep-alive"}
         except asyncio.CancelledError:
             await broadcaster.disconnect(queue)
 
