@@ -293,16 +293,14 @@ class ResumePipeline:
 
         # S3 upload
         if self.s3 and self.s3.enabled:
-            remote_path = f"{self.config.date_stamp}/run_{self.config.time_stamp}/{file_path.name}"
+            remote_path = f"{self.run_dir}/{file_path.name}"
             self.s3.upload_file(file_path, remote_path)
 
         # Nextcloud upload
         if self.nextcloud and self.nextcloud.enabled:
             # NEW: Include run timestamp in Nextcloud path
-            remote_parent = f"Resumes/{self.config.date_stamp}"
-            remote_dir = (
-                f"Resumes/{self.config.date_stamp}/run_{self.config.time_stamp}"
-            )
+            remote_parent = "Resumes"
+            remote_dir = f"Resumes/{self.run_dir}"
             self.nextcloud.upload_file(file_path, remote_parent, remote_dir)
 
     def _load_json(self, path: Path) -> dict:
@@ -314,8 +312,13 @@ class ResumePipeline:
         filename = self.config.get_checkpoint_filename(name)
         path = self.run_dir / filename
         if isinstance(data, str):
-            path.write_text(json.dumps({"content": data}, indent=2), encoding="utf-8")
+            output_data = {"content": data}
+            if self.s3 and self.s3.enabled:
+                self.s3.upload_json(filename, output_data)
+            path.write_text(json.dumps(output_data, indent=2), encoding="utf-8")
         else:
+            if self.s3 and self.s3.enabled:
+                self.s3.upload_json(filename, data)
             path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     def _print_summary(
