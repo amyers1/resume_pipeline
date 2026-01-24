@@ -43,7 +43,7 @@
                 {% for job in experience if not job.is_grouped %}
                 <div class="experience-item">
                     <div class="exp-header">
-                        <span class="job-title">{{ job.title }}</span>
+                        <span class="job-title">{{ job.role_title }}</span>
                         <span class="dates">{{ job.start_date }} — {{ job.end_date }}</span>
                     </div>
                     <div class="exp-sub-header">
