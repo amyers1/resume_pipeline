@@ -222,11 +222,13 @@ class ResumePipeline:
             output_pdf = self.run_dir / pdf_filename
             context = structured_resume.model_dump()
 
-            pdf_path = self.compiler.compile(
+            html_str, pdf_path = self.compiler.compile(
                 output_pdf=output_pdf,
                 template_name=self.config.template_name,
                 context=context,
             )
+
+            self._save_checkpoint("resume_in_html", html_str)
 
             # Also generate .tex file for archival
             latex_output = self.latex_gen.generate(structured_resume)
@@ -259,7 +261,7 @@ class ResumePipeline:
         output_pdf = json_path.parent / pdf_filename
 
         # Compile via WeasyPrint
-        pdf_path = self.compiler.compile(
+        html_str, pdf_path = self.compiler.compile(
             output_pdf=output_pdf,
             template_name=self.config.template_name,
             context=context,

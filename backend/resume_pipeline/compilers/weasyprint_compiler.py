@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from weasyprint import CSS, HTML  # type: ignore
@@ -72,7 +72,7 @@ class WeasyPrintCompiler:
         template_name: str,
         context: Dict[str, Any],
         clean: bool = False,  # kept for API parity with LaTeXCompiler
-    ) -> Optional[Path]:
+    ) -> Tuple[Optional[str], Optional[Path]]:
         """
         Render an HTML resume and compile it to PDF.
 
@@ -122,14 +122,14 @@ class WeasyPrintCompiler:
 
             if output_pdf.exists():
                 print(f"  ✓ PDF created: {output_pdf.name}")
-                return output_pdf
+                return html_str, output_pdf
             else:
                 print("  ✗ PDF not created")
-                return None
+                return None, None
 
         except Exception as e:
             print(f"  ✗ WeasyPrint compilation error: {e}")
-            return None
+            return None, None
 
     def get_recommended_engine(self, template: str) -> str:
         """Kept for interface symmetry; WeasyPrint doesn't need engine selection."""
