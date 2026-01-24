@@ -58,7 +58,7 @@ class S3Uploader:
             print(f"  ✗ S3 upload error: {e}")
             return False
 
-    def upload_json(self, object_name: str, raw_json: dict) -> bool:
+    def upload_json(self, path: Path, raw_json: dict) -> bool:
         # 1. Convert the Python dictionary to a JSON formatted string and encode to bytes
         json_bytes = json.dumps(raw_json, indent=2).encode("utf-8")
         data_stream = io.BytesIO(json_bytes)
@@ -70,13 +70,13 @@ class S3Uploader:
         # 2. Upload the JSON data stream to the bucket
         try:
             self.client.put_object(
-                self.bucket,
-                object_name,
-                data_stream,
-                data_length,
+                bucket_name=self.bucket,
+                object_name=str(path),
+                data=data_stream,
+                length=data_length,
                 content_type="application/json",  # Specify the content type
             )
-            print(f"  ✓ Uploaded checkpoint to S3: {object_name}")
+            print(f"  ✓ Uploaded checkpoint to S3: {path}")
             return True
         except Exception as e:
             print(f"  ✗ S3 checkpoint upload error: {e}")
