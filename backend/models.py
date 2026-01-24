@@ -227,7 +227,7 @@ class CareerProject(Base):
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, index=True)
+    user_id = Column(String, ForeignKey("users.id"), index=True)
     root_job_id = Column(String, index=True, nullable=True)
     status = Column(String, default="queued", index=True)
 
@@ -344,7 +344,7 @@ class JobHistoryItem(BaseModel):
     template: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class JobSubmitRequest(BaseModel):
@@ -373,7 +373,7 @@ class JobResponse(BaseModel):
     history: List[JobHistoryItem] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProfileBase(BaseModel):
