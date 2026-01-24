@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiService } from "../services/api";
 import { useUser } from "../contexts/UserContext";
-import "./ProfileEditor.css";
 
 export default function ProfileEditor() {
     const { profileId } = useParams();
@@ -10,6 +9,7 @@ export default function ProfileEditor() {
     const { currentUser, loading: userLoading } = useUser();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [profile, setProfile] = useState(null);
     const [formData, setFormData] = useState({
         basics: {
@@ -41,6 +41,7 @@ export default function ProfileEditor() {
                 setLoading(false);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentUser, profileId]);
 
     const loadProfile = async () => {
@@ -267,518 +268,560 @@ export default function ProfileEditor() {
         }
     };
 
+    // Reusable Input Component for Consistency
+    const InputField = ({
+        label,
+        value,
+        onChange,
+        type = "text",
+        placeholder,
+        required = false,
+        className = "",
+    }) => (
+        <div className={className}>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {label} {required && "*"}
+            </label>
+            <input
+                type={type}
+                value={value || ""}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                required={required}
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            />
+        </div>
+    );
+
+    const TextAreaField = ({
+        label,
+        value,
+        onChange,
+        rows = 3,
+        placeholder,
+        className = "",
+    }) => (
+        <div className={className}>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {label}
+            </label>
+            <textarea
+                value={value || ""}
+                onChange={(e) => onChange(e.target.value)}
+                rows={rows}
+                placeholder={placeholder}
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            />
+        </div>
+    );
+
     if (userLoading || loading) {
-        return <div className="profile-editor loading">Loading profile...</div>;
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
     }
 
     return (
-        <div className="profile-editor">
-            <div className="profile-editor-header">
-                <h1>{profileId ? "Edit Profile" : "Create Profile"}</h1>
+        <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {profileId ? "Edit Profile" : "Create Profile"}
+                </h1>
                 <button
                     onClick={() => navigate("/profiles")}
-                    className="btn-secondary"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                     Back to Profiles
                 </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="profile-form">
+            <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Basic Information */}
-                <section className="form-section">
-                    <h2>Basic Information</h2>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Full Name *</label>
-                            <input
-                                type="text"
-                                value={formData.basics.name}
-                                onChange={(e) =>
-                                    handleBasicInfoChange(
-                                        "name",
-                                        e.target.value,
-                                    )
-                                }
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Professional Title</label>
-                            <input
-                                type="text"
-                                value={formData.basics.label}
-                                onChange={(e) =>
-                                    handleBasicInfoChange(
-                                        "label",
-                                        e.target.value,
-                                    )
-                                }
-                                placeholder="e.g. Senior Software Engineer"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Email</label>
-                            <input
-                                type="email"
-                                value={formData.basics.email}
-                                onChange={(e) =>
-                                    handleBasicInfoChange(
-                                        "email",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Phone</label>
-                            <input
-                                type="tel"
-                                value={formData.basics.phone}
-                                onChange={(e) =>
-                                    handleBasicInfoChange(
-                                        "phone",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Website/Portfolio</label>
-                        <input
-                            type="url"
-                            value={formData.basics.url}
-                            onChange={(e) =>
-                                handleBasicInfoChange("url", e.target.value)
-                            }
-                            placeholder="https://yourwebsite.com"
+                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        Basic Information
+                    </h2>
+                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                        <InputField
+                            label="Full Name"
+                            value={formData.basics.name}
+                            onChange={(v) => handleBasicInfoChange("name", v)}
+                            required
                         />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Professional Summary</label>
-                        <textarea
+                        <InputField
+                            label="Professional Title"
+                            value={formData.basics.label}
+                            onChange={(v) => handleBasicInfoChange("label", v)}
+                            placeholder="e.g. Senior Software Engineer"
+                        />
+                        <InputField
+                            label="Email"
+                            value={formData.basics.email}
+                            onChange={(v) => handleBasicInfoChange("email", v)}
+                            type="email"
+                        />
+                        <InputField
+                            label="Phone"
+                            value={formData.basics.phone}
+                            onChange={(v) => handleBasicInfoChange("phone", v)}
+                            type="tel"
+                        />
+                        <InputField
+                            label="Website/Portfolio"
+                            value={formData.basics.url}
+                            onChange={(v) => handleBasicInfoChange("url", v)}
+                            placeholder="https://yourwebsite.com"
+                            className="sm:col-span-2"
+                        />
+                        <TextAreaField
+                            label="Professional Summary"
                             value={formData.basics.summary}
-                            onChange={(e) =>
-                                handleBasicInfoChange("summary", e.target.value)
+                            onChange={(v) =>
+                                handleBasicInfoChange("summary", v)
                             }
                             rows={4}
                             placeholder="A brief summary of your professional background and goals..."
+                            className="sm:col-span-2"
                         />
                     </div>
                 </section>
 
                 {/* Location */}
-                <section className="form-section">
-                    <h2>Location</h2>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>City</label>
-                            <input
-                                type="text"
-                                value={formData.basics.location.city}
-                                onChange={(e) =>
-                                    handleLocationChange("city", e.target.value)
-                                }
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>State/Region</label>
-                            <input
-                                type="text"
-                                value={formData.basics.location.region}
-                                onChange={(e) =>
-                                    handleLocationChange(
-                                        "region",
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>Country Code</label>
-                            <input
-                                type="text"
-                                value={formData.basics.location.countryCode}
-                                onChange={(e) =>
-                                    handleLocationChange(
-                                        "countryCode",
-                                        e.target.value,
-                                    )
-                                }
-                                placeholder="US"
-                                maxLength={2}
-                            />
-                        </div>
+                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        Location
+                    </h2>
+                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3">
+                        <InputField
+                            label="City"
+                            value={formData.basics.location.city}
+                            onChange={(v) => handleLocationChange("city", v)}
+                        />
+                        <InputField
+                            label="State/Region"
+                            value={formData.basics.location.region}
+                            onChange={(v) => handleLocationChange("region", v)}
+                        />
+                        <InputField
+                            label="Country Code"
+                            value={formData.basics.location.countryCode}
+                            onChange={(v) =>
+                                handleLocationChange("countryCode", v)
+                            }
+                            placeholder="US"
+                        />
                     </div>
                 </section>
 
                 {/* Skills */}
-                <section className="form-section">
-                    <h2>Skills</h2>
-                    {formData.skills.map((skill, index) => (
-                        <div key={index} className="list-item">
-                            <input
-                                type="text"
-                                value={skill.name || skill}
-                                onChange={(e) =>
-                                    handleSkillChange(index, e.target.value)
-                                }
-                                placeholder="e.g. Python, React, AWS"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => removeSkill(index)}
-                                className="btn-remove"
+                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                            Skills
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={addSkill}
+                            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium"
+                        >
+                            + Add Skill
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {formData.skills.map((skill, index) => (
+                            <div
+                                key={index}
+                                className="flex gap-2 items-center"
                             >
-                                Remove
-                            </button>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={addSkill}
-                        className="btn-add"
-                    >
-                        + Add Skill
-                    </button>
+                                <input
+                                    type="text"
+                                    value={skill.name || skill}
+                                    onChange={(e) =>
+                                        handleSkillChange(index, e.target.value)
+                                    }
+                                    placeholder="e.g. Python"
+                                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeSkill(index)}
+                                    className="text-red-600 hover:text-red-800 p-2"
+                                    title="Remove Skill"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))}
+                        {formData.skills.length === 0 && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full">
+                                No skills added yet.
+                            </p>
+                        )}
+                    </div>
                 </section>
 
                 {/* Work Experience */}
-                <section className="form-section">
-                    <h2>Work Experience</h2>
-                    {formData.work.map((job, index) => (
-                        <div key={index} className="nested-item">
-                            <h3>Position {index + 1}</h3>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Company</label>
-                                    <input
-                                        type="text"
+                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                            Work Experience
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={addWorkExperience}
+                            className="px-3 py-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 rounded text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                        >
+                            + Add Position
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {formData.work.map((job, index) => (
+                            <div
+                                key={index}
+                                className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 relative border border-gray-200 dark:border-gray-700"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => removeWorkExperience(index)}
+                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Remove Position"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+                                    Position {index + 1}
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <InputField
+                                        label="Company"
                                         value={job.name}
-                                        onChange={(e) =>
-                                            handleWorkChange(
-                                                index,
-                                                "name",
-                                                e.target.value,
-                                            )
+                                        onChange={(v) =>
+                                            handleWorkChange(index, "name", v)
                                         }
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label>Position</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="Position"
                                         value={job.position}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleWorkChange(
                                                 index,
                                                 "position",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                     />
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Start Date</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="Start Date"
                                         value={job.startDate}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleWorkChange(
                                                 index,
                                                 "startDate",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                         placeholder="YYYY-MM"
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label>End Date</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="End Date"
                                         value={job.endDate}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleWorkChange(
                                                 index,
                                                 "endDate",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
-                                        placeholder="YYYY-MM or leave blank for current"
+                                        placeholder="YYYY-MM (blank for current)"
                                     />
                                 </div>
-                            </div>
-                            <div className="form-group">
-                                <label>Summary</label>
-                                <textarea
+
+                                <TextAreaField
+                                    label="Summary"
                                     value={job.summary}
-                                    onChange={(e) =>
-                                        handleWorkChange(
-                                            index,
-                                            "summary",
-                                            e.target.value,
-                                        )
+                                    onChange={(v) =>
+                                        handleWorkChange(index, "summary", v)
                                     }
                                     rows={2}
+                                    className="mb-4"
                                 />
-                            </div>
-                            <div className="highlights-section">
-                                <label>Highlights/Achievements</label>
-                                {(job.highlights || []).map(
-                                    (highlight, hIndex) => (
-                                        <div
-                                            key={hIndex}
-                                            className="highlight-item"
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Highlights
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                addWorkHighlight(index)
+                                            }
+                                            className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                                         >
-                                            <textarea
-                                                value={
-                                                    typeof highlight ===
-                                                    "string"
-                                                        ? highlight
-                                                        : highlight.description
-                                                }
-                                                onChange={(e) =>
-                                                    handleWorkHighlightChange(
-                                                        index,
-                                                        hIndex,
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                rows={2}
-                                                placeholder="Describe an achievement or responsibility..."
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    removeWorkHighlight(
-                                                        index,
-                                                        hIndex,
-                                                    )
-                                                }
-                                                className="btn-remove-small"
+                                            + Add Highlight
+                                        </button>
+                                    </div>
+                                    {(job.highlights || []).map(
+                                        (highlight, hIndex) => (
+                                            <div
+                                                key={hIndex}
+                                                className="flex gap-2 items-start"
                                             >
-                                                ×
-                                            </button>
-                                        </div>
-                                    ),
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => addWorkHighlight(index)}
-                                    className="btn-add-small"
-                                >
-                                    + Add Highlight
-                                </button>
+                                                <textarea
+                                                    value={
+                                                        typeof highlight ===
+                                                        "string"
+                                                            ? highlight
+                                                            : highlight.description
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleWorkHighlightChange(
+                                                            index,
+                                                            hIndex,
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    rows={2}
+                                                    className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                                                    placeholder="Achievement or responsibility..."
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeWorkHighlight(
+                                                            index,
+                                                            hIndex,
+                                                        )
+                                                    }
+                                                    className="text-gray-400 hover:text-red-600 mt-2"
+                                                >
+                                                    &times;
+                                                </button>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => removeWorkExperience(index)}
-                                className="btn-remove"
-                            >
-                                Remove Position
-                            </button>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={addWorkExperience}
-                        className="btn-add"
-                    >
-                        + Add Work Experience
-                    </button>
+                        ))}
+                    </div>
                 </section>
 
                 {/* Education */}
-                <section className="form-section">
-                    <h2>Education</h2>
-                    {formData.education.map((edu, index) => (
-                        <div key={index} className="nested-item">
-                            <h3>Education {index + 1}</h3>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Institution</label>
-                                    <input
-                                        type="text"
+                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                            Education
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={addEducation}
+                            className="px-3 py-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 rounded text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                        >
+                            + Add Education
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {formData.education.map((edu, index) => (
+                            <div
+                                key={index}
+                                className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 relative border border-gray-200 dark:border-gray-700"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => removeEducation(index)}
+                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField
+                                        label="Institution"
                                         value={edu.institution}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleEducationChange(
                                                 index,
                                                 "institution",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label>Degree Type</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="Degree Type"
                                         value={edu.studyType}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleEducationChange(
                                                 index,
                                                 "studyType",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                         placeholder="e.g. Bachelor's, Master's"
                                     />
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Field of Study</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="Field of Study"
                                         value={edu.area}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleEducationChange(
                                                 index,
                                                 "area",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label>End Date</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="End Date"
                                         value={edu.endDate}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleEducationChange(
                                                 index,
                                                 "endDate",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                         placeholder="YYYY-MM"
                                     />
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => removeEducation(index)}
-                                className="btn-remove"
-                            >
-                                Remove Education
-                            </button>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={addEducation}
-                        className="btn-add"
-                    >
-                        + Add Education
-                    </button>
+                        ))}
+                    </div>
                 </section>
 
                 {/* Certifications */}
-                <section className="form-section">
-                    <h2>Certifications</h2>
-                    {formData.certifications.map((cert, index) => (
-                        <div key={index} className="nested-item">
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Certification Name</label>
-                                    <input
-                                        type="text"
+                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                            Certifications
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={addCertification}
+                            className="px-3 py-1 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 rounded text-sm font-medium hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                        >
+                            + Add Certification
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {formData.certifications.map((cert, index) => (
+                            <div
+                                key={index}
+                                className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 relative border border-gray-200 dark:border-gray-700"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => removeCertification(index)}
+                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-5 w-5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <InputField
+                                        label="Certification Name"
                                         value={cert.name}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleCertificationChange(
                                                 index,
                                                 "name",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label>Issuer</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="Issuer"
                                         value={cert.issuer}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleCertificationChange(
                                                 index,
                                                 "issuer",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                     />
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Date</label>
-                                    <input
-                                        type="text"
+                                    <InputField
+                                        label="Date"
                                         value={cert.date}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleCertificationChange(
                                                 index,
                                                 "date",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
                                         placeholder="YYYY-MM"
                                     />
-                                </div>
-                                <div className="form-group">
-                                    <label>URL</label>
-                                    <input
-                                        type="url"
+                                    <InputField
+                                        label="URL"
                                         value={cert.url}
-                                        onChange={(e) =>
+                                        onChange={(v) =>
                                             handleCertificationChange(
                                                 index,
                                                 "url",
-                                                e.target.value,
+                                                v,
                                             )
                                         }
+                                        type="url"
                                     />
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => removeCertification(index)}
-                                className="btn-remove"
-                            >
-                                Remove Certification
-                            </button>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={addCertification}
-                        className="btn-add"
-                    >
-                        + Add Certification
-                    </button>
+                        ))}
+                    </div>
                 </section>
 
-                {/* Submit */}
-                <div className="form-actions">
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <button
                         type="button"
                         onClick={() => navigate("/profiles")}
-                        className="btn-secondary"
+                        className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                         disabled={saving}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        className="btn-primary"
+                        className="px-6 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
                         disabled={saving}
                     >
                         {saving ? "Saving..." : "Save Profile"}

@@ -86,69 +86,74 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-end justify-between gap-4">
-                <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Select Career Profile
-                    </label>
-                    <select
-                        value={formData.profile_id}
-                        onChange={(e) =>
-                            setFormData((prev) => ({
-                                ...prev,
-                                profile_id: e.target.value,
-                            }))
-                        }
-                        className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                    >
-                        <option value="">-- Select Profile --</option>
-                        {profiles.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name || "Untitled Profile"} (
-                                {new Date(p.created_at).toLocaleDateString()})
-                            </option>
-                        ))}
-                    </select>
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Select Career Profile *
+                        </label>
+                        <select
+                            value={formData.profile_id}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    profile_id: e.target.value,
+                                }))
+                            }
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                        >
+                            <option value="">-- Select Profile --</option>
+                            {profiles.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name || "Untitled Profile"} (
+                                    {new Date(
+                                        p.created_at,
+                                    ).toLocaleDateString()}
+                                    )
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={handleManageProfiles}
+                            className="px-4 py-2 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-sm font-medium rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-2 border border-blue-200 dark:border-blue-800"
+                        >
+                            ⚙️ Manage
+                        </button>
+
+                        <input
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleFileUpload}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="px-4 py-2 bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 border border-gray-200 dark:border-gray-600 disabled:opacity-50"
+                        >
+                            {uploading ? "Importing..." : "📂 Import JSON"}
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={handleManageProfiles}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                        ⚙️ Manage Profiles
-                    </button>
-
-                    <input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleFileUpload}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {uploading ? "Importing..." : "📂 Import JSON"}
-                    </button>
-                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Choose a profile from the database to use as the base for
+                    this resume.
+                </p>
             </div>
 
-            <p className="text-sm text-gray-500 -mt-4">
-                Choose a profile from the database, import a JSON file, or
-                manage your profiles.
-            </p>
-
             {profilePreview && (
-                <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Profile Preview
                     </label>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-y-auto">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 max-h-80 overflow-y-auto shadow-inner">
                         <pre className="text-xs text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap">
                             {profilePreview}
                         </pre>
@@ -156,17 +161,17 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                 </div>
             )}
 
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700 mt-8">
                 <button
                     onClick={onBack}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
                 >
                     ← Back
                 </button>
                 <button
                     onClick={onNext}
                     disabled={!formData.profile_id}
-                    className="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
                 >
                     Next: Pipeline Settings →
                 </button>
