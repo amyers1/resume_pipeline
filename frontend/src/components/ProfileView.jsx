@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiService } from "../services/api";
 import { useUser } from "../contexts/UserContext";
-import "./ProfileView.css";
 
 export default function ProfileView() {
     const { profileId } = useParams();
@@ -37,20 +36,44 @@ export default function ProfileView() {
 
     if (userLoading || loading) {
         return (
-            <div className="profile-view loading">
-                <div className="spinner"></div>
-                <p>Loading profile...</p>
+            <div className="flex items-center justify-center py-12">
+                <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="profile-view error">
-                <p>{error}</p>
-                <button onClick={loadProfile} className="btn-primary">
-                    Retry
-                </button>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="text-center py-12">
+                    <p className="text-red-600 dark:text-red-400 mb-4">
+                        {error}
+                    </p>
+                    <button
+                        onClick={loadProfile}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="text-center py-12">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Profile not found
+                    </p>
+                    <button
+                        onClick={() => navigate("/profiles")}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                        Back to Profiles
+                    </button>
+                </div>
             </div>
         );
     }
@@ -60,88 +83,130 @@ export default function ProfileView() {
     const location = basics.location || {};
 
     return (
-        <div className="profile-view">
-            <div className="profile-view-header">
-                <h1>{basics.name || "Career Profile"}</h1>
-                <div className="header-actions">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate("/profiles")}
-                        className="btn-secondary"
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                        Back to List
+                        ← Back
                     </button>
-                    <button
-                        onClick={() => navigate(`/profiles/${profileId}/edit`)}
-                        className="btn-primary"
-                    >
-                        Edit Profile
-                    </button>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {profile.name || basics.name || "Untitled Profile"}
+                    </h1>
                 </div>
+                <button
+                    onClick={() => navigate(`/profiles/${profileId}/edit`)}
+                    className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                >
+                    Edit Profile
+                </button>
             </div>
 
-            <div className="profile-content">
+            {/* Content */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
                 {/* Basic Information */}
-                <section className="profile-section">
-                    <h2>Basic Information</h2>
-                    <div className="info-grid">
+                <section className="p-8 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                        Basic Information
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {basics.name && (
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Name
+                                </p>
+                                <p className="text-gray-900 dark:text-white font-medium">
+                                    {basics.name}
+                                </p>
+                            </div>
+                        )}
                         {basics.label && (
-                            <div className="info-item">
-                                <span className="label">Title:</span>
-                                <span className="value">{basics.label}</span>
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Title
+                                </p>
+                                <p className="text-gray-900 dark:text-white font-medium">
+                                    {basics.label}
+                                </p>
                             </div>
                         )}
                         {basics.email && (
-                            <div className="info-item">
-                                <span className="label">Email:</span>
-                                <span className="value">{basics.email}</span>
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Email
+                                </p>
+                                <p className="text-gray-900 dark:text-white font-medium">
+                                    {basics.email}
+                                </p>
                             </div>
                         )}
                         {basics.phone && (
-                            <div className="info-item">
-                                <span className="label">Phone:</span>
-                                <span className="value">{basics.phone}</span>
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Phone
+                                </p>
+                                <p className="text-gray-900 dark:text-white font-medium">
+                                    {basics.phone}
+                                </p>
                             </div>
                         )}
                         {basics.url && (
-                            <div className="info-item">
-                                <span className="label">Website:</span>
-                                <span className="value">
-                                    <a
-                                        href={basics.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        {basics.url}
-                                    </a>
-                                </span>
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Website
+                                </p>
+                                <a
+                                    href={basics.url}
+                                    className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                                >
+                                    {basics.url}
+                                </a>
                             </div>
                         )}
                         {(location.city || location.region) && (
-                            <div className="info-item">
-                                <span className="label">Location:</span>
-                                <span className="value">
-                                    {[location.city, location.region]
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Location
+                                </p>
+                                <p className="text-gray-900 dark:text-white font-medium">
+                                    {[
+                                        location.city,
+                                        location.region,
+                                        location.countryCode,
+                                    ]
                                         .filter(Boolean)
                                         .join(", ")}
-                                </span>
+                                </p>
                             </div>
                         )}
                     </div>
                     {basics.summary && (
-                        <div className="summary">
-                            <h3>Professional Summary</h3>
-                            <p>{basics.summary}</p>
+                        <div className="mt-6">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                Summary
+                            </p>
+                            <p className="text-gray-900 dark:text-white leading-relaxed">
+                                {basics.summary}
+                            </p>
                         </div>
                     )}
                 </section>
 
                 {/* Skills */}
-                {data.skills && data.skills.length > 0 && (
-                    <section className="profile-section">
-                        <h2>Skills</h2>
-                        <div className="skills-list">
+                {Array.isArray(data.skills) && data.skills.length > 0 && (
+                    <section className="p-8 border-b border-gray-200 dark:border-gray-700">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                            Skills
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
                             {data.skills.map((skill, index) => (
-                                <span key={index} className="skill-tag">
+                                <span
+                                    key={index}
+                                    className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-full"
+                                >
                                     {typeof skill === "string"
                                         ? skill
                                         : skill.name}
@@ -152,140 +217,181 @@ export default function ProfileView() {
                 )}
 
                 {/* Work Experience */}
-                {data.work && data.work.length > 0 && (
-                    <section className="profile-section">
-                        <h2>Work Experience</h2>
-                        {data.work.map((job, index) => (
-                            <div key={index} className="experience-item">
-                                <div className="experience-header">
-                                    <div>
-                                        <h3>{job.position}</h3>
-                                        <h4>{job.name}</h4>
-                                    </div>
-                                    <div className="date-range">
-                                        {job.startDate} -{" "}
-                                        {job.endDate || "Present"}
-                                    </div>
-                                </div>
-                                {job.summary && (
-                                    <p className="summary">{job.summary}</p>
-                                )}
-                                {job.highlights &&
-                                    job.highlights.length > 0 && (
-                                        <ul className="highlights">
-                                            {job.highlights.map(
-                                                (highlight, hIndex) => (
-                                                    <li key={hIndex}>
-                                                        {typeof highlight ===
-                                                        "string"
-                                                            ? highlight
-                                                            : highlight.description}
-                                                    </li>
-                                                ),
+                {Array.isArray(data.work) && data.work.length > 0 && (
+                    <section className="p-8 border-b border-gray-200 dark:border-gray-700">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                            Work Experience
+                        </h2>
+                        <div className="space-y-6">
+                            {data.work.map((job, index) => (
+                                <div
+                                    key={index}
+                                    className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                >
+                                    <div className="mb-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {job.position}
+                                        </h3>
+                                        <p className="text-primary-600 dark:text-primary-400 font-medium">
+                                            {job.name}
+                                        </p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                            {job.startDate && (
+                                                <>
+                                                    {job.startDate}{" "}
+                                                    {job.endDate
+                                                        ? `- ${job.endDate}`
+                                                        : "- Present"}
+                                                </>
                                             )}
-                                        </ul>
+                                        </p>
+                                    </div>
+                                    {job.summary && (
+                                        <p className="text-gray-700 dark:text-gray-300 mb-3">
+                                            {job.summary}
+                                        </p>
                                     )}
-                            </div>
-                        ))}
+                                    {Array.isArray(job.highlights) &&
+                                        job.highlights.length > 0 && (
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                    Key Achievements:
+                                                </p>
+                                                <ul className="space-y-2">
+                                                    {job.highlights.map(
+                                                        (highlight, idx) => (
+                                                            <li
+                                                                key={idx}
+                                                                className="flex gap-2"
+                                                            >
+                                                                <span className="text-primary-600 dark:text-primary-400 mt-1">
+                                                                    •
+                                                                </span>
+                                                                <span className="text-gray-700 dark:text-gray-300">
+                                                                    {typeof highlight ===
+                                                                    "string"
+                                                                        ? highlight
+                                                                        : highlight.description}
+                                                                </span>
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            </div>
+                                        )}
+                                </div>
+                            ))}
+                        </div>
                     </section>
                 )}
 
                 {/* Education */}
-                {data.education && data.education.length > 0 && (
-                    <section className="profile-section">
-                        <h2>Education</h2>
-                        {data.education.map((edu, index) => (
-                            <div key={index} className="education-item">
-                                <div className="education-header">
-                                    <div>
-                                        <h3>
-                                            {edu.studyType} in {edu.area}
-                                        </h3>
-                                        <h4>{edu.institution}</h4>
-                                    </div>
-                                    <div className="date-range">
-                                        {edu.endDate}
-                                    </div>
+                {Array.isArray(data.education) && data.education.length > 0 && (
+                    <section className="p-8 border-b border-gray-200 dark:border-gray-700">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                            Education
+                        </h2>
+                        <div className="space-y-4">
+                            {data.education.map((edu, index) => (
+                                <div
+                                    key={index}
+                                    className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                >
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {edu.institution}
+                                    </h3>
+                                    <p className="text-primary-600 dark:text-primary-400 font-medium">
+                                        {edu.studyType}{" "}
+                                        {edu.area && `in ${edu.area}`}
+                                    </p>
+                                    {edu.endDate && (
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                            Graduated: {edu.endDate}
+                                        </p>
+                                    )}
+                                    {edu.score && (
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            GPA: {edu.score}
+                                        </p>
+                                    )}
                                 </div>
-                                {edu.score && (
-                                    <p className="score">Score: {edu.score}</p>
-                                )}
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </section>
                 )}
 
                 {/* Certifications */}
-                {data.certifications && data.certifications.length > 0 && (
-                    <section className="profile-section">
-                        <h2>Certifications</h2>
-                        {data.certifications.map((cert, index) => (
-                            <div key={index} className="certification-item">
-                                <div className="cert-header">
-                                    <h3>{cert.name}</h3>
-                                    <span className="cert-date">
-                                        {cert.date}
-                                    </span>
-                                </div>
-                                {cert.issuer && (
-                                    <p className="cert-issuer">
-                                        Issued by: {cert.issuer}
-                                    </p>
-                                )}
-                                {cert.url && (
-                                    <a
-                                        href={cert.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="cert-link"
+                {Array.isArray(data.certifications) &&
+                    data.certifications.length > 0 && (
+                        <section className="p-8 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                                Certifications
+                            </h2>
+                            <div className="space-y-4">
+                                {data.certifications.map((cert, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
                                     >
-                                        View Certification
-                                    </a>
-                                )}
-                            </div>
-                        ))}
-                    </section>
-                )}
-
-                {/* Projects */}
-                {data.projects && data.projects.length > 0 && (
-                    <section className="profile-section">
-                        <h2>Projects</h2>
-                        {data.projects.map((project, index) => (
-                            <div key={index} className="project-item">
-                                <h3>{project.name}</h3>
-                                {project.description && (
-                                    <p className="project-desc">
-                                        {project.description}
-                                    </p>
-                                )}
-                                {project.keywords &&
-                                    project.keywords.length > 0 && (
-                                        <div className="project-keywords">
-                                            {project.keywords.map(
-                                                (keyword, kIndex) => (
-                                                    <span
-                                                        key={kIndex}
-                                                        className="keyword-tag"
-                                                    >
-                                                        {keyword}
-                                                    </span>
-                                                ),
+                                        <span className="text-2xl">🏆</span>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                                                {typeof cert === "string"
+                                                    ? cert
+                                                    : cert.name}
+                                            </h3>
+                                            {typeof cert === "object" && (
+                                                <>
+                                                    {cert.issuer && (
+                                                        <p className="text-primary-600 dark:text-primary-400">
+                                                            {cert.issuer}
+                                                        </p>
+                                                    )}
+                                                    {cert.date && (
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                            {cert.date}
+                                                        </p>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
-                                    )}
-                                {project.url && (
-                                    <a
-                                        href={project.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="project-link"
-                                    >
-                                        View Project
-                                    </a>
-                                )}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </section>
+                    )}
+
+                {/* Projects */}
+                {Array.isArray(data.projects) && data.projects.length > 0 && (
+                    <section className="p-8">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                            Projects
+                        </h2>
+                        <div className="space-y-4">
+                            {data.projects.map((project, index) => (
+                                <div
+                                    key={index}
+                                    className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                >
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        {project.name}
+                                    </h3>
+                                    {project.description && (
+                                        <p className="text-gray-700 dark:text-gray-300 mt-2">
+                                            {project.description}
+                                        </p>
+                                    )}
+                                    {project.url && (
+                                        <a
+                                            href={project.url}
+                                            className="text-primary-600 dark:text-primary-400 hover:underline text-sm mt-2 inline-block"
+                                        >
+                                            View Project →
+                                        </a>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </section>
                 )}
             </div>
