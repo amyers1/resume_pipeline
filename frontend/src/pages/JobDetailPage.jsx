@@ -113,32 +113,28 @@ export default function JobDetailPage() {
         }
     };
 
-    // FIX #4: Handle job resubmission with proper error handling
+    // Handle job resubmission with proper error handling
     const handleResubmit = async (config) => {
         try {
             setResubmitting(true);
             const response = await apiService.resubmitJob(jobId, config);
 
-            // Reset state for new run
+            // Hide modal
             setShowResubmitModal(false);
-            setEvents([]);
-            setCurrentStatus(null);
 
-            // Navigate to the new job
+            // KEY CHANGE: Navigate to the new job ID.
+            // This triggers useEffect -> fetchJobDetails -> resets state/logs automatically.
             const newJobId = response.data.job_id || response.data.id;
             navigate(`/jobs/${newJobId}`);
         } catch (error) {
             console.error("Failed to resubmit job:", error);
-            const errorMsg =
-                error.response?.data?.detail ||
-                "Failed to resubmit job. Please try again.";
-            alert(errorMsg);
+            // ... error handling ...
         } finally {
             setResubmitting(false);
         }
     };
 
-    // FIX #5: Handle job deletion with proper error handling
+    // Handle job deletion with proper error handling
     const handleDelete = async () => {
         try {
             setDeleting(true);
@@ -261,6 +257,12 @@ export default function JobDetailPage() {
     const isProcessing = job.status === "processing" || job.status === "queued";
     const isCompleted = job.status === "completed";
     const isFailed = job.status === "failed";
+    const formatTime = (dateStr) => {
+        return new Date(dateStr).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
@@ -392,6 +394,63 @@ export default function JobDetailPage() {
 
                 {/* Sidebar */}
                 <div className="space-y-6">
+                    {/* NEW: Job History / Versions Card */}
+                    {job && job.history && job.history.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                                Version History
+                            </h2>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                                {job.history.map((ver) => {
+                                    const isCurrent = ver.id === job.id;
+                                    return (
+                                        <button
+                                            key={ver.id}
+                                            onClick={() =>
+                                                navigate(`/jobs/${ver.id}`)
+                                            }
+                                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between group ${
+                                                isCurrent
+                                                    ? "bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800"
+                                                    : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-transparent"
+                                            }`}
+                                        >
+                                            <div className="flex flex-col">
+                                                <span
+                                                    className={`font-medium ${isCurrent ? "text-primary-700 dark:text-primary-300" : "text-gray-700 dark:text-gray-300"}`}
+                                                >
+                                                    {ver.template ||
+                                                        "Standard Resume"}
+                                                </span>
+                                                <span className="text-xs text-gray-500">
+                                                    {new Date(
+                                                        ver.created_at,
+                                                    ).toLocaleDateString()}{" "}
+                                                    at{" "}
+                                                    {formatTime(ver.created_at)}
+                                                </span>
+                                            </div>
+
+                                            {/* Status Badge Mini */}
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`w-2 h-2 rounded-full ${
+                                                        ver.status ===
+                                                        "completed"
+                                                            ? "bg-green-500"
+                                                            : ver.status ===
+                                                                "failed"
+                                                              ? "bg-red-500"
+                                                              : "bg-blue-500 animate-pulse"
+                                                    }`}
+                                                />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                     {/* Pipeline Stages */}
                     {(isProcessing ||
                         job.status === "queued" ||

@@ -227,7 +227,8 @@ class CareerProject(Base):
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"), nullable=True)
+    user_id = Column(String, index=True)
+    root_job_id = Column(String, index=True, nullable=True)
     status = Column(String, default="queued", index=True)
 
     # 1. DETAILS
@@ -336,6 +337,16 @@ class AdvancedSettings(BaseModel):
     enable_cover_letter: bool = False
 
 
+class JobHistoryItem(BaseModel):
+    id: str
+    created_at: datetime
+    status: str
+    template: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
 class JobSubmitRequest(BaseModel):
     profile_id: Optional[str] = None
     job_data: Dict[str, Any]
@@ -349,6 +360,8 @@ class JobSubmitRequest(BaseModel):
 
 class JobResponse(BaseModel):
     id: str
+    user_id: Optional[str] = None
+    root_job_id: Optional[str] = None
     company: str
     job_title: str
     status: str
@@ -357,9 +370,10 @@ class JobResponse(BaseModel):
     final_score: Optional[float] = None
     output_files: Optional[Dict[str, str]] = None
     advanced_settings: Optional[Dict[str, Any]] = None
+    history: List[JobHistoryItem] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class ProfileBase(BaseModel):

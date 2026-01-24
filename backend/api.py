@@ -389,6 +389,7 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
     new_job = Job(
         id=job_id,
         user_id=request.user_id,
+        root_job_id=job_id,
         # --- JOB DETAILS ---
         company=jd.get("company", "Unknown"),
         job_title=jd.get("job_title", "Unknown"),
@@ -462,15 +463,129 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
     return response_obj
 
 
+@app.post("/jobs/{job_id}/submit", response_model=JobResponse, status_code=201)
+def resubmit_job(job_id: str, options: dict = {}, db: Session = Depends(get_db)):
+    """
+    Resubmits an existing job by creating a clone with a new ID.
+    Accepts optional 'template', 'output_backend', and 'advanced_settings' overrides.
+    """
+    # 1. Fetch original job
+    original_job = db.query(Job).filter(Job.id == job_id).first()
+    if not original_job:
+        raise HTTPException(status_code=404, detail="Original job not found")
+
+    # 2. Prepare new job data (Clone)
+    new_job_id = str(uuid.uuid4())
+
+    # If original has a root, use it. Otherwise, original IS the root.
+    root_id = original_job.root_job_id if original_job.root_job_id else original_job.id
+
+    # Determine config (Use overrides if provided, else fall back to original)
+    new_template = options.get("template", original_job.template)
+    new_backend = options.get("output_backend", original_job.output_backend)
+    new_priority = options.get("priority", original_job.priority)
+
+    # Merge advanced settings
+    orig_settings = original_job.advanced_settings or {}
+    new_settings = options.get("advanced_settings", {})
+    final_settings = {**orig_settings, **new_settings}
+
+    # 3. Create new Job Record
+    # Copy all relevant input fields from the original job
+    new_job = Job(
+        id=new_job_id,
+        user_id=original_job.user_id,
+        root_job_id=root_id,
+        # --- JOB DETAILS ---
+        company=original_job.company,
+        job_title=original_job.job_title,
+        source=original_job.source,
+        platform=original_job.platform,
+        company_rating=original_job.company_rating,
+        location=original_job.location,
+        location_detail=original_job.location_detail,
+        employment_type=original_job.employment_type,
+        pay_currency=original_job.pay_currency,
+        pay_min_annual=original_job.pay_min_annual,
+        pay_max_annual=original_job.pay_max_annual,
+        pay_rate_type=original_job.pay_rate_type,
+        pay_display=original_job.pay_display,
+        remote_type=original_job.remote_type,
+        work_model=original_job.work_model,
+        work_model_notes=original_job.work_model_notes,
+        job_post_url=original_job.job_post_url,
+        apply_url=original_job.apply_url,
+        posting_age=original_job.posting_age,
+        security_clearance_required=original_job.security_clearance_required,
+        security_clearance_preferred=original_job.security_clearance_preferred,
+        # --- SEARCH CONTEXT ---
+        search_keywords=original_job.search_keywords,
+        search_location=original_job.search_location,
+        search_radius=original_job.search_radius,
+        # --- BENEFITS ---
+        benefits_listed=original_job.benefits_listed,
+        benefits_text=original_job.benefits_text,
+        benefits_eligibility=original_job.benefits_eligibility,
+        benefits_relocation=original_job.benefits_relocation,
+        benefits_sign_on_bonus=original_job.benefits_sign_on_bonus,
+        # --- DESCRIPTION ---
+        jd_headline=original_job.jd_headline,
+        jd_short_summary=original_job.jd_short_summary,
+        jd_full_text=original_job.jd_full_text,
+        jd_experience_min=original_job.jd_experience_min,
+        jd_education=original_job.jd_education,
+        jd_must_have_skills=original_job.jd_must_have_skills,
+        jd_nice_to_have_skills=original_job.jd_nice_to_have_skills,
+        # --- CONFIG & PROFILE ---
+        career_profile_json=original_job.career_profile_json,
+        template=new_template,
+        output_backend=new_backend,
+        priority=new_priority,
+        advanced_settings=final_settings,
+        status="queued",
+    )
+
+    db.add(new_job)
+    db.commit()
+    db.refresh(new_job)
+
+    # 4. Publish to RabbitMQ
+    publish_job_request(
+        job_id=new_job_id,
+        job_json_path="DB",
+        career_profile_path="DB",
+        template=new_template,
+        output_backend=new_backend,
+        priority=new_priority,
+    )
+
+    # 5. Return response formatted for frontend
+    response_obj = JobResponse.from_orm(new_job)
+    response_obj.job_description_json = new_job.to_schema_json()
+
+    return response_obj
+
+
 @app.get("/jobs/{job_id}", response_model=JobResponse)
 def get_job(job_id: str, db: Session = Depends(get_db)):
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    # Hydrate the JSON field for frontend compatibility
+    # NEW: Fetch history (siblings sharing the same root_job_id)
+    history_items = []
+    if job.root_job_id:
+        siblings = (
+            db.query(Job)
+            .filter(Job.root_job_id == job.root_job_id)
+            .order_by(desc(Job.created_at))
+            .all()
+        )
+        history_items = siblings
+
     resp = JobResponse.from_orm(job)
     resp.job_description_json = job.to_schema_json()
+    resp.history = history_items  # Attach history
     return resp
 
 
