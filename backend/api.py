@@ -331,6 +331,189 @@ def list_profiles(user_id: str, db: Session = Depends(get_db)):
     return results
 
 
+# ADDITIONS TO backend/api.py
+# Add these endpoints to the existing PROFILE ENDPOINTS section
+
+
+@app.get("/users/{user_id}/profiles", response_model=List[ProfileResponse])
+def list_user_profiles(user_id: str, db: Session = Depends(get_db)):
+    """List all profiles for a specific user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    profiles = (
+        db.query(CareerProfile)
+        .filter(CareerProfile.user_id == user_id)
+        .order_by(desc(CareerProfile.updated_at))
+        .all()
+    )
+    return profiles
+
+
+@app.get("/users/{user_id}/profiles/{profile_id}", response_model=ProfileResponse)
+def get_profile(user_id: str, profile_id: str, db: Session = Depends(get_db)):
+    """Get a specific profile by ID with all nested data for a specific user."""
+    profile = (
+        db.query(CareerProfile)
+        .options(
+            joinedload(CareerProfile.experience).joinedload(
+                CareerExperience.highlights
+            ),
+            joinedload(CareerProfile.education),
+            joinedload(CareerProfile.projects),
+            joinedload(CareerProfile.certifications),
+        )
+        .filter(CareerProfile.id == profile_id, CareerProfile.user_id == user_id)
+        .first()
+    )
+
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return profile
+
+
+@app.put("/users/{user_id}/profiles/{profile_id}", response_model=ProfileResponse)
+def update_profile(
+    user_id: str,
+    profile_id: str,
+    profile_req: ProfileCreate,
+    db: Session = Depends(get_db),
+):
+    """Update an existing profile with nested data for a specific user."""
+    profile = (
+        db.query(CareerProfile)
+        .filter(CareerProfile.id == profile_id, CareerProfile.user_id == user_id)
+        .first()
+    )
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    data = profile_req.profile_json
+    basics = data.get("basics", {})
+    location = basics.get("location", {})
+
+    # Update basic profile fields
+    profile.name = basics.get("name", profile.name)
+    profile.label = basics.get("label")
+    profile.email = basics.get("email")
+    profile.phone = basics.get("phone")
+    profile.url = basics.get("url")
+    profile.summary = basics.get("summary")
+    profile.city = location.get("city")
+    profile.region = location.get("region")
+    profile.country_code = location.get("countryCode")
+    profile.skills = [s.get("name") for s in data.get("skills", []) if s.get("name")]
+    profile.awards = data.get("awards", [])
+    profile.updated_at = datetime.utcnow()
+
+    # Delete existing nested data
+    db.query(CareerExperience).filter(
+        CareerExperience.profile_id == profile_id
+    ).delete()
+    db.query(CareerEducation).filter(CareerEducation.profile_id == profile_id).delete()
+    db.query(CareerProject).filter(CareerProject.profile_id == profile_id).delete()
+    db.query(CareerCertification).filter(
+        CareerCertification.profile_id == profile_id
+    ).delete()
+
+    # Re-create work experience
+    for work in data.get("work", []):
+        exp = CareerExperience(
+            id=str(uuid.uuid4()),
+            profile_id=profile.id,
+            company=work.get("name", "Unknown"),
+            position=work.get("position", "Unknown"),
+            start_date=work.get("startDate"),
+            end_date=work.get("endDate"),
+            is_current=not work.get("endDate"),
+            summary=work.get("summary"),
+        )
+        db.add(exp)
+        db.flush()
+
+        for hl in work.get("highlights", []):
+            if isinstance(hl, str):
+                highlight = CareerExperienceHighlight(
+                    id=str(uuid.uuid4()),
+                    experience_id=exp.id,
+                    description=hl,
+                )
+                db.add(highlight)
+            elif isinstance(hl, dict):
+                highlight = CareerExperienceHighlight(
+                    id=str(uuid.uuid4()),
+                    experience_id=exp.id,
+                    description=hl.get("description", ""),
+                    impact_metric=hl.get("impact_metric"),
+                    domain_tags=hl.get("domain_tags", []),
+                )
+                db.add(highlight)
+
+    # Re-create education
+    for edu in data.get("education", []):
+        education = CareerEducation(
+            id=str(uuid.uuid4()),
+            profile_id=profile.id,
+            institution=edu.get("institution", "Unknown"),
+            area=edu.get("area"),
+            study_type=edu.get("studyType"),
+            start_date=edu.get("startDate"),
+            end_date=edu.get("endDate"),
+            score=edu.get("score"),
+            courses=edu.get("courses", []),
+        )
+        db.add(education)
+
+    # Re-create projects
+    for proj in data.get("projects", []):
+        project = CareerProject(
+            id=str(uuid.uuid4()),
+            profile_id=profile.id,
+            name=proj.get("name", "Unknown"),
+            description=proj.get("description"),
+            url=proj.get("url"),
+            keywords=proj.get("keywords", []),
+            roles=proj.get("roles", []),
+            start_date=proj.get("startDate"),
+            end_date=proj.get("endDate"),
+        )
+        db.add(project)
+
+    # Re-create certifications
+    for cert in data.get("certifications", []):
+        certification = CareerCertification(
+            id=str(uuid.uuid4()),
+            profile_id=profile.id,
+            name=cert.get("name", "Unknown"),
+            date=cert.get("date"),
+            issuer=cert.get("issuer"),
+            url=cert.get("url"),
+        )
+        db.add(certification)
+
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
+@app.delete("/users/{user_id}/profiles/{profile_id}")
+def delete_profile(user_id: str, profile_id: str, db: Session = Depends(get_db)):
+    """Delete a specific profile for a user."""
+    profile = (
+        db.query(CareerProfile)
+        .filter(CareerProfile.id == profile_id, CareerProfile.user_id == user_id)
+        .first()
+    )
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    db.delete(profile)
+    db.commit()
+    return {"message": "Profile deleted successfully"}
+
+
 @app.get("/profiles")
 def list_all_profiles(db: Session = Depends(get_db)):
     profiles = db.query(CareerProfile).all()

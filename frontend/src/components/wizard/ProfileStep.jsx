@@ -1,16 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { apiService } from "../../services/api";
+import { useUser } from "../../contexts/UserContext";
 
 export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
+    const { currentUser, loading: userLoading } = useUser();
     const [profiles, setProfiles] = useState([]);
     const [profilePreview, setProfilePreview] = useState("");
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
 
-    // 1. Fetch Profiles
+    // 1. Fetch Profiles for current user
     const loadProfiles = async () => {
+        if (!currentUser) return;
+
         try {
-            const response = await apiService.listProfiles();
+            const response = await apiService.listUserProfiles(currentUser.id);
             setProfiles(response.data);
         } catch (error) {
             console.error("Failed to load profiles", error);
@@ -18,15 +22,16 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
     };
 
     useEffect(() => {
-        loadProfiles();
-    }, []);
+        if (currentUser) {
+            loadProfiles();
+        }
+    }, [currentUser]);
 
     // 2. Update Preview
     useEffect(() => {
         if (formData.profile_id) {
             const profile = profiles.find((p) => p.id === formData.profile_id);
             if (profile) {
-                // FIXED: Use the nested profile_json if available, or fall back to the object
                 const dataToShow = profile.profile_json || profile;
                 setProfilePreview(JSON.stringify(dataToShow, null, 2));
             }
@@ -35,37 +40,24 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
         }
     }, [formData.profile_id, profiles]);
 
-    // 3. Handle File Import (Client-side JSON Read)
+    // 3. Handle File Import
     const handleFileUpload = async (event) => {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file || !currentUser) return;
 
         setUploading(true);
         const reader = new FileReader();
 
         reader.onload = async (e) => {
             try {
-                // Parse JSON in browser
                 const jsonContent = JSON.parse(e.target.result);
 
-                // Get a user ID (Using the first user found, or a default)
-                // In a real app, this comes from Auth Context.
-                // For now, we fetch users and pick the first one.
-                const usersRes = await apiService.listUsers();
-                const userId = usersRes.data[0]?.id;
-
-                if (!userId)
-                    throw new Error("No user found to attach profile to.");
-
-                // Send as JSON payload
                 const payload = {
                     name: jsonContent.basics?.name || "Imported Profile",
                     profile_json: jsonContent,
                 };
 
-                await apiService.createProfile(userId, payload);
-
-                // Refresh list and select the new one
+                await apiService.createProfile(currentUser.id, payload);
                 await loadProfiles();
                 alert("Profile imported successfully!");
             } catch (error) {
@@ -79,6 +71,18 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
 
         reader.readAsText(file);
     };
+
+    const handleManageProfiles = () => {
+        window.open("/profiles", "_blank");
+    };
+
+    if (userLoading) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -107,8 +111,15 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                     </select>
                 </div>
 
-                {/* Import Button */}
-                <div>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={handleManageProfiles}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        ⚙️ Manage Profiles
+                    </button>
+
                     <input
                         type="file"
                         accept=".json"
@@ -120,7 +131,7 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {uploading ? "Importing..." : "📂 Import JSON"}
                     </button>
@@ -128,11 +139,10 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
             </div>
 
             <p className="text-sm text-gray-500 -mt-4">
-                Choose a profile from the database or import a standard{" "}
-                <code>career_profile.json</code>.
+                Choose a profile from the database, import a JSON file, or
+                manage your profiles.
             </p>
 
-            {/* Preview Area */}
             {profilePreview && (
                 <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

@@ -65,7 +65,15 @@ export const apiService = {
     createUser: (userData) => api.post("/users", userData),
 
     // Profile operations (Updated)
-    listProfiles: () => api.get("/profiles"), // Global list
+    listUserProfiles: (userId) => api.get(`/users/${userId}/profiles`),
+    getProfile: (userId, profileId) =>
+        api.get(`/users/${userId}/profiles/${profileId}`),
+    updateProfile: (userId, profileId, profileData) =>
+        api.put(`/users/${userId}/profiles/${profileId}`, profileData),
+    deleteProfile: (userId, profileId) =>
+        api.delete(`/users/${userId}/profiles/${profileId}`),
+    createProfile: (userId, profileData) =>
+        api.post(`/users/${userId}/profiles`, profileData),
 
     // Create profile for specific user (Replaces uploadProfile)
     createProfile: (userId, profileData) => {
