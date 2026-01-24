@@ -260,6 +260,14 @@ class CareerProfile(BaseModel):
             cert_names = [c.name for c in self.certifications[:5]]  # Top 5 certs
             parts.append(f"Certifications: {', '.join(cert_names)}")
 
+        # Awards
+        if self.awards:
+            parts.append("\nAwards:")
+            for award in self.awards[:5]:  # Limit to top 5
+                date_str = f" ({award.date})" if award.date else ""
+                issuer_str = f" - {award.awarder}" if award.awarder else ""
+                parts.append(f"  - {award.title}{issuer_str}{date_str}")
+
         return "\n".join(parts)
 
 
@@ -317,8 +325,8 @@ class StructuredResume(BaseModel):
     core_competencies: list[str] = Field(default_factory=list)
     experience: list[ExperienceEntry] = Field(default_factory=list)
     education: list[EducationEntry] = Field(default_factory=list)
-    certifications: list[str] = Field(default_factory=list)
-    awards: list[str] = Field(default_factory=list)
+    certifications: list[ProfileCertification] = Field(default_factory=list)
+    awards: list[ProfileAward] = Field(default_factory=list)
 
 
 class CritiqueResult(BaseModel):
