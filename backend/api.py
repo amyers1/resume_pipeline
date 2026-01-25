@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import shutil
 import threading
 import uuid
@@ -11,7 +12,9 @@ from typing import List, Optional
 from database import Base, engine, get_db
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
+from minio import Minio
+from minio.error import S3Error
 from models import (
     CareerCertification,
     CareerEducation,
@@ -36,6 +39,22 @@ from sse_starlette.sse import EventSourceResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# S3 Client Initialization
+s3_enabled = os.getenv("ENABLE_S3", "false").lower() == "true"
+s3_client = None
+if s3_enabled:
+    try:
+        s3_client = Minio(
+            os.getenv("S3_ENDPOINT"),
+            access_key=os.getenv("S3_ACCESS_KEY"),
+            secret_key=os.getenv("S3_SECRET_KEY"),
+            secure=os.getenv("S3_ENDPOINT", "").startswith("https"),
+        )
+        s3_bucket = os.getenv("S3_BUCKET", "resume-pipeline")
+    except Exception as e:
+        logger.error(f"Failed to initialize S3 client: {e}")
+        s3_client = None
 
 # Create Tables
 Base.metadata.create_all(bind=engine)
@@ -306,33 +325,6 @@ def create_profile(
     resp = ProfileResponse.from_orm(new_profile)
     resp.profile_json = new_profile.to_full_json()
     return resp
-
-
-@app.get("/users/{user_id}/profiles", response_model=List[ProfileResponse])
-def list_profiles(user_id: str, db: Session = Depends(get_db)):
-    profiles = (
-        db.query(CareerProfile)
-        .options(
-            joinedload(CareerProfile.experience).joinedload(
-                CareerExperience.highlights
-            ),
-            joinedload(CareerProfile.education),
-            joinedload(CareerProfile.certifications),
-        )
-        .filter(CareerProfile.user_id == user_id)
-        .all()
-    )
-
-    results = []
-    for p in profiles:
-        r = ProfileResponse.from_orm(p)
-        r.profile_json = p.to_full_json()
-        results.append(r)
-    return results
-
-
-# ADDITIONS TO backend/api.py
-# Add these endpoints to the existing PROFILE ENDPOINTS section
 
 
 @app.get("/users/{user_id}/profiles", response_model=List[ProfileResponse])
@@ -814,6 +806,31 @@ def list_jobs(page: int = 1, size: int = 20, db: Session = Depends(get_db)):
     return {"items": items, "total": total, "page": page, "size": size}
 
 
+@app.delete("/jobs", status_code=200)
+def delete_all_jobs(db: Session = Depends(get_db)):
+    """
+    Deletes all jobs from the database and removes their generated artifacts from disk.
+    """
+    # 1. Find all jobs in the database
+    jobs = db.query(Job).all()
+
+    # 2. Delete all records from the database
+    for job in jobs:
+        db.delete(job)
+    db.commit()
+
+    # 3. Clean up the file system (Output Directory)
+    for job in jobs:
+        job_dir = OUTPUT_DIR / job.id
+        if job_dir.exists() and job_dir.is_dir():
+            try:
+                shutil.rmtree(job_dir)
+            except Exception as e:
+                logger.error(f"Failed to delete directory {job_dir}: {e}")
+
+    return {"message": "All jobs deleted successfully"}
+
+
 @app.delete("/jobs/{job_id}", status_code=204)
 def delete_job(job_id: str, db: Session = Depends(get_db)):
     """
@@ -847,6 +864,25 @@ def delete_job(job_id: str, db: Session = Depends(get_db)):
 @app.get("/jobs/{job_id}/files")
 def list_job_files(job_id: str):
     """List generated files for a specific job."""
+    if s3_client:
+        try:
+            objects = s3_client.list_objects(
+                s3_bucket, prefix=f"{job_id}/", recursive=True
+            )
+            files = [
+                {
+                    "name": os.path.basename(obj.object_name),
+                    "size": obj.size,
+                    "modified": obj.last_modified,
+                }
+                for obj in objects
+            ]
+            if files:
+                return files
+        except S3Error as e:
+            logger.error(f"Error listing files from S3 for job {job_id}: {e}")
+
+    # Fallback to local filesystem
     job_dir = OUTPUT_DIR / job_id
     if not job_dir.exists():
         return []
@@ -867,6 +903,27 @@ def list_job_files(job_id: str):
 @app.get("/jobs/{job_id}/files/{filename}")
 def download_job_file(job_id: str, filename: str):
     """Download a specific artifact."""
+    if s3_client:
+        response = None
+        try:
+            object_name = f"{job_id}/{filename}"
+            response = s3_client.get_object(s3_bucket, object_name)
+            return Response(
+                response.read(),
+                media_type=response.headers.get(
+                    "Content-Type", "application/octet-stream"
+                ),
+            )
+        except S3Error as e:
+            if e.code != "NoSuchKey":
+                logger.error(f"Error downloading file from S3: {e}")
+
+        finally:
+            if response:
+                response.close()
+                response.release_conn()
+
+    # Fallback to local filesystem
     file_path = OUTPUT_DIR / job_id / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
