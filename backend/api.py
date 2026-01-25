@@ -322,7 +322,7 @@ def create_profile(
     db.commit()
     db.refresh(new_profile)
 
-    resp = ProfileResponse.from_orm(new_profile)
+    resp = ProfileResponse.model_validate(new_profile, from_attributes=True)
     resp.profile_json = new_profile.to_full_json()
     return resp
 
@@ -537,7 +537,7 @@ def list_all_profiles(db: Session = Depends(get_db)):
     profiles = db.query(CareerProfile).all()
     results = []
     for p in profiles:
-        r = ProfileResponse.from_orm(p)
+        r = ProfileResponse.model_validate(p, from_attributes=True)
         r.profile_json = p.to_full_json()
         results.append(r)
     return results
@@ -658,7 +658,7 @@ def submit_job(request: JobSubmitRequest, db: Session = Depends(get_db)):
 
     # We manually attach the reconstructed JSON for the response
     # (Since we removed the JSON column from DB, but Frontend expects it)
-    response_obj = JobResponse.from_orm(new_job)
+    response_obj = JobResponse.model_validate(new_job, from_attributes=True)
     response_obj.job_description_json = new_job.to_schema_json()
 
     return response_obj
@@ -761,7 +761,7 @@ def resubmit_job(job_id: str, options: dict = {}, db: Session = Depends(get_db))
     )
 
     # 5. Return response formatted for frontend
-    response_obj = JobResponse.from_orm(new_job)
+    response_obj = JobResponse.model_validate(new_job, from_attributes=True)
     response_obj.job_description_json = new_job.to_schema_json()
 
     return response_obj
@@ -784,7 +784,7 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
         )
         history_items = siblings
 
-    resp = JobResponse.from_orm(job)
+    resp = JobResponse.model_validate(job, from_attributes=True)
     resp.job_description_json = job.to_schema_json()
     resp.history = history_items  # Attach history
     return resp
@@ -799,7 +799,7 @@ def list_jobs(page: int = 1, size: int = 20, db: Session = Depends(get_db)):
     # Hydrate list items
     items = []
     for j in jobs:
-        r = JobResponse.from_orm(j)
+        r = JobResponse.model_validate(j, from_attributes=True)
         r.job_description_json = j.to_schema_json()
         items.append(r)
 
