@@ -861,42 +861,73 @@ def delete_job(job_id: str, db: Session = Depends(get_db)):
 # ==========================
 
 
+def get_local_files(job_id: str) -> list:
+    # Fallback to local filesystem
+    files = []
+    job_dir = OUTPUT_DIR / job_id
+    if job_dir.exists():
+        for f in job_dir.glob("*"):
+            if f.is_file() and f.name not in filenames:
+                files.append(
+                    {
+                        "name": f.name,
+                        "size": f.stat().st_size,
+                        "modified": datetime.fromtimestamp(f.stat().st_mtime),
+                    }
+                )
+    return files
+
+
+def get_local_file(job_id: str, filename: str) -> FileResponse:
+    # Fallback to local filesystem
+    file_path = OUTPUT_DIR / job_id / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(
+        path=file_path, filename=filename, media_type="application/octet-stream"
+    )
+
+
 @app.get("/jobs/{job_id}/files")
 def list_job_files(job_id: str):
     """List generated files for a specific job."""
+    files = []
+    filenames = set()
+
     if s3_client:
         try:
             objects = s3_client.list_objects(
                 s3_bucket, prefix=f"{job_id}/", recursive=True
             )
-            files = [
-                {
-                    "name": os.path.basename(obj.object_name),
-                    "size": obj.size,
-                    "modified": obj.last_modified,
-                }
-                for obj in objects
-            ]
-            if files:
-                return files
+            if len(list(objects)) == 0:
+                logger.info(
+                    f"Files from S3 for job {job_id} not found...trying local folders"
+                )
+                local_files = get_local_files(job_id)
+                if len(local_files) > 0:
+                    for f in local_files:
+                        files.append(f)
+            else:
+                for obj in objects:
+                    filename = os.path.basename(obj.object_name)
+                    files.append(
+                        {
+                            "name": filename,
+                            "size": obj.size,
+                            "modified": obj.last_modified,
+                        }
+                    )
+                    filenames.add(filename)
         except S3Error as e:
             logger.error(f"Error listing files from S3 for job {job_id}: {e}")
 
-    # Fallback to local filesystem
-    job_dir = OUTPUT_DIR / job_id
-    if not job_dir.exists():
-        return []
+    else:
+        local_files = get_local_files(job_id)
+        if len(local_files) > 0:
+            for f in local_files:
+                files.append(f)
 
-    files = []
-    for f in job_dir.glob("*"):
-        if f.is_file():
-            files.append(
-                {
-                    "name": f.name,
-                    "size": f.stat().st_size,
-                    "modified": datetime.fromtimestamp(f.stat().st_mtime),
-                }
-            )
     return files
 
 
@@ -907,13 +938,17 @@ def download_job_file(job_id: str, filename: str):
         response = None
         try:
             object_name = f"{job_id}/{filename}"
-            response = s3_client.get_object(s3_bucket, object_name)
-            return Response(
-                response.read(),
-                media_type=response.headers.get(
-                    "Content-Type", "application/octet-stream"
-                ),
-            )
+            if len(list(s3_client.list_objects(s3_bucket, prefix=f"{job_id}/"))) > 0:
+                response = s3_client.get_object(s3_bucket, object_name)
+                return Response(
+                    response.read(),
+                    media_type=response.headers.get(
+                        "Content-Type", "application/octet-stream"
+                    ),
+                )
+            else:
+                response = get_local_file(job_id, filename)
+                return response
         except S3Error as e:
             if e.code != "NoSuchKey":
                 logger.error(f"Error downloading file from S3: {e}")
