@@ -1,4 +1,5 @@
 import asyncio
+import io
 import json
 import logging
 import os
@@ -12,7 +13,7 @@ from typing import List, Optional
 from database import Base, engine, get_db
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from minio import Minio
 from minio.error import S3Error
 from models import (
@@ -46,15 +47,18 @@ s3_client = None
 if s3_enabled:
     try:
         s3_client = Minio(
-            os.getenv("S3_ENDPOINT"),
+            endpoint=os.getenv("S3_ENDPOINT"),
             access_key=os.getenv("S3_ACCESS_KEY"),
             secret_key=os.getenv("S3_SECRET_KEY"),
-            secure=os.getenv("S3_ENDPOINT", "").startswith("https"),
+            secure=True,
         )
         s3_bucket = os.getenv("S3_BUCKET", "resume-pipeline")
+        logger.info(f"Successfully initialized S3 client: bucket = {s3_bucket}")
     except Exception as e:
         logger.error(f"Failed to initialize S3 client: {e}")
         s3_client = None
+else:
+    logger.info(f"S3 client disabled by environment variable: ENABLE_S3 = {s3_enabled}")
 
 # Create Tables
 Base.metadata.create_all(bind=engine)
@@ -861,13 +865,18 @@ def delete_job(job_id: str, db: Session = Depends(get_db)):
 # ==========================
 
 
-def get_local_files(job_id: str) -> list:
-    # Fallback to local filesystem
+def get_local_files(job_id: str, exclude_names: set = None) -> list:
+    """Helper to fetch local files, excluding those already found in S3."""
+    if exclude_names is None:
+        exclude_names = set()
+
     files = []
     job_dir = OUTPUT_DIR / job_id
+
     if job_dir.exists():
         for f in job_dir.glob("*"):
-            if f.is_file() and f.name not in filenames:
+            # Skip hidden files or internal directories if necessary
+            if f.is_file() and f.name not in exclude_names:
                 files.append(
                     {
                         "name": f.name,
@@ -878,8 +887,8 @@ def get_local_files(job_id: str) -> list:
     return files
 
 
-def get_local_file(job_id: str, filename: str) -> FileResponse:
-    # Fallback to local filesystem
+def get_local_file_response(job_id: str, filename: str) -> FileResponse:
+    """Helper to serve a local file."""
     file_path = OUTPUT_DIR / job_id / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
@@ -891,81 +900,81 @@ def get_local_file(job_id: str, filename: str) -> FileResponse:
 
 @app.get("/jobs/{job_id}/files")
 def list_job_files(job_id: str):
-    """List generated files for a specific job."""
+    """List generated files for a specific job, merging S3 and Local results."""
     files = []
     filenames = set()
 
+    # # 1. Try S3 First
     if s3_client:
         try:
-            objects = s3_client.list_objects(
-                s3_bucket, prefix=f"{job_id}/", recursive=True
+            # list_objects returns an iterator. We convert to list to force execution.
+            # We catch generic Exception here because connection timeouts raise urllib3 errors, not S3Error
+            s3_objects = list(
+                s3_client.list_objects(s3_bucket, prefix=f"{job_id}/", recursive=True)
             )
-            if len(list(objects)) == 0:
-                logger.info(
-                    f"Files from S3 for job {job_id} not found...trying local folders"
-                )
-                local_files = get_local_files(job_id)
-                if len(local_files) > 0:
-                    for f in local_files:
-                        files.append(f)
-            else:
-                for obj in objects:
-                    filename = os.path.basename(obj.object_name)
-                    files.append(
-                        {
-                            "name": filename,
-                            "size": obj.size,
-                            "modified": obj.last_modified,
-                        }
-                    )
-                    filenames.add(filename)
-        except S3Error as e:
-            logger.error(f"Error listing files from S3 for job {job_id}: {e}")
 
-    else:
-        local_files = get_local_files(job_id)
-        if len(local_files) > 0:
-            for f in local_files:
-                files.append(f)
+            for obj in s3_objects:
+                filename = os.path.basename(obj.object_name)
+                d = {
+                    "name": filename,
+                    "size": obj.size,
+                    "modified": obj.last_modified,
+                }
+                logger.debug(
+                    f"s3 object returned: name = {d['name']}; size = {d['size']}; modified = {d['modified']}"
+                )
+                files.append(d)
+                filenames.add(filename)
+
+        except Exception as e:
+            # Log the error but DO NOT crash. Fallback to local immediately.
+            logger.error(f"S3 List Error for job {job_id}: {e}")
+
+    # 2. Merge with Local Files (if S3 failed or files exist locally)
+    try:
+        local_files = get_local_files(job_id, exclude_names=filenames)
+        files.extend(local_files)
+    except Exception as e:
+        logger.error(f"Local File Error for job {job_id}: {e}")
+
+    # Sort by modification time (descending)
+    files.sort(key=lambda x: str(x["modified"]), reverse=True)
 
     return files
 
 
 @app.get("/jobs/{job_id}/files/{filename}")
 def download_job_file(job_id: str, filename: str):
-    """Download a specific artifact."""
+    """Download a specific artifact, checking S3 first then Local."""
+
+    # 1. Try S3
     if s3_client:
-        response = None
         try:
-            object_name = f"{job_id}/{filename}"
-            if len(list(s3_client.list_objects(s3_bucket, prefix=f"{job_id}/"))) > 0:
-                response = s3_client.get_object(s3_bucket, object_name)
-                return Response(
-                    response.read(),
-                    media_type=response.headers.get(
-                        "Content-Type", "application/octet-stream"
-                    ),
-                )
-            else:
-                response = get_local_file(job_id, filename)
-                return response
+            # Fetch the object from the bucket
+            response = s3_client.get_object(
+                bucket_name=s3_bucket, object_name=f"{job_id}/{filename}"
+            )
+
+            # Determine content type (you can make this dynamic based on file extension)
+            content_type = response.headers.get(
+                "Content-Type", "application/octet-stream"
+            )
+
+            # Stream the response back to the client
+            return StreamingResponse(
+                io.BytesIO(response.data),  # Use response.data for the content
+                media_type=content_type,
+                headers={"Content-Disposition": f"inline; filename={filename}"},
+            )
         except S3Error as e:
-            if e.code != "NoSuchKey":
-                logger.error(f"Error downloading file from S3: {e}")
-
+            raise HTTPException(status_code=404, detail=f"File not found: {e}")
         finally:
-            if response:
-                response.close()
-                response.release_conn()
+            response.close()
+            response.release_conn()
 
-    # Fallback to local filesystem
-    file_path = OUTPUT_DIR / job_id / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-
-    return FileResponse(
-        path=file_path, filename=filename, media_type="application/octet-stream"
-    )
+    # 2. Fallback to Local
+    logger.info(f"failed to fetch {filename} from s3...falling back to local files")
+    return get_local_file_response(job_id, filename)
 
 
 # ==========================
