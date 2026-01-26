@@ -1,121 +1,223 @@
-/* Page Setup */
-@page {
-    size: letter;
-    margin: 0.35in 0.45in; /* Further reduced margins */
+/* ==========================================================================
+   Modern Resume Style – Awesome-CV inspired – WeasyPrint friendly
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap");
+
+/* Reset & base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-print-color-adjust: exact !important; /* Important for WeasyPrint */
+    print-color-adjust: exact !important;
 }
 
 body {
-    font-family: "Helvetica", "Arial", sans-serif;
-    font-size: 9pt; /* Reduced from 9.5pt */
-    line-height: 1.25; /* Tightened from 1.3 */
+    font-family: "Roboto", Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.45;
     color: #333;
+    background: #fff;
     margin: 0;
-    padding: 0;
+}
+
+/* Container – aim for ~A4/letter usable area */
+.container {
+    max-width: 8.5in; /* A4 width – adjust to 8.5in / 216mm for US letter */
+    margin: 0 auto;
+    padding: 2.8cm 2.2cm 2cm; /* generous top margin for header breathing room */
+}
+
+/* Typography scale */
+h1,
+h2 {
+    font-weight: 700;
+    color: #2d3748; /* dark slate */
+    letter-spacing: -0.4px;
 }
 
 h1 {
-    font-size: 18pt; /* Reduced from 20pt */
-    margin: 0;
-    text-transform: uppercase;
-    color: #000;
-    letter-spacing: 0.5pt;
-}
-
-h2 {
-    font-size: 10pt; /* Reduced from 10.5pt */
-    text-transform: uppercase;
-    border-bottom: 1.5px solid #000;
-    margin: 6pt 0 2pt 0; /* Further tightened margins */
-    padding-bottom: 1pt;
-    font-weight: bold;
-}
-
-/* Header Styles */
-header {
-    text-align: center;
-    margin-bottom: 4pt; /* Reduced from 6pt */
+    font-size: 2.4rem;
+    margin-bottom: 0.15em;
+    line-height: 1;
 }
 
 .role-title {
-    font-size: 10pt; /* Reduced from 10.5pt */
-    font-weight: bold;
-    color: #444;
+    font-size: 1.18rem;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 0.8em;
 }
 
 .contact-info {
-    font-size: 8pt; /* Reduced from 8.5pt */
-    margin-top: 1pt;
+    font-size: 9.5pt;
+    color: #4a5568;
+    margin-bottom: 1.8em;
 }
 
-/* Core Competencies - 2 Columns */
-.competency-list {
+.contact-info span {
+    margin-right: 1.1em;
+}
+
+.contact-info a {
+    color: #2b6cb0;
+    text-decoration: none;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+/* Section headings – Awesome-CV style thick left bar */
+h2 {
+    font-size: 1.35rem;
+    margin: 1.4em 0 0.9em;
+    padding-left: 0.9em;
+    border-left: 5px solid #a0aec0; /* subtle gray-blue accent */
+    line-height: 1.2;
+}
+
+/* Core Competencies – compact grid */
+.competency-grid {
+    list-style: none;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+    grid-template-columns: repeat(2, 1fr); /* ← changed from auto-fit minmax */
+    gap: 0.5em 2.5em; /* wider horizontal gap looks balanced */
+    font-size: 9pt; /* slightly larger helps legibility */
+    margin-top: 0.7em;
+    margin-bottom: 1.2em;
 }
 
-.competency-list li {
-    font-size: 8.5pt; /* Reduced from 9pt */
-    padding-left: 10pt;
+.competency-grid li {
     position: relative;
-    margin-bottom: 0.3pt; /* Micro-adjustment */
+    padding-left: 1.1em;
 }
 
-.competency-list li::before {
-    content: "■";
-    font-size: 4.5pt;
+.competency-grid li::before {
+    content: "▹";
     position: absolute;
     left: 0;
-    top: 2.5pt;
-    color: #555;
+    color: #4299e1; /* blue accent */
+    font-size: 1.1em;
 }
 
-/* Experience Styles */
+/* Experience items */
 .experience-item {
-    margin-bottom: 6pt; /* Reduced from 7pt */
-    page-break-inside: avoid;
+    margin-bottom: 1.5em;
 }
 
 .exp-header {
     display: flex;
     justify-content: space-between;
-    font-weight: bold;
-    font-size: 9.5pt; /* Reduced from 10pt */
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.8em;
+    margin-bottom: 0.35em;
+}
+
+.job-title {
+    font-size: 1.12rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.dates {
+    font-size: 9.8pt;
+    color: #718096;
+    font-weight: 400;
+    white-space: nowrap;
 }
 
 .exp-sub-header {
-    display: flex;
-    justify-content: space-between;
+    font-size: 10pt;
+    color: #4a5568;
+    margin-bottom: 0.5em;
     font-style: italic;
-    font-size: 8.5pt; /* Reduced from 9pt */
-    margin-bottom: 0.5pt;
 }
 
 .bullets {
-    margin: 0;
-    padding-left: 12pt; /* Tighter indent */
+    list-style: none;
+    margin-left: 0;
+    padding-left: 1.3em;
 }
 
 .bullets li {
-    margin-bottom: 0.3pt; /* Near-zero extra spacing between bullets */
-    text-align: justify;
+    position: relative;
+    margin-bottom: 0.55em;
+    padding-left: 1.2em;
 }
 
-.other-experience {
-    margin-top: 6pt;
+.bullets li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #4299e1;
+    font-size: 1.4em;
+    line-height: 1;
 }
 
-/* Education, Certs, Awards */
+/* Education & Certifications */
 .edu-item {
-    margin-bottom: 3pt; /* Reduced from 4pt */
+    margin-bottom: 1.1em;
 }
+
+.edu-item .exp-header {
+    margin-bottom: 0.2em;
+}
+
+.degree {
+    font-size: 10.2pt;
+    color: #4a5568;
+}
+
+/* Simple lists (certifications, etc.) */
 .simple-list {
-    margin: 0;
-    padding-left: 12pt;
+    list-style: none;
+    padding-left: 1.3em;
+    margin-top: 0.5em;
 }
+
 .simple-list li {
-    font-size: 8.5pt;
-    margin-bottom: 0.3pt;
+    margin-bottom: 0.45em;
+    position: relative;
+}
+
+.simple-list li::before {
+    content: "›";
+    position: absolute;
+    left: -1.1em;
+    color: #4299e1;
+}
+
+/* Other experience – slightly de-emphasized */
+.other-experience h3,
+.other-experience .job-title {
+    color: #4a5568;
+    font-weight: 600;
+}
+
+/* Footer spacing fix */
+.container > section:last-child {
+    margin-bottom: 0;
+}
+
+/* WeasyPrint / print tweaks */
+@media print {
+    .container {
+        padding: 2.2cm 1.9cm 1.8cm;
+    }
+    h2 {
+        page-break-after: avoid;
+    }
+    .experience-item {
+        page-break-inside: avoid;
+    }
+    @page {
+        size: A4; /* or: letter */
+        margin: 0;
+    }
 }
