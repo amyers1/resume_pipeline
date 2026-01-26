@@ -197,6 +197,10 @@ class ResumePipeline:
         # Step 6: Generate structured output
         self._report_progress("refining", 85, "Structuring data")
         structured_resume = self.parser.parse(final_resume)
+
+        if critique and "final_score" in critique:
+            structured_resume.final_score = critique["final_score"]
+
         self._save_checkpoint("structured_resume", structured_resume.model_dump())
 
         # Step 7: Generate outputs and upload

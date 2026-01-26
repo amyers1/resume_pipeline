@@ -327,6 +327,7 @@ class StructuredResume(BaseModel):
     education: list[EducationEntry] = Field(default_factory=list)
     certifications: list[ProfileCertification] = Field(default_factory=list)
     awards: list[ProfileAward] = Field(default_factory=list)
+    final_score: float | None = None
 
 
 class CritiqueResult(BaseModel):
