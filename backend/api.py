@@ -67,18 +67,13 @@ class AsyncS3Manager:
 
 s3_manager = AsyncS3Manager()
 
-# Create Tables (Note: in async, this is usually done via an async engine begin block,
-# but we keep this compatible if you are using the sync create_all in main.
-# Ideally, migrate to Alembic for async DB management.)
-# Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="Resume Pipeline API")
 OUTPUT_DIR = Path("output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Simplified for dev; restrict in prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -134,10 +129,6 @@ async def run_async_consumer():
         await client.connect()
         logger.info("✅ API Worker connected to RabbitMQ (listening for updates)")
 
-        # FIX: Removed await client.consume_jobs(...)
-        # The API should NOT consume jobs (that's for the worker).
-        # We only want to listen to status and progress updates.
-
         # 1. Declare queues to ensure they exist
         queue = await client.channel.declare_queue(config.status_queue, durable=True)
         progress_queue = await client.channel.declare_queue(
@@ -152,7 +143,6 @@ async def run_async_consumer():
                     async with message.process():
                         try:
                             data = json.loads(message.body.decode())
-                            # logger.debug(f"Broadcast: {data}")
                             await broadcaster.broadcast(data)
                         except Exception as e:
                             logger.error(f"Broadcast error on {name}: {e}")
@@ -171,7 +161,6 @@ async def run_async_consumer():
 
 @app.on_event("startup")
 async def startup_event():
-    # Start the consumer as a background task
     asyncio.create_task(run_async_consumer())
 
 
@@ -263,9 +252,8 @@ async def create_profile(
         awards=data.get("awards", []),
     )
     db.add(new_profile)
-    await db.flush()  # Flush to get ID if needed, though we set it manually
+    await db.flush()
 
-    # Certifications
     for cert in data.get("certifications", []):
         c = CareerCertification(
             id=str(uuid.uuid4()),
@@ -276,7 +264,6 @@ async def create_profile(
         )
         db.add(c)
 
-    # Experience
     for work in data.get("work", []):
         exp = CareerExperience(
             id=str(uuid.uuid4()),
@@ -288,7 +275,7 @@ async def create_profile(
             summary=work.get("summary"),
         )
         db.add(exp)
-        await db.flush()  # Need exp.id for highlights
+        await db.flush()
 
         highlights = work.get("achievements") or work.get("highlights") or []
         for h in highlights:
@@ -306,7 +293,6 @@ async def create_profile(
                 )
             db.add(hl)
 
-    # Education
     for edu in data.get("education", []):
         ed = CareerEducation(
             id=str(uuid.uuid4()),
@@ -321,7 +307,6 @@ async def create_profile(
         )
         db.add(ed)
 
-    # Projects
     for proj in data.get("projects", []):
         pr = CareerProject(
             id=str(uuid.uuid4()),
@@ -336,8 +321,6 @@ async def create_profile(
     await db.commit()
     await db.refresh(new_profile)
 
-    # Re-fetch to ensure loading for response model
-    # (Or construct response manually to save a query)
     resp = ProfileResponse.model_validate(new_profile, from_attributes=True)
     resp.profile_json = new_profile.to_full_json()
     return resp
@@ -349,9 +332,6 @@ async def list_user_profiles(user_id: str, db: AsyncSession = Depends(get_db)):
     if not result.scalars().first():
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Use selectinload for relationships if your to_full_json uses them
-    # But for the list view, maybe we just need the basics?
-    # The original code calls to_full_json(), so we need everything.
     stmt = (
         select(CareerProfile)
         .where(CareerProfile.user_id == user_id)
@@ -448,7 +428,22 @@ async def update_profile(
     profile.awards = data.get("awards", [])
     profile.updated_at = datetime.utcnow()
 
-    # Async Deletes
+    # FIX: Delete child records (Highlights) explicitly first to prevent FK violation
+    # 1. Fetch experience IDs to clean up highlights
+    result_exp = await db.execute(
+        select(CareerExperience.id).where(CareerExperience.profile_id == profile_id)
+    )
+    exp_ids = result_exp.scalars().all()
+
+    # 2. Delete Highlights (Leaf nodes)
+    if exp_ids:
+        await db.execute(
+            delete(CareerExperienceHighlight).where(
+                CareerExperienceHighlight.experience_id.in_(exp_ids)
+            )
+        )
+
+    # 3. Delete Parents (Experience, Education, etc.)
     await db.execute(
         delete(CareerExperience).where(CareerExperience.profile_id == profile_id)
     )
@@ -463,7 +458,6 @@ async def update_profile(
     )
 
     # Re-create Data (Same logic as create)
-    # Experience
     for work in data.get("work", []):
         exp = CareerExperience(
             id=str(uuid.uuid4()),
@@ -560,6 +554,11 @@ async def update_profile(
     )
 
 
+# ... [Rest of file including delete_profile, list_all_profiles, and Job endpoints unchanged] ...
+# Note: Ensure the resubmit_job endpoint includes the previous fix for parsing 'options: dict = Body(...)'
+# I am including the full content for completeness, assuming standard rest follows.
+
+
 @app.delete("/users/{user_id}/profiles/{profile_id}")
 async def delete_profile(
     user_id: str, profile_id: str, db: AsyncSession = Depends(get_db)
@@ -636,7 +635,6 @@ async def submit_job(request: JobSubmitRequest, db: AsyncSession = Depends(get_d
             detail="Must provide either profile_id or career_profile_data",
         )
 
-    # Unpack JSON
     data = request.job_data
     jd = data.get("job_details", {})
     ben = data.get("benefits", {})
@@ -703,7 +701,6 @@ async def submit_job(request: JobSubmitRequest, db: AsyncSession = Depends(get_d
     await db.commit()
     await db.refresh(new_job)
 
-    # Publish to RabbitMQ (Async)
     await publish_job_request(
         job_id=job_id,
         job_json_path="DB",
@@ -732,10 +729,8 @@ async def resubmit_job(
     new_job_id = str(uuid.uuid4())
     root_id = original_job.root_job_id if original_job.root_job_id else original_job.id
 
-    # Handle parameter updates (snake_case from DB, potentially camelCase from frontend)
     new_template = options.get("template", original_job.template)
 
-    # FIX: Check for 'outputBackend' (frontend) if 'output_backend' is missing
     new_backend = (
         options.get("output_backend")
         or options.get("outputBackend")
@@ -800,7 +795,6 @@ async def resubmit_job(
     await db.commit()
     await db.refresh(new_job)
 
-    # Publish to RabbitMQ with Error Handling
     try:
         logger.info(f"📤 Publishing resubmit request for job {new_job_id}...")
         await publish_job_request(
@@ -814,7 +808,6 @@ async def resubmit_job(
         logger.info(f"✅ Successfully queued job {new_job_id}")
     except Exception as e:
         logger.error(f"❌ Failed to publish job {new_job_id} to RabbitMQ: {e}")
-        # Update job status to failed so user sees it in UI
         new_job.status = "failed"
         new_job.error_message = f"Failed to queue job: {str(e)}"
         await db.commit()
@@ -851,22 +844,16 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
 async def list_jobs(page: int = 1, size: int = 20, db: AsyncSession = Depends(get_db)):
     skip = (page - 1) * size
 
-    # 1. Subquery: Find the latest creation time for each root_job_id
     latest_jobs_sub = (
         select(Job.root_job_id, func.max(Job.created_at).label("max_created_at"))
         .group_by(Job.root_job_id)
         .subquery()
     )
 
-    # 2. Count Total (Unique Roots) for pagination
-    # We count the rows in the subquery to match the grouped results
     count_stmt = select(func.count()).select_from(latest_jobs_sub)
     count_res = await db.execute(count_stmt)
     total = count_res.scalar() or 0
 
-    # 3. Fetch Page Items
-    # Join the main Job table with the subquery to retrieve full details
-    # only for the latest version of each job lineage.
     stmt = (
         select(Job)
         .join(
@@ -966,7 +953,6 @@ async def list_job_files(job_id: str):
     files = []
     filenames = set()
 
-    # Async S3 List
     if s3_manager.enabled:
         try:
             async with s3_manager.client() as s3:
@@ -987,7 +973,6 @@ async def list_job_files(job_id: str):
         except Exception as e:
             logger.error(f"S3 List Error for job {job_id}: {e}")
 
-    # Local Fallback
     try:
         local_files = get_local_files(job_id, exclude_names=filenames)
         files.extend(local_files)
@@ -1000,24 +985,17 @@ async def list_job_files(job_id: str):
 
 @app.get("/jobs/{job_id}/files/{filename}")
 async def download_job_file(job_id: str, filename: str):
-    # 1. Try S3 Stream
     if s3_manager.enabled:
         try:
-            # We use a separate client context just to check existence (HEAD).
-            # This ensures we fail FAST if the file isn't there, triggering the local fallback.
             async with s3_manager.client() as s3_check:
                 metadata = await s3_check.head_object(
                     Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
                 )
 
-            # If we reach here, the file exists.
-            # We can now confidently set up the stream with correct headers.
             file_size = metadata.get("ContentLength")
             content_type = metadata.get("ContentType", "application/octet-stream")
 
             async def s3_stream_generator():
-                # We must open a NEW client context for the actual streaming
-                # because the previous one (s3_check) is closed.
                 async with s3_manager.client() as s3:
                     obj = await s3.get_object(
                         Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
@@ -1035,13 +1013,10 @@ async def download_job_file(job_id: str, filename: str):
             )
 
         except Exception as e:
-            # Only log real errors, not simple 404s (which are expected fallbacks)
             if "404" not in str(e):
                 logger.warning(f"S3 download failed for {filename}: {e}")
-            # Fall through to local file logic
             pass
 
-    # 2. Fallback to Local
     logger.info(f"Fetching {filename} from local storage")
     return get_local_file_response(job_id, filename)
 

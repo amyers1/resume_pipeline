@@ -3,6 +3,53 @@ import { useParams, useNavigate } from "react-router-dom";
 import { apiService } from "../services/api";
 import { useUser } from "../contexts/UserContext";
 
+// FIX: Moved Input components outside of ProfileEditor to prevent re-creation on render
+const InputField = ({
+    label,
+    value,
+    onChange,
+    type = "text",
+    placeholder,
+    required = false,
+    className = "",
+}) => (
+    <div className={className}>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {label} {required && "*"}
+        </label>
+        <input
+            type={type}
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            required={required}
+            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+        />
+    </div>
+);
+
+const TextAreaField = ({
+    label,
+    value,
+    onChange,
+    rows = 3,
+    placeholder,
+    className = "",
+}) => (
+    <div className={className}>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {label}
+        </label>
+        <textarea
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            rows={rows}
+            placeholder={placeholder}
+            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+        />
+    </div>
+);
+
 export default function ProfileEditor() {
     const { profileId } = useParams();
     const navigate = useNavigate();
@@ -267,53 +314,6 @@ export default function ProfileEditor() {
             setSaving(false);
         }
     };
-
-    // Reusable Input Component for Consistency
-    const InputField = ({
-        label,
-        value,
-        onChange,
-        type = "text",
-        placeholder,
-        required = false,
-        className = "",
-    }) => (
-        <div className={className}>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {label} {required && "*"}
-            </label>
-            <input
-                type={type}
-                value={value || ""}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={placeholder}
-                required={required}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-            />
-        </div>
-    );
-
-    const TextAreaField = ({
-        label,
-        value,
-        onChange,
-        rows = 3,
-        placeholder,
-        className = "",
-    }) => (
-        <div className={className}>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {label}
-            </label>
-            <textarea
-                value={value || ""}
-                onChange={(e) => onChange(e.target.value)}
-                rows={rows}
-                placeholder={placeholder}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-            />
-        </div>
-    );
 
     if (userLoading || loading) {
         return (
