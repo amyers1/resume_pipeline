@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiService, createJobStatusSSE } from "../services/api";
 import { useApp } from "../contexts/AppContext";
@@ -28,9 +28,6 @@ export default function JobDetailPage() {
     // Viewer State
     const [viewingFile, setViewingFile] = useState(null); // { name, url, type }
     const [loadingFile, setLoadingFile] = useState(false);
-
-    // Use ref to track if we've already fetched to avoid double-fetching
-    const hasFetchedRef = useRef(false);
 
     // Fetch job details
     const fetchJobDetails = async () => {
@@ -189,15 +186,19 @@ export default function JobDetailPage() {
         setViewingFile(null);
     };
 
-    // Initial fetch on mount
+    // Initial fetch on mount or when jobId changes
     useEffect(() => {
-        if (!hasFetchedRef.current) {
-            hasFetchedRef.current = true;
-            setEvents([]);
-            setCurrentStatus(null);
-            fetchJobDetails();
-            fetchJobFiles();
-        }
+        // Reset state for the new job ID
+        setEvents([]);
+        setCurrentStatus(null);
+        setFiles([]); // Clear old files immediately
+
+        // Fetch data for the new job
+        fetchJobDetails();
+        fetchJobFiles();
+
+        // Optional: Close any open file viewers from the previous job
+        setViewingFile(null);
     }, [jobId]);
 
     // Setup SSE connection
