@@ -956,44 +956,49 @@ async def list_job_files(job_id: str):
 
 @app.get("/jobs/{job_id}/files/{filename}")
 async def download_job_file(job_id: str, filename: str):
-    # Async S3 Stream
+    # 1. Try S3 Stream
     if s3_manager.enabled:
         try:
-            # We must open the client, get the object, and return a StreamingResponse
-            # that iterates over the body. Note: The client must stay open while streaming.
-            # aioboto3/aiobotocore context manager closes connection on exit.
-            # We need to manually handle the session or use a generator that keeps it alive.
+            # We use a separate client context just to check existence (HEAD).
+            # This ensures we fail FAST if the file isn't there, triggering the local fallback.
+            async with s3_manager.client() as s3_check:
+                metadata = await s3_check.head_object(
+                    Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
+                )
+
+            # If we reach here, the file exists.
+            # We can now confidently set up the stream with correct headers.
+            file_size = metadata.get("ContentLength")
+            content_type = metadata.get("ContentType", "application/octet-stream")
 
             async def s3_stream_generator():
+                # We must open a NEW client context for the actual streaming
+                # because the previous one (s3_check) is closed.
                 async with s3_manager.client() as s3:
-                    try:
-                        obj = await s3.get_object(
-                            Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
-                        )
-                        # Stream the body
-                        async for chunk in obj["Body"].iter_chunks(chunk_size=4096):
-                            yield chunk
-                    except Exception as e:
-                        logger.error(f"S3 Stream Error: {e}")
-                        raise HTTPException(
-                            status_code=404, detail="File not found in S3"
-                        )
-
-            # Check existence quickly before starting stream (optional, but good for 404s)
-            # For now, we trust the generator to fail if needed, but StreamingResponse
-            # starts immediately.
+                    obj = await s3.get_object(
+                        Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
+                    )
+                    async for chunk in obj["Body"].iter_chunks(chunk_size=4096):
+                        yield chunk
 
             return StreamingResponse(
                 s3_stream_generator(),
-                media_type="application/octet-stream",
-                headers={"Content-Disposition": f"inline; filename={filename}"},
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"inline; filename={filename}",
+                    "Content-Length": str(file_size) if file_size else None,
+                },
             )
 
-        except Exception:
-            # Fallback to local
+        except Exception as e:
+            # Only log real errors, not simple 404s (which are expected fallbacks)
+            if "404" not in str(e):
+                logger.warning(f"S3 download failed for {filename}: {e}")
+            # Fall through to local file logic
             pass
 
-    logger.info(f"fetching {filename} from local storage")
+    # 2. Fallback to Local
+    logger.info(f"Fetching {filename} from local storage")
     return get_local_file_response(job_id, filename)
 
 
