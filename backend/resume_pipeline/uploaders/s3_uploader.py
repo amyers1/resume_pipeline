@@ -1,6 +1,7 @@
 import io
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 from minio import Minio
 
@@ -18,6 +19,20 @@ class S3Uploader:
         bucket: str,
         secure: bool = True,
     ):
+        # FIX: Clean up endpoint URL to handle http://, https://, and paths
+        if "://" in endpoint:
+            parsed = urlparse(endpoint)
+            endpoint = parsed.netloc
+            # Auto-detect secure mode from scheme
+            if parsed.scheme == "http":
+                secure = False
+            elif parsed.scheme == "https":
+                secure = True
+
+        # Remove any trailing slashes or paths (Minio client forbids them)
+        if "/" in endpoint:
+            endpoint = endpoint.split("/")[0]
+
         # We use the Minio client library as it is a robust S3-compatible client
         self.client = Minio(
             endpoint, access_key=access_key, secret_key=secret_key, secure=secure

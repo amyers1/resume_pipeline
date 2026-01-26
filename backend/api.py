@@ -11,7 +11,7 @@ from typing import List, Optional
 
 import aioboto3
 from database import Base, engine, get_db
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Body, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from models import (
@@ -27,7 +27,6 @@ from models import (
     JobSubmitRequest,
     ProfileCreate,
     ProfileResponse,
-    ResubmitOptions,
     User,
     UserCreate,
     UserResponse,
@@ -127,40 +126,41 @@ broadcaster = SSEBroadcaster()
 
 
 async def run_async_consumer():
-    """Background task to consume RabbitMQ messages."""
+    """Background task to consume RabbitMQ messages (Status & Progress only)."""
     config = RabbitMQConfig()
     client = AsyncRabbitMQClient(config)
 
-    # Callback to push messages to SSE
-    async def on_message(data):
-        await broadcaster.broadcast(data)
-
     try:
         await client.connect()
-        await client.consume_jobs(
-            lambda x: None
-        )  # The API doesn't consume jobs, strictly status
-        # We need a dedicated consume_status method or similar if we want to stream updates back
-        # NOTE: For the API, we likely want to consume the STATUS queue to update the frontend
-        # Creating a specific consume loop for the API:
+        logger.info("✅ API Worker connected to RabbitMQ (listening for updates)")
 
+        # FIX: Removed await client.consume_jobs(...)
+        # The API should NOT consume jobs (that's for the worker).
+        # We only want to listen to status and progress updates.
+
+        # 1. Declare queues to ensure they exist
         queue = await client.channel.declare_queue(config.status_queue, durable=True)
         progress_queue = await client.channel.declare_queue(
             config.progress_queue, durable=True
         )
 
-        async def process_queue(q):
+        # 2. Define the consumption logic
+        async def process_queue(q, name):
+            logger.info(f"🎧 Listening to queue: {name}")
             async with q.iterator() as queue_iter:
                 async for message in queue_iter:
                     async with message.process():
                         try:
                             data = json.loads(message.body.decode())
+                            # logger.debug(f"Broadcast: {data}")
                             await broadcaster.broadcast(data)
                         except Exception as e:
-                            logger.error(f"Broadcast error: {e}")
+                            logger.error(f"Broadcast error on {name}: {e}")
 
-        # Run consumers for both status and progress
-        await asyncio.gather(process_queue(queue), process_queue(progress_queue))
+        # 3. Run both consumers concurrently
+        await asyncio.gather(
+            process_queue(queue, "status"), process_queue(progress_queue, "progress")
+        )
 
     except asyncio.CancelledError:
         logger.info("RabbitMQ consumer cancelled")
@@ -719,40 +719,39 @@ async def submit_job(request: JobSubmitRequest, db: AsyncSession = Depends(get_d
 
 
 @app.post("/jobs/{job_id}/submit", response_model=JobResponse, status_code=201)
-@app.post("/jobs/{job_id}/submit", response_model=JobResponse, status_code=201)
 async def resubmit_job(
-    job_id: str,
-    options: ResubmitOptions,  # Use Pydantic model here!
-    db: AsyncSession = Depends(get_db),
+    job_id: str, options: dict = Body(default={}), db: AsyncSession = Depends(get_db)
 ):
-    # 1. Fetch original job
+    logger.info(f"🔄 Resubmitting job {job_id} with options: {options}")
+
     result = await db.execute(select(Job).where(Job.id == job_id))
     original_job = result.scalars().first()
     if not original_job:
         raise HTTPException(status_code=404, detail="Original job not found")
 
-    # 2. Prepare new job data
     new_job_id = str(uuid.uuid4())
     root_id = original_job.root_job_id if original_job.root_job_id else original_job.id
 
-    # 3. Apply Overrides (Use the Pydantic model fields)
-    new_template = options.template or original_job.template
-    new_backend = options.output_backend or original_job.output_backend
-    new_priority = (
-        options.priority if options.priority is not None else original_job.priority
+    # Handle parameter updates (snake_case from DB, potentially camelCase from frontend)
+    new_template = options.get("template", original_job.template)
+
+    # FIX: Check for 'outputBackend' (frontend) if 'output_backend' is missing
+    new_backend = (
+        options.get("output_backend")
+        or options.get("outputBackend")
+        or original_job.output_backend
     )
 
-    # Merge advanced settings
-    orig_settings = original_job.advanced_settings or {}
-    new_settings_input = options.advanced_settings or {}
-    final_settings = {**orig_settings, **new_settings_input}
+    new_priority = options.get("priority", original_job.priority)
 
-    # 4. Create new Job Record
+    orig_settings = original_job.advanced_settings or {}
+    new_settings = options.get("advanced_settings", {})
+    final_settings = {**orig_settings, **new_settings}
+
     new_job = Job(
         id=new_job_id,
         user_id=original_job.user_id,
         root_job_id=root_id,
-        # ... Copy all other fields from original_job ...
         company=original_job.company,
         job_title=original_job.job_title,
         source=original_job.source,
@@ -790,7 +789,6 @@ async def resubmit_job(
         jd_must_have_skills=original_job.jd_must_have_skills,
         jd_nice_to_have_skills=original_job.jd_nice_to_have_skills,
         career_profile_json=original_job.career_profile_json,
-        # Apply New Config
         template=new_template,
         output_backend=new_backend,
         priority=new_priority,
@@ -802,15 +800,25 @@ async def resubmit_job(
     await db.commit()
     await db.refresh(new_job)
 
-    # 5. Publish to RabbitMQ
-    await publish_job_request(
-        job_id=new_job_id,
-        job_json_path="DB",
-        career_profile_path="DB",
-        template=new_template,
-        output_backend=new_backend,
-        priority=new_priority,
-    )
+    # Publish to RabbitMQ with Error Handling
+    try:
+        logger.info(f"📤 Publishing resubmit request for job {new_job_id}...")
+        await publish_job_request(
+            job_id=new_job_id,
+            job_json_path="DB",
+            career_profile_path="DB",
+            template=new_template,
+            output_backend=new_backend,
+            priority=new_priority,
+        )
+        logger.info(f"✅ Successfully queued job {new_job_id}")
+    except Exception as e:
+        logger.error(f"❌ Failed to publish job {new_job_id} to RabbitMQ: {e}")
+        # Update job status to failed so user sees it in UI
+        new_job.status = "failed"
+        new_job.error_message = f"Failed to queue job: {str(e)}"
+        await db.commit()
+        raise HTTPException(status_code=500, detail=f"Failed to queue job: {str(e)}")
 
     response_obj = JobResponse.model_validate(new_job, from_attributes=True)
     response_obj.job_description_json = new_job.to_schema_json()
