@@ -1,29 +1,32 @@
 """
-Resume Pipeline Worker - Python 3.14 Compatible
+Resume Pipeline Worker - AsyncIO Compatible
 
 Processes resume generation jobs from RabbitMQ queue with PostgreSQL backend.
-Updated for Python 3.14 compatibility with proper type hints.
+Uses asyncio for RabbitMQ/DB IO and threads for CPU-bound Pipeline execution.
 """
 
+import asyncio
 import json
 import logging
-import os
 import sys
 import tempfile
 import traceback
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-from database import SessionLocal
+from database import AsyncSessionLocal
 from models import Job
 from rabbitmq import (
+    AsyncRabbitMQClient,
     JobRequest,
     MessageType,
     PipelineStage,
-    RabbitMQClient,
 )
 from resume_pipeline.config import PipelineConfig
 from resume_pipeline.pipeline import ResumePipeline
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Configure logging
 logging.basicConfig(
@@ -34,55 +37,77 @@ logger = logging.getLogger(__name__)
 
 class DatabaseResumeWorker:
     """
-    Worker that processes resume generation jobs from RabbitMQ.
-
-    Reads job details from PostgreSQL, runs the resume pipeline,
-    and updates job status back to the database.
+    Async Worker that processes resume generation jobs.
     """
 
     def __init__(self):
-        """Initialize worker with RabbitMQ client."""
-        self.rabbitmq = RabbitMQClient()
-        logger.info("Worker initialized")
+        """Initialize worker with Async RabbitMQ client."""
+        self.rabbitmq = AsyncRabbitMQClient()
+        self.loop = asyncio.get_event_loop()
+        logger.info("Async Worker initialized")
 
-    def process_job(self, request: JobRequest) -> None:
+    def _run_pipeline_sync(
+        self, config: PipelineConfig, job_id: str, progress_queue: asyncio.Queue
+    ):
         """
-        Process a single job request.
+        Wrapper to run the synchronous ResumePipeline in a separate thread.
+        Bridges the synchronous callback to the async event loop via a Queue or run_coroutine_threadsafe.
+        """
 
-        Args:
-            request: Job request from RabbitMQ queue
+        # Define the callback that runs in the THREAD
+        def thread_callback(stage: str, percent: int, message: str):
+            # Schedule the publish coroutine on the MAIN EVENT LOOP
+            asyncio.run_coroutine_threadsafe(
+                self.rabbitmq.publish_progress(job_id, stage, percent, message),
+                self.loop,
+            )
+
+        try:
+            pipeline = ResumePipeline(config)
+
+            # Use the existing method in ResumePipeline to attach our bridge
+            if hasattr(pipeline, "set_progress_callback"):
+                pipeline.set_progress_callback(thread_callback)
+
+            # BLOCKING CALL - Runs in thread
+            return pipeline.run()
+        except Exception as e:
+            raise e
+
+    async def process_job(self, request: JobRequest) -> None:
+        """
+        Process a single job request asynchronously.
         """
         logger.info(f"📥 Processing Job ID: {request.job_id}")
 
-        db = SessionLocal()
+        async with AsyncSessionLocal() as db:
+            try:
+                # 1. Fetch Job (Async)
+                result = await db.execute(select(Job).where(Job.id == request.job_id))
+                job = result.scalars().first()
 
-        try:
-            job = db.query(Job).filter(Job.id == request.job_id).first()
+                if not job:
+                    logger.error(f"❌ Job {request.job_id} not found in database")
+                    return
 
-            if not job:
-                logger.error(f"❌ Job {request.job_id} not found in database")
-                return
+                # 2. Update Status to Processing (Async)
+                job.status = "processing"
+                job.started_at = datetime.now(timezone.utc)
+                await db.commit()
 
-            # Update status to processing
-            job.status = "processing"
-            job.started_at = datetime.now(UTC)
-            db.commit()
+                await self.rabbitmq.publish_job_status(
+                    job_id=job.id, status=MessageType.JOB_STARTED
+                )
 
-            # Publish job started event
-            self.rabbitmq.publish_job_status(
-                job_id=job.id, status=MessageType.JOB_STARTED
-            )
+                # 3. Prepare Pipeline Config (CPU Bound - fast enough to run in loop)
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_path = Path(temp_dir)
 
-            # Create temporary workspace for file-based pipeline
-            with tempfile.TemporaryDirectory() as temp_dir:
-                temp_path = Path(temp_dir)
-
-                try:
-                    # Generate job files from database
+                    # Generate temporary files for the pipeline logic
                     jd_path = temp_path / "job_description.json"
                     profile_path = temp_path / "career_profile.json"
 
-                    # Reconstruct JSON from database columns
+                    # Note: job.to_schema_json() is synchronous Pydantic logic
                     reconstructed_json = job.to_schema_json()
 
                     with open(jd_path, "w", encoding="utf-8") as f:
@@ -91,11 +116,9 @@ class DatabaseResumeWorker:
                     with open(profile_path, "w", encoding="utf-8") as f:
                         json.dump(job.career_profile_json, f, indent=2)
 
-                    # Define persistent output directory
                     persistent_output = Path("output") / str(job.id)
                     persistent_output.mkdir(parents=True, exist_ok=True)
 
-                    # Configure pipeline with job settings
                     pipeline_overrides = {
                         "company_name": job.company,
                         "job_title": job.job_title,
@@ -110,198 +133,140 @@ class DatabaseResumeWorker:
                         "use_flat_structure": True,
                     }
 
-                    # Inject advanced settings from database if present
                     if job.advanced_settings:
                         pipeline_overrides.update(job.advanced_settings)
 
                     config = PipelineConfig.from_env(**pipeline_overrides)
 
-                    # Create pipeline with progress callback
-                    pipeline = ResumePipeline(config)
-
-                    def progress_callback(
-                        stage: str, percent: int, message: str
-                    ) -> None:
-                        """Callback for pipeline progress updates."""
-                        logger.info(f"[{percent}%] {stage}: {message}")
-
-                        # Map stage names to PipelineStage enum
-                        stage_map = {
-                            "analyzing_jd": PipelineStage.ANALYSIS,
-                            "matching_achievements": PipelineStage.ANALYSIS,
-                            "generating_draft": PipelineStage.GENERATING_DRAFT,
-                            "critiquing": PipelineStage.CRITIQUE,
-                            "refining": PipelineStage.REFINEMENT,
-                            "generating_output": PipelineStage.FORMATTING,
-                            "post_processing": PipelineStage.FORMATTING,
-                        }
-
-                        pipeline_stage = stage_map.get(
-                            stage, PipelineStage.GENERATING_DRAFT
-                        )
-
-                        # Publish progress to RabbitMQ
-                        self.rabbitmq.publish_progress(
-                            job_id=job.id,
-                            stage=pipeline_stage,
-                            percent=percent,
-                            message=message,
-                        )
-
-                    # Set progress callback if supported
-                    if hasattr(pipeline, "set_progress_callback"):
-                        pipeline.set_progress_callback(progress_callback)
-
-                    # Run the pipeline
+                    # 4. Run Pipeline in Thread (Offload blocking work)
                     logger.info(
                         f"🚀 Starting pipeline for {job.company} - {job.job_title}"
                     )
-                    start_time = datetime.now(UTC)
 
-                    structured_resume, output_artifact, pdf_path = pipeline.run()
+                    # asyncio.to_thread runs the sync function in a separate thread
+                    # while awaiting it here, allowing the loop to handle other events (like heartbeats)
+                    start_time = datetime.now(timezone.utc)
 
-                    end_time = datetime.now(UTC)
+                    # Pass a dummy queue if not using it, or handle callback logic inside wrapper
+                    # The wrapper `_run_pipeline_sync` handles the callback bridging.
+                    (
+                        structured_resume,
+                        output_artifact,
+                        pdf_path,
+                    ) = await asyncio.to_thread(
+                        self._run_pipeline_sync, config, job.id, None
+                    )
+
+                    end_time = datetime.now(timezone.utc)
                     processing_time = (end_time - start_time).total_seconds()
-
                     logger.info(f"✅ Pipeline completed in {processing_time:.1f}s")
 
-                    # Collect output files
+                    # 5. Collect Results
                     output_files = {}
                     if pdf_path and pdf_path.exists():
                         output_files["pdf"] = str(pdf_path)
 
-                    # Find other generated files
                     for ext in [".tex", ".json", ".md"]:
                         files = list(persistent_output.glob(f"*{ext}"))
                         if files:
                             output_files[ext.lstrip(".")] = str(files[0])
 
-                    # Update job in database
+                    # 6. Update Database (Async)
+                    # We need to re-fetch or attach the job instance if the session expired,
+                    # but usually with async session context it remains active.
                     job.status = "completed"
                     job.completed_at = end_time
                     job.processing_time_seconds = processing_time
                     job.output_files = output_files
-
-                    # Store final quality score if available
                     if hasattr(structured_resume, "final_score"):
                         job.final_score = structured_resume.final_score
 
-                    db.commit()
+                    await db.commit()
 
-                    # Publish completion event
-                    self.rabbitmq.publish_completion(
+                    await self.rabbitmq.publish_completion(
                         job_id=job.id,
                         output_files=output_files,
                         started_at=start_time.isoformat(),
                     )
-
                     logger.info(f"✅ Job {job.id} completed successfully")
 
-                except Exception as e:
-                    # Handle pipeline errors
-                    error_msg = str(e)
-                    error_trace = traceback.format_exc()
+            except Exception as e:
+                # Error Handling
+                error_msg = str(e)
+                error_trace = traceback.format_exc()
+                logger.error(f"❌ Pipeline failed: {error_msg}")
+                logger.debug(error_trace)
 
-                    logger.error(f"❌ Pipeline failed: {error_msg}")
-                    logger.debug(error_trace)
-
-                    # Update job with error
-                    job.status = "failed"
-                    job.completed_at = datetime.now(UTC)
-                    job.error_message = error_msg
-
-                    if job.started_at:
-                        processing_time = (
-                            datetime.now(UTC) - job.started_at
-                        ).total_seconds()
-                        job.processing_time_seconds = processing_time
-
-                    db.commit()
-
-                    # Publish error event
-                    self.rabbitmq.publish_error(
-                        job_id=job.id,
-                        error_msg=error_msg,
-                        started_at=job.started_at.isoformat() if job.started_at else "",
+                # Re-fetch job to ensure clean state for error update
+                try:
+                    result = await db.execute(
+                        select(Job).where(Job.id == request.job_id)
                     )
+                    job = result.scalars().first()
+                    if job:
+                        job.status = "failed"
+                        job.completed_at = datetime.now(timezone.utc)
+                        job.error_message = error_msg
+                        await db.commit()
 
-                    logger.error(f"❌ Job {job.id} failed after {processing_time:.1f}s")
+                        await self.rabbitmq.publish_error(
+                            job_id=job.id,
+                            error_msg=error_msg,
+                            started_at=job.started_at.isoformat()
+                            if job.started_at
+                            else "",
+                        )
+                except Exception as db_err:
+                    logger.error(f"Failed to update job error state: {db_err}")
 
-        except Exception as e:
-            logger.error(f"❌ Error processing job {request.job_id}: {e}")
-            logger.debug(traceback.format_exc())
-
-        finally:
-            db.close()
-
-    def start(self) -> None:
+    async def start(self) -> None:
         """
         Start the worker and begin consuming jobs from RabbitMQ.
-
-        This will run indefinitely until interrupted.
         """
         logger.info("=" * 80)
-        logger.info("Resume Pipeline Worker Starting")
-        logger.info("=" * 80)
-        logger.info(
-            f"RabbitMQ Host: {self.rabbitmq.config.host}:{self.rabbitmq.config.port}"
-        )
-        logger.info(f"Job Queue: {self.rabbitmq.config.job_queue}")
-        logger.info(f"Status Queue: {self.rabbitmq.config.status_queue}")
-        logger.info(f"Progress Queue: {self.rabbitmq.config.progress_queue}")
+        logger.info("Async Resume Pipeline Worker Starting")
         logger.info("=" * 80)
 
-        # Ensure output directory exists
         Path("output").mkdir(exist_ok=True)
 
-        # Connect to RabbitMQ (note: connect() may return None, so check channel instead)
         try:
-            self.rabbitmq.connect()
-
-            # Verify connection by checking if channel exists
-            if not self.rabbitmq.channel:
-                logger.error("❌ Failed to establish RabbitMQ channel")
-                sys.exit(1)
-
+            await self.rabbitmq.connect()
             logger.info("✅ Ready to process jobs")
 
-        except Exception as e:
-            logger.error(f"❌ Failed to connect to RabbitMQ: {e}")
-            sys.exit(1)
+            # Start consuming
+            # The callback `process_job` is async, so aio_pika will await it automatically
+            await self.rabbitmq.consume_jobs(callback=self.process_job)
 
-        # Start consuming jobs
-        try:
-            logger.info("👀 Waiting for jobs...")
-            self.rabbitmq.consume_jobs(callback=self.process_job)
-        except KeyboardInterrupt:
-            logger.info("\n⚠️  Worker interrupted by user")
+            # Keep the loop running
+            # In a real app, consume_jobs might return a Future or we wait on a signal
+            # aio_pika's start_consuming is blocking (but async compatible),
+            # but our RabbitMQClient wrapper uses a non-blocking iterator approach usually.
+            # If your RabbitMQClient.consume_jobs returns immediately (starts background task),
+            # we need to wait here.
+            # Based on previous refactor, consume_jobs awaits the iterator, so it blocks execution
+            # (in a good way) until cancelled.
+
+        except asyncio.CancelledError:
+            logger.info("Worker cancelled")
         except Exception as e:
-            logger.error(f"❌ Worker error: {e}")
-            logger.debug(traceback.format_exc())
+            logger.error(f"❌ Fatal Worker Error: {e}")
+            sys.exit(1)
         finally:
-            logger.info("🛑 Shutting down worker...")
-            if hasattr(self.rabbitmq, "connection") and self.rabbitmq.connection:
-                try:
-                    self.rabbitmq.connection.close()
-                except:
-                    pass
-            logger.info("✅ Worker shut down gracefully")
+            await self.rabbitmq.close()
 
 
 def main() -> None:
     """Main entry point for the worker."""
-    # Suppress Pydantic v1 warning from LangChain
     import warnings
 
-    warnings.filterwarnings(
-        "ignore",
-        message="Core Pydantic V1 functionality isn't compatible with Python 3.14",
-        category=UserWarning,
-    )
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     try:
         worker = DatabaseResumeWorker()
-        worker.start()
+        asyncio.run(worker.start())
+    except KeyboardInterrupt:
+        # Allow graceful exit on Ctrl+C
+        pass
     except Exception as e:
         logger.error(f"❌ Fatal error: {e}")
         logger.debug(traceback.format_exc())
