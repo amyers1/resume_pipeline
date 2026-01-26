@@ -417,3 +417,10 @@ class JobListResponse(BaseModel):
     total: int
     page: int
     size: int
+
+
+class ResubmitOptions(BaseModel):
+    template: Optional[str] = None
+    output_backend: Optional[str] = None
+    priority: Optional[int] = None
+    advanced_settings: Optional[Dict[str, Any]] = None

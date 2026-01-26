@@ -43,24 +43,25 @@ class DatabaseResumeWorker:
     def __init__(self):
         """Initialize worker with Async RabbitMQ client."""
         self.rabbitmq = AsyncRabbitMQClient()
-        self.loop = asyncio.get_event_loop()
+        self.loop = None  # Loop is initialized in start()
         logger.info("Async Worker initialized")
 
     def _run_pipeline_sync(
-        self, config: PipelineConfig, job_id: str, progress_queue: asyncio.Queue
+        self, config: PipelineConfig, job_id: str, loop: asyncio.AbstractEventLoop
     ):
         """
         Wrapper to run the synchronous ResumePipeline in a separate thread.
-        Bridges the synchronous callback to the async event loop via a Queue or run_coroutine_threadsafe.
+        Bridges the synchronous callback to the async event loop via run_coroutine_threadsafe.
         """
 
         # Define the callback that runs in the THREAD
         def thread_callback(stage: str, percent: int, message: str):
             # Schedule the publish coroutine on the MAIN EVENT LOOP
-            asyncio.run_coroutine_threadsafe(
-                self.rabbitmq.publish_progress(job_id, stage, percent, message),
-                self.loop,
-            )
+            if loop and loop.is_running():
+                asyncio.run_coroutine_threadsafe(
+                    self.rabbitmq.publish_progress(job_id, stage, percent, message),
+                    loop,
+                )
 
         try:
             pipeline = ResumePipeline(config)
@@ -99,7 +100,7 @@ class DatabaseResumeWorker:
                     job_id=job.id, status=MessageType.JOB_STARTED
                 )
 
-                # 3. Prepare Pipeline Config (CPU Bound - fast enough to run in loop)
+                # 3. Prepare Pipeline Config
                 with tempfile.TemporaryDirectory() as temp_dir:
                     temp_path = Path(temp_dir)
 
@@ -143,18 +144,15 @@ class DatabaseResumeWorker:
                         f"🚀 Starting pipeline for {job.company} - {job.job_title}"
                     )
 
-                    # asyncio.to_thread runs the sync function in a separate thread
-                    # while awaiting it here, allowing the loop to handle other events (like heartbeats)
                     start_time = datetime.now(timezone.utc)
 
-                    # Pass a dummy queue if not using it, or handle callback logic inside wrapper
-                    # The wrapper `_run_pipeline_sync` handles the callback bridging.
+                    # Pass the captured loop explicitly to the sync wrapper
                     (
                         structured_resume,
                         output_artifact,
                         pdf_path,
                     ) = await asyncio.to_thread(
-                        self._run_pipeline_sync, config, job.id, None
+                        self._run_pipeline_sync, config, job.id, self.loop
                     )
 
                     end_time = datetime.now(timezone.utc)
@@ -172,8 +170,6 @@ class DatabaseResumeWorker:
                             output_files[ext.lstrip(".")] = str(files[0])
 
                     # 6. Update Database (Async)
-                    # We need to re-fetch or attach the job instance if the session expired,
-                    # but usually with async session context it remains active.
                     job.status = "completed"
                     job.completed_at = end_time
                     job.processing_time_seconds = processing_time
@@ -197,8 +193,8 @@ class DatabaseResumeWorker:
                 logger.error(f"❌ Pipeline failed: {error_msg}")
                 logger.debug(error_trace)
 
-                # Re-fetch job to ensure clean state for error update
                 try:
+                    # Async Re-fetch for error update
                     result = await db.execute(
                         select(Job).where(Job.id == request.job_id)
                     )
@@ -227,6 +223,9 @@ class DatabaseResumeWorker:
         logger.info("Async Resume Pipeline Worker Starting")
         logger.info("=" * 80)
 
+        # CAPTURE LOOP HERE - Inside the async context
+        self.loop = asyncio.get_running_loop()
+
         Path("output").mkdir(exist_ok=True)
 
         try:
@@ -234,17 +233,7 @@ class DatabaseResumeWorker:
             logger.info("✅ Ready to process jobs")
 
             # Start consuming
-            # The callback `process_job` is async, so aio_pika will await it automatically
             await self.rabbitmq.consume_jobs(callback=self.process_job)
-
-            # Keep the loop running
-            # In a real app, consume_jobs might return a Future or we wait on a signal
-            # aio_pika's start_consuming is blocking (but async compatible),
-            # but our RabbitMQClient wrapper uses a non-blocking iterator approach usually.
-            # If your RabbitMQClient.consume_jobs returns immediately (starts background task),
-            # we need to wait here.
-            # Based on previous refactor, consume_jobs awaits the iterator, so it blocks execution
-            # (in a good way) until cancelled.
 
         except asyncio.CancelledError:
             logger.info("Worker cancelled")
@@ -265,7 +254,6 @@ def main() -> None:
         worker = DatabaseResumeWorker()
         asyncio.run(worker.start())
     except KeyboardInterrupt:
-        # Allow graceful exit on Ctrl+C
         pass
     except Exception as e:
         logger.error(f"❌ Fatal error: {e}")

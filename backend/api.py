@@ -27,6 +27,7 @@ from models import (
     JobSubmitRequest,
     ProfileCreate,
     ProfileResponse,
+    ResubmitOptions,
     User,
     UserCreate,
     UserResponse,
@@ -718,29 +719,40 @@ async def submit_job(request: JobSubmitRequest, db: AsyncSession = Depends(get_d
 
 
 @app.post("/jobs/{job_id}/submit", response_model=JobResponse, status_code=201)
+@app.post("/jobs/{job_id}/submit", response_model=JobResponse, status_code=201)
 async def resubmit_job(
-    job_id: str, options: dict = {}, db: AsyncSession = Depends(get_db)
+    job_id: str,
+    options: ResubmitOptions,  # Use Pydantic model here!
+    db: AsyncSession = Depends(get_db),
 ):
+    # 1. Fetch original job
     result = await db.execute(select(Job).where(Job.id == job_id))
     original_job = result.scalars().first()
     if not original_job:
         raise HTTPException(status_code=404, detail="Original job not found")
 
+    # 2. Prepare new job data
     new_job_id = str(uuid.uuid4())
     root_id = original_job.root_job_id if original_job.root_job_id else original_job.id
 
-    new_template = options.get("template", original_job.template)
-    new_backend = options.get("output_backend", original_job.output_backend)
-    new_priority = options.get("priority", original_job.priority)
+    # 3. Apply Overrides (Use the Pydantic model fields)
+    new_template = options.template or original_job.template
+    new_backend = options.output_backend or original_job.output_backend
+    new_priority = (
+        options.priority if options.priority is not None else original_job.priority
+    )
 
+    # Merge advanced settings
     orig_settings = original_job.advanced_settings or {}
-    new_settings = options.get("advanced_settings", {})
-    final_settings = {**orig_settings, **new_settings}
+    new_settings_input = options.advanced_settings or {}
+    final_settings = {**orig_settings, **new_settings_input}
 
+    # 4. Create new Job Record
     new_job = Job(
         id=new_job_id,
         user_id=original_job.user_id,
         root_job_id=root_id,
+        # ... Copy all other fields from original_job ...
         company=original_job.company,
         job_title=original_job.job_title,
         source=original_job.source,
@@ -778,6 +790,7 @@ async def resubmit_job(
         jd_must_have_skills=original_job.jd_must_have_skills,
         jd_nice_to_have_skills=original_job.jd_nice_to_have_skills,
         career_profile_json=original_job.career_profile_json,
+        # Apply New Config
         template=new_template,
         output_backend=new_backend,
         priority=new_priority,
@@ -789,6 +802,7 @@ async def resubmit_job(
     await db.commit()
     await db.refresh(new_job)
 
+    # 5. Publish to RabbitMQ
     await publish_job_request(
         job_id=new_job_id,
         job_json_path="DB",

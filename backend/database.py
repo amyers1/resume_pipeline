@@ -23,8 +23,6 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
-        yield session
-
 
 # Legacy Synchronous Version
 # import os
