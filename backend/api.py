@@ -829,13 +829,35 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
 async def list_jobs(page: int = 1, size: int = 20, db: AsyncSession = Depends(get_db)):
     skip = (page - 1) * size
 
-    # Async count
-    count_res = await db.execute(select(func.count()).select_from(Job))
-    total = count_res.scalar()
-
-    jobs_res = await db.execute(
-        select(Job).order_by(desc(Job.created_at)).offset(skip).limit(size)
+    # 1. Subquery: Find the latest creation time for each root_job_id
+    latest_jobs_sub = (
+        select(Job.root_job_id, func.max(Job.created_at).label("max_created_at"))
+        .group_by(Job.root_job_id)
+        .subquery()
     )
+
+    # 2. Count Total (Unique Roots) for pagination
+    # We count the rows in the subquery to match the grouped results
+    count_stmt = select(func.count()).select_from(latest_jobs_sub)
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
+
+    # 3. Fetch Page Items
+    # Join the main Job table with the subquery to retrieve full details
+    # only for the latest version of each job lineage.
+    stmt = (
+        select(Job)
+        .join(
+            latest_jobs_sub,
+            (Job.root_job_id == latest_jobs_sub.c.root_job_id)
+            & (Job.created_at == latest_jobs_sub.c.max_created_at),
+        )
+        .order_by(desc(Job.created_at))
+        .offset(skip)
+        .limit(size)
+    )
+
+    jobs_res = await db.execute(stmt)
     jobs = jobs_res.scalars().all()
 
     items = []
