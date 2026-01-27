@@ -55,25 +55,14 @@ export default function Dashboard() {
         }
     };
 
-    // Listen to SSE updates for real-time status changes
     useEffect(() => {
         const cleanup = createAllJobsStatusSSE({
             onMessage: (payload) => {
-                // Update job status in real-time
-                if (payload.job_id && payload.status) {
+                // Update job in real-time with all its data
+                if (payload.id) {
                     dispatch({
-                        type: actionTypes.UPDATE_JOB_STATUS, // FIX: Correct action type
-                        payload: {
-                            job_id: payload.job_id,
-                            status:
-                                payload.status === "job_completed"
-                                    ? "completed"
-                                    : payload.status === "job_failed"
-                                      ? "failed"
-                                      : payload.status === "job_started"
-                                        ? "processing"
-                                        : "processing",
-                        },
+                        type: actionTypes.UPDATE_JOB,
+                        payload: payload,
                     });
                 }
             },

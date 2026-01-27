@@ -200,58 +200,51 @@ class DatabaseResumeWorker:
                     output_files[ext.lstrip(".")] = str(files[0])
 
             # 8. Update Database with success (new session)
+            job_dict = {}
             async with AsyncSessionLocal() as db:
-                result = await db.execute(select(Job).where(Job.id == job_id))
-                job = result.scalars().first()
-
-                if job:
-                    job.status = "completed"
-                    job.completed_at = end_time
-                    job.processing_time_seconds = processing_time
-                    job.output_files = output_files
+                job_to_update = await db.get(Job, job_id)
+                if job_to_update:
+                    job_to_update.status = "completed"
+                    job_to_update.completed_at = end_time
+                    job_to_update.processing_time_seconds = processing_time
+                    job_to_update.output_files = output_files
                     if hasattr(structured_resume, "final_score"):
-                        job.final_score = structured_resume.final_score
-
-                    # Save critique data with jd_requirements for frontend display
+                        job_to_update.final_score = structured_resume.final_score
                     if critique_data:
-                        critique_to_save = {
+                        job_to_update.critique_json = {
                             **critique_data,
                             "jd_requirements": jd_requirements_data,
                         }
-                        job.critique_json = critique_to_save
 
                     await db.commit()
+                    await db.refresh(job_to_update)
+                    job_dict = job_to_update.to_dict()  # Serialize after commit
 
-            await self.rabbitmq.publish_completion(
-                job_id=job_id,
-                output_files=output_files,
-                started_at=start_time.isoformat(),
-            )
+            await self.rabbitmq.publish_completion(job_id=job_id, job_data=job_dict)
             logger.info(f"✅ Job {job_id} completed successfully")
 
         except Exception as e:
-            # Pipeline execution error
+            # ... (error logging)
             error_msg = str(e)
             error_trace = traceback.format_exc()
             logger.error(f"❌ Pipeline failed: {error_msg}")
             logger.debug(error_trace)
 
-            # Update job with error (new session)
+            # Update DB and get data for publishing
+            job_dict = {}
             async with AsyncSessionLocal() as db:
-                result = await db.execute(select(Job).where(Job.id == job_id))
-                job = result.scalars().first()
-
-                if job:
-                    job.status = "failed"
-                    job.completed_at = datetime.now(timezone.utc)
-                    job.error_message = error_msg
+                job_to_update = await db.get(Job, job_id)
+                if job_to_update:
+                    job_to_update.status = "failed"
+                    job_to_update.completed_at = datetime.now(timezone.utc)
+                    job_to_update.error_message = error_msg
                     await db.commit()
+                    await db.refresh(job_to_update)
+                    job_dict = job_to_update.to_dict()  # Serialize after commit
 
-                    await self.rabbitmq.publish_error(
-                        job_id=job_id,
-                        error_msg=error_msg,
-                        started_at=start_time.isoformat() if start_time else "",
-                    )
+            await self.rabbitmq.publish_error(
+                job_id=job_id, error_msg=error_msg, job_data=job_dict
+            )
 
     async def start(self) -> None:
         """

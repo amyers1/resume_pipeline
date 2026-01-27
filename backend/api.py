@@ -788,6 +788,7 @@ async def resubmit_job(
         jd_must_have_skills=original_job.jd_must_have_skills,
         jd_nice_to_have_skills=original_job.jd_nice_to_have_skills,
         career_profile_json=original_job.career_profile_json,
+        critique_json=original_job.critique_json,
         template=new_template,
         output_backend=new_backend,
         priority=new_priority,
@@ -905,6 +906,8 @@ async def list_jobs(page: int = 1, size: int = 20, db: AsyncSession = Depends(ge
     for j in jobs:
         r = JobResponse.model_validate(j, from_attributes=True)
         r.job_description_json = j.to_schema_json()
+        r.template = j.template
+        r.output_backend = j.output_backend
         items.append(r)
 
     return {"items": items, "total": total, "page": page, "size": size}

@@ -113,21 +113,25 @@ const connectSSE = () => {
 
     globalEventSource.onmessage = (event) => {
         try {
-            // Heartbeats (comments) are automatically ignored by EventSource
-            // We only process "data" messages
-            const raw = JSON.parse(event.data);
+            let payload = event.data;
 
-            // Handle double-encoded data if present
-            const payload = raw.data
-                ? typeof raw.data === "string"
-                    ? JSON.parse(raw.data)
-                    : raw.data
-                : raw;
+            // Handle potential double-encoding
+            if (typeof payload === "string") {
+                payload = JSON.parse(payload);
+            }
+            if (payload.data && typeof payload.data === "string") {
+                payload = JSON.parse(payload.data);
+            }
 
             // Broadcast to all active listeners
             globalListeners.forEach((listener) => listener(payload));
         } catch (error) {
-            console.error("Failed to parse SSE message:", error);
+            console.error(
+                "Failed to parse SSE message:",
+                error,
+                "Raw data:",
+                event.data,
+            );
         }
     };
 

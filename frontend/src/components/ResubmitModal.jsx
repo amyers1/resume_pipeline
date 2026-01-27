@@ -1,21 +1,33 @@
 import { useState } from "react";
 import { TEMPLATES, OUTPUT_BACKENDS } from "../utils/constants";
 
-export default function ResubmitModal({ job, onSubmit, onClose }) {
+export default function ResubmitModal({
+    job,
+    onSubmit,
+    onClose,
+    isSubmitting,
+}) {
     const [config, setConfig] = useState({
-        // Removed unused 'careerProfilePath' - the backend now uses the DB profile
         template: job.template || "awesome-cv",
-        output_backend: job.output_backend || "weasyprint", // CHANGED to snake_case
+        output_backend: job.output_backend || "weasyprint",
         priority: Math.min((job.priority || 5) + 1, 10),
-        // Advanced settings can be grouped if your backend expects them
         advanced_settings: {
-            enable_uploads: true, // snake_case for consistency
+            ...job.advanced_settings,
+            // Example of overriding or adding a setting on resubmit
+            enable_uploads: true,
         },
     });
 
     const handleSubmit = () => {
-        onSubmit(config);
+        // Filter out template if backend is not latex
+        const finalConfig = { ...config };
+        if (finalConfig.output_backend !== "latex") {
+            finalConfig.template = "resume.html.j2"; // Default to HTML for non-latex
+        }
+        onSubmit(finalConfig);
     };
+
+    const isLatex = config.output_backend === "latex";
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -77,7 +89,9 @@ export default function ResubmitModal({ job, onSubmit, onClose }) {
                                 }
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                             >
-                                {TEMPLATES.map((template) => (
+                                {TEMPLATES.filter(
+                                    (t) => t.backend === "latex",
+                                ).map((template) => (
                                     <option
                                         key={template.value}
                                         value={template.value}

@@ -307,6 +307,24 @@ class Job(Base):
 
     user = relationship("User", back_populates="jobs")
 
+    def to_dict(self):
+        """Converts the Job object to a dictionary for SSE messages."""
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "root_job_id": self.root_job_id,
+            "status": self.status,
+            "company": self.company,
+            "job_title": self.job_title,
+            "source": self.source,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "template": self.template,
+            "output_backend": self.output_backend,
+            "priority": self.priority,
+            "final_score": self.final_score,
+            "critique": self.critique_json,
+        }
+
     def to_schema_json(self) -> Dict[str, Any]:
         return {
             "job_details": {
@@ -391,6 +409,8 @@ class JobResponse(BaseModel):
     job_title: str
     status: str
     created_at: datetime
+    template: Optional[str] = None  # Added this line
+    output_backend: Optional[str] = None  # Added this line
     job_description_json: Optional[Dict[str, Any]] = None
     final_score: Optional[float] = None
     critique: Optional[CritiqueResponse] = None

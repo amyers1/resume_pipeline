@@ -165,26 +165,23 @@ class AsyncRabbitMQClient:
         except Exception as e:
             logger.error(f"Failed to publish progress: {e}")
 
-    async def publish_completion(
-        self, job_id: str, output_files: dict, started_at: str
-    ):
-        """Publishes job completion status."""
+    async def publish_completion(self, job_id: str, job_data: dict):
+        """Publishes job completion status with the full job data."""
         payload = {
             "job_id": job_id,
             "type": MessageType.JOB_COMPLETED,
-            "output_files": output_files,
-            "started_at": started_at,
+            **job_data,
             "timestamp": time.time(),
         }
         await self._publish(self.config.status_queue, payload)
 
-    async def publish_error(self, job_id: str, error_msg: str, started_at: str):
-        """Publishes job error status."""
+    async def publish_error(self, job_id: str, error_msg: str, job_data: dict):
+        """Publishes job error status with the full job data."""
         payload = {
             "job_id": job_id,
             "type": MessageType.JOB_FAILED,
             "error": error_msg,
-            "started_at": started_at,
+            **job_data,
             "timestamp": time.time(),
         }
         await self._publish(self.config.status_queue, payload)

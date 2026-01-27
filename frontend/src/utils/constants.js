@@ -62,6 +62,7 @@ export const HEALTH_COLORS = {
 export const TEMPLATES = [
     { value: "modern-deedy", label: "Modern Deedy", backend: "latex" },
     { value: "awesome-cv", label: "Awesome CV", backend: "latex" },
+    { value: "resume.html.j2", label: "Standard HTML", backend: "weasyprint" },
 ];
 
 // Output backends

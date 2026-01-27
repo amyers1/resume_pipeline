@@ -94,11 +94,15 @@ export default function JobDetailPage() {
             },
         ]);
 
-        // FIX #3: Update job status in state based on message type
+        // When job completes or fails, refetch details to get all final data
+        if (payload.type === "JOB_COMPLETED" || payload.type === "JOB_FAILED") {
+            fetchJobDetails(); // Refreshes the whole job object
+            fetchJobFiles(); // Refreshes the file list
+        }
+
+        // Update live job status in the main state
         if (payload.type === "JOB_COMPLETED") {
             setJob((prev) => ({ ...prev, status: "completed" }));
-            // Fetch files when job completes
-            fetchJobFiles();
         } else if (payload.type === "JOB_FAILED") {
             setJob((prev) => ({
                 ...prev,
@@ -108,7 +112,6 @@ export default function JobDetailPage() {
         } else if (payload.type === "JOB_STARTED") {
             setJob((prev) => ({ ...prev, status: "processing" }));
         } else if (payload.type === "JOB_PROGRESS") {
-            // Keep status as processing during progress updates
             setJob((prev) => ({ ...prev, status: "processing" }));
         }
     };
