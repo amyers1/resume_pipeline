@@ -88,10 +88,10 @@
                 {% for edu in education %}
                 <div class="edu-item">
                     <div class="exp-header">
-                        <span class="institution">{{ edu.institution }}</span>
+                        <span class="degree">{{ edu.degree }}</span>
                         <span class="dates">{{ edu.graduation_date }}</span>
                     </div>
-                    <div class="degree">{{ edu.degree }} | {{ edu.location }}</div>
+                    <div class="institution">{{ edu.institution }} | {{ edu.location }}</div>
                 </div>
                 {% endfor %}
             </div>
@@ -113,7 +113,8 @@
             <div class="section-content">
                 <ul class="simple-list">
                     {% for award in awards %}
-                    <li>{{ award.title }}{% if award.awarder %}, {{ award.awarder }} {% endif %} ({{ award.date }})</li>
+                    <li>{{ award.title }}{% if award.awarder %}, {{ award.awarder }} {% endif %} {% if award.date %} ({{ award.date }}) {% endif %}
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
