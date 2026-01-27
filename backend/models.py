@@ -77,7 +77,6 @@ class CareerProfile(Base):
         "CareerProject", back_populates="profile", cascade="all, delete-orphan"
     )
 
-    # NEW: Certifications Relationship
     certifications = relationship(
         "CareerCertification", back_populates="profile", cascade="all, delete-orphan"
     )

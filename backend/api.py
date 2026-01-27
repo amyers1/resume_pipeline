@@ -425,7 +425,9 @@ async def update_profile(
     profile.region = location.get("region")
     profile.country_code = location.get("countryCode")
     profile.skills = [s.get("name") for s in data.get("skills", []) if s.get("name")]
-    profile.awards = data.get("awards", [])
+    profile.awards = [
+        a.get("title") if isinstance(a, dict) else a for a in data.get("awards", [])
+    ]
     profile.updated_at = datetime.utcnow()
 
     # FIX: Delete child records (Highlights) explicitly first to prevent FK violation
@@ -456,6 +458,8 @@ async def update_profile(
     await db.execute(
         delete(CareerCertification).where(CareerCertification.profile_id == profile_id)
     )
+
+    await db.flush()
 
     # Re-create Data (Same logic as create)
     for work in data.get("work", []):
@@ -522,7 +526,7 @@ async def update_profile(
             profile_id=profile.id,
             name=cert.get("name", "Unknown"),
             date=cert.get("date"),
-            issuer=cert.get("issuer"),
+            organization=cert.get("issuer"),
         )
         db.add(certification)
 
@@ -552,11 +556,6 @@ async def update_profile(
         updated_at=refreshed_profile.updated_at,
         profile_json=refreshed_profile.to_full_json(),
     )
-
-
-# ... [Rest of file including delete_profile, list_all_profiles, and Job endpoints unchanged] ...
-# Note: Ensure the resubmit_job endpoint includes the previous fix for parsing 'options: dict = Body(...)'
-# I am including the full content for completeness, assuming standard rest follows.
 
 
 @app.delete("/users/{user_id}/profiles/{profile_id}")
