@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TEMPLATES, OUTPUT_BACKENDS } from "../utils/constants";
 
 export default function ResubmitModal({
@@ -13,18 +13,28 @@ export default function ResubmitModal({
         priority: Math.min((job.priority || 5) + 1, 10),
         advanced_settings: {
             ...job.advanced_settings,
-            // Example of overriding or adding a setting on resubmit
             enable_uploads: true,
         },
     });
 
-    const handleSubmit = () => {
-        // Filter out template if backend is not latex
-        const finalConfig = { ...config };
-        if (finalConfig.output_backend !== "latex") {
-            finalConfig.template = "resume.html.j2"; // Default to HTML for non-latex
+    // Update template when backend changes to avoid mismatches
+    useEffect(() => {
+        if (config.output_backend === "latex") {
+            // If current template is not a latex template, switch to a default
+            const currentTemplate = TEMPLATES.find(
+                (t) => t.value === config.template,
+            );
+            if (currentTemplate?.backend !== "latex") {
+                setConfig((prev) => ({ ...prev, template: "awesome-cv" }));
+            }
+        } else {
+            // If backend is not latex (e.g., weasyprint), ensure html template is selected
+            setConfig((prev) => ({ ...prev, template: "resume.html.j2" }));
         }
-        onSubmit(finalConfig);
+    }, [config.output_backend]);
+
+    const handleSubmit = () => {
+        onSubmit(config);
     };
 
     const isLatex = config.output_backend === "latex";
