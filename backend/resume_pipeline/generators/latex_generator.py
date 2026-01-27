@@ -2,12 +2,16 @@
 LaTeX resume generation with template support.
 """
 
+import logging
+
 import jinja2
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
 from ..models import CareerProfile, EducationEntry, StructuredResume
 from ..templates import AwesomeCVTemplate, ModernDeedyTemplate
+
+logger = logging.getLogger(__name__)
 
 
 class LaTeXGenerator:
@@ -24,10 +28,15 @@ class LaTeXGenerator:
         elif self.template_name == "awesome-cv":
             return AwesomeCVTemplate()
         else:
-            raise ValueError(
-                f"Unknown template: {self.template_name}. "
-                "Use 'modern-deedy' or 'awesome-cv'"
+            self.template_name = "awesome-cv"
+            logger.info(
+                f"provide template ({self.template_name}) was not found...setting it to awesome-cv"
             )
+            return AwesomeCVTemplate()
+            # raise ValueError(
+            #     f"Unknown template: {self.template_name}. "
+            #     "Use 'modern-deedy' or 'awesome-cv'"
+            # )
 
     def generate(self, structured_resume: StructuredResume) -> str:
         """

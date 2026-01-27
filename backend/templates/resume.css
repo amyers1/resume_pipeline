@@ -32,7 +32,7 @@ body {
 .container {
     max-width: 8.5in;
     margin: 0 auto;
-    padding: 1.8cm 1.8cm 1.6cm; /* ↓ reduced top and side padding */
+    padding: 0.3cm 1.8cm 1.6cm; /* ↓ reduced top and side padding */
 }
 
 /* Typography scale */
@@ -251,5 +251,8 @@ h2 {
 
 @page {
     size: A4; /* or: letter */
-    margin: 0;
+    margin-top: 0.4in;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
 }
