@@ -131,10 +131,19 @@ class ResumePipeline:
         self._report_progress("analyzing_jd", 5, "Loading inputs")
 
         # Step 1: Load inputs
-        jd_json = self._load_json(self.config.job_json_path)
-        career_profile = CareerProfile.model_validate_json(
-            self.config.career_profile_path.read_text(encoding="utf-8")
-        )
+        if isinstance(self.config.job_json_path, dict):
+            jd_json = self.config.job_json_path
+        else:
+            jd_json = self._load_json(self.config.job_json_path)
+
+        if isinstance(self.config.career_profile_path, dict):
+            career_profile = CareerProfile.model_validate(
+                self.config.career_profile_path
+            )
+        else:
+            career_profile = CareerProfile.model_validate_json(
+                self.config.career_profile_path.read_text(encoding="utf-8")
+            )
 
         # Compute hashes for caching
         job_hash = self.config.compute_hash(jd_json)

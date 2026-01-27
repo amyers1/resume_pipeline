@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 from imaplib import Commands
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import pytz
 
@@ -38,8 +38,8 @@ class PipelineConfig(BaseModel):
     strong_model: str = Field(default="gpt-5-mini")
 
     # Input paths
-    job_json_path: Optional[Path]
-    career_profile_path: Optional[Path]
+    job_json_path: Union[Path, dict] = Field(default=None)
+    career_profile_path: Union[Path, dict] = Field(default=None)
 
     # Output configuration
     output_dir: Path = Field(default=Path("./output"))

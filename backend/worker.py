@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from database import AsyncSessionLocal
-from models import Job
+from models import CareerProfile, Job
 from rabbitmq import (
     AsyncRabbitMQClient,
     JobRequest,
@@ -100,91 +100,85 @@ class DatabaseResumeWorker:
                     job_id=job.id, status=MessageType.JOB_STARTED
                 )
 
-                # 3. Prepare Pipeline Config
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    temp_path = Path(temp_dir)
+                # 3. Fetch User's Current Career Profile
+                result = await db.execute(
+                    select(CareerProfile)
+                    .where(CareerProfile.user_id == job.user_id)
+                    .order_by(CareerProfile.updated_at.desc())
+                )
+                career_profile = result.scalars().first()
 
-                    # Generate temporary files for the pipeline logic
-                    jd_path = temp_path / "job_description.json"
-                    profile_path = temp_path / "career_profile.json"
-
-                    # Note: job.to_schema_json() is synchronous Pydantic logic
-                    reconstructed_json = job.to_schema_json()
-
-                    with open(jd_path, "w", encoding="utf-8") as f:
-                        json.dump(reconstructed_json, f, indent=2)
-
-                    with open(profile_path, "w", encoding="utf-8") as f:
-                        json.dump(job.career_profile_json, f, indent=2)
-
-                    persistent_output = Path("output") / str(job.id)
-                    persistent_output.mkdir(parents=True, exist_ok=True)
-
-                    pipeline_overrides = {
-                        "company_name": job.company,
-                        "job_title": job.job_title,
-                        "base_filename": f"{job.company}_{job.job_title}".replace(
-                            " ", "_"
-                        ),
-                        "job_json_path": str(jd_path),
-                        "career_profile_path": str(profile_path),
-                        "latex_template": job.template,
-                        "output_backend": job.output_backend,
-                        "output_dir": persistent_output,
-                        "use_flat_structure": True,
-                    }
-
-                    if job.advanced_settings:
-                        pipeline_overrides.update(job.advanced_settings)
-
-                    config = PipelineConfig.from_env(**pipeline_overrides)
-
-                    # 4. Run Pipeline in Thread (Offload blocking work)
-                    logger.info(
-                        f"🚀 Starting pipeline for {job.company} - {job.job_title}"
-                    )
-
-                    start_time = datetime.now(timezone.utc)
-
-                    # Pass the captured loop explicitly to the sync wrapper
-                    (
-                        structured_resume,
-                        output_artifact,
-                        pdf_path,
-                    ) = await asyncio.to_thread(
-                        self._run_pipeline_sync, config, job.id, self.loop
-                    )
-
-                    end_time = datetime.now(timezone.utc)
-                    processing_time = (end_time - start_time).total_seconds()
-                    logger.info(f"✅ Pipeline completed in {processing_time:.1f}s")
-
-                    # 5. Collect Results
-                    output_files = {}
-                    if pdf_path and pdf_path.exists():
-                        output_files["pdf"] = str(pdf_path)
-
-                    for ext in [".tex", ".json", ".md"]:
-                        files = list(persistent_output.glob(f"*{ext}"))
-                        if files:
-                            output_files[ext.lstrip(".")] = str(files[0])
-
-                    # 6. Update Database (Async)
-                    job.status = "completed"
-                    job.completed_at = end_time
-                    job.processing_time_seconds = processing_time
-                    job.output_files = output_files
-                    if hasattr(structured_resume, "final_score"):
-                        job.final_score = structured_resume.final_score
-
+                if not career_profile:
+                    logger.error(f"❌ No career profile found for user {job.user_id}")
+                    job.status = "failed"
+                    job.error_message = "No career profile found for user"
                     await db.commit()
+                    return
 
-                    await self.rabbitmq.publish_completion(
-                        job_id=job.id,
-                        output_files=output_files,
-                        started_at=start_time.isoformat(),
-                    )
-                    logger.info(f"✅ Job {job.id} completed successfully")
+                persistent_output = Path("output") / str(job.id)
+                persistent_output.mkdir(parents=True, exist_ok=True)
+
+                pipeline_overrides = {
+                    "company_name": job.company,
+                    "job_title": job.job_title,
+                    "base_filename": f"{job.company}_{job.job_title}".replace(" ", "_"),
+                    "job_json_path": job.to_schema_json(),  # Passing python dict vs path
+                    "career_profile_path": career_profile.to_full_json(),  # Passing python dict vs path
+                    "latex_template": job.template,
+                    "output_backend": job.output_backend,
+                    "output_dir": persistent_output,
+                    "use_flat_structure": True,
+                }
+
+                if job.advanced_settings:
+                    pipeline_overrides.update(job.advanced_settings)
+
+                config = PipelineConfig.from_env(**pipeline_overrides)
+
+                # 4. Run Pipeline in Thread (Offload blocking work)
+                logger.info(f"🚀 Starting pipeline for {job.company} - {job.job_title}")
+
+                start_time = datetime.now(timezone.utc)
+
+                # Pass the captured loop explicitly to the sync wrapper
+                (
+                    structured_resume,
+                    output_artifact,
+                    pdf_path,
+                ) = await asyncio.to_thread(
+                    self._run_pipeline_sync, config, job.id, self.loop
+                )
+
+                end_time = datetime.now(timezone.utc)
+                processing_time = (end_time - start_time).total_seconds()
+                logger.info(f"✅ Pipeline completed in {processing_time:.1f}s")
+
+                # 5. Collect Results
+                output_files = {}
+                if pdf_path and pdf_path.exists():
+                    output_files["pdf"] = str(pdf_path)
+
+                for ext in [".tex", ".json", ".md"]:
+                    files = list(persistent_output.glob(f"*{ext}"))
+                    if files:
+                        output_files[ext.lstrip(".")] = str(files[0])
+
+                # 6. Update Database (Async)
+                job.status = "completed"
+                job.completed_at = end_time
+                job.processing_time_seconds = processing_time
+                job.output_files = output_files
+                if hasattr(structured_resume, "final_score"):
+                    job.final_score = structured_resume.final_score
+
+                await db.commit()
+
+                await self.rabbitmq.publish_completion(
+                    job_id=job.id,
+                    output_files=output_files,
+                    started_at=start_time.isoformat(),
+                )
+                logger.info(f"✅ Job {job.id} completed successfully")
 
             except Exception as e:
                 # Error Handling
