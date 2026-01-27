@@ -164,11 +164,23 @@ export default function ProfileEditor() {
         });
     };
 
-    const handleWorkHighlightChange = (workIndex, highlightIndex, value) => {
+    const handleWorkHighlightChange = (
+        workIndex,
+        highlightIndex,
+        field,
+        value,
+    ) => {
         setFormData((prev) => {
             const newWork = [...prev.work];
             const highlights = [...(newWork[workIndex].highlights || [])];
-            highlights[highlightIndex] = value;
+            // Ensure highlight is an object
+            const currentHighlight = highlights[highlightIndex];
+            const highlightObj =
+                typeof currentHighlight === "string"
+                    ? { description: currentHighlight, domain_tags: [] }
+                    : { ...currentHighlight };
+            highlightObj[field] = value;
+            highlights[highlightIndex] = highlightObj;
             newWork[workIndex] = { ...newWork[workIndex], highlights };
             return { ...prev, work: newWork };
         });
@@ -196,7 +208,7 @@ export default function ProfileEditor() {
             const newWork = [...prev.work];
             newWork[workIndex].highlights = [
                 ...(newWork[workIndex].highlights || []),
-                "",
+                { description: "", domain_tags: [] },
             ];
             return { ...prev, work: newWork };
         });
@@ -238,6 +250,7 @@ export default function ProfileEditor() {
                     studyType: "",
                     startDate: "",
                     endDate: "",
+                    location: "",
                     score: "",
                     courses: [],
                 },
@@ -579,43 +592,91 @@ export default function ProfileEditor() {
                                         </button>
                                     </div>
                                     {(job.highlights || []).map(
-                                        (highlight, hIndex) => (
-                                            <div
-                                                key={hIndex}
-                                                className="flex gap-2 items-start"
-                                            >
-                                                <textarea
-                                                    value={
-                                                        typeof highlight ===
-                                                        "string"
-                                                            ? highlight
-                                                            : highlight.description
-                                                    }
-                                                    onChange={(e) =>
-                                                        handleWorkHighlightChange(
-                                                            index,
-                                                            hIndex,
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    rows={2}
-                                                    className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
-                                                    placeholder="Achievement or responsibility..."
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        removeWorkHighlight(
-                                                            index,
-                                                            hIndex,
-                                                        )
-                                                    }
-                                                    className="text-gray-400 hover:text-red-600 mt-2"
+                                        (highlight, hIndex) => {
+                                            const desc =
+                                                typeof highlight === "string"
+                                                    ? highlight
+                                                    : highlight.description ||
+                                                      "";
+                                            const tags =
+                                                typeof highlight === "string"
+                                                    ? []
+                                                    : highlight.domain_tags ||
+                                                      [];
+                                            return (
+                                                <div
+                                                    key={hIndex}
+                                                    className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-600"
                                                 >
-                                                    &times;
-                                                </button>
-                                            </div>
-                                        ),
+                                                    <div className="flex gap-2 items-start mb-2">
+                                                        <textarea
+                                                            value={desc}
+                                                            onChange={(e) =>
+                                                                handleWorkHighlightChange(
+                                                                    index,
+                                                                    hIndex,
+                                                                    "description",
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            rows={2}
+                                                            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                                                            placeholder="Achievement or responsibility..."
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                removeWorkHighlight(
+                                                                    index,
+                                                                    hIndex,
+                                                                )
+                                                            }
+                                                            className="text-gray-400 hover:text-red-600 mt-2"
+                                                        >
+                                                            &times;
+                                                        </button>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                                            Tags
+                                                            (comma-separated)
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={tags.join(
+                                                                ", ",
+                                                            )}
+                                                            onChange={(e) =>
+                                                                handleWorkHighlightChange(
+                                                                    index,
+                                                                    hIndex,
+                                                                    "domain_tags",
+                                                                    e.target.value
+                                                                        .split(
+                                                                            ",",
+                                                                        )
+                                                                        .map(
+                                                                            (
+                                                                                t,
+                                                                            ) =>
+                                                                                t.trim(),
+                                                                        )
+                                                                        .filter(
+                                                                            (
+                                                                                t,
+                                                                            ) =>
+                                                                                t,
+                                                                        ),
+                                                                )
+                                                            }
+                                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs"
+                                                            placeholder="e.g. Python, AWS, Leadership"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        },
                                     )}
                                 </div>
                             </div>
@@ -674,6 +735,18 @@ export default function ProfileEditor() {
                                                 v,
                                             )
                                         }
+                                    />
+                                    <InputField
+                                        label="Location"
+                                        value={edu.location}
+                                        onChange={(v) =>
+                                            handleEducationChange(
+                                                index,
+                                                "location",
+                                                v,
+                                            )
+                                        }
+                                        placeholder="e.g. Boston, MA"
                                     />
                                     <InputField
                                         label="Degree Type"
