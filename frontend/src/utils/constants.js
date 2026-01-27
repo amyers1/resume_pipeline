@@ -86,3 +86,13 @@ export const FILE_ICONS = {
     tex: "📝",
     txt: "📃",
 };
+
+// Model Options
+export const MODEL_OPTIONS = [
+    { value: "gpt-4o", label: "GPT-4o (Latest)" },
+    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+    { value: "gpt-4", label: "GPT-4" },
+    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+    { value: "gemini-1.0-pro", label: "Gemini 1.0 Pro" },
+];
