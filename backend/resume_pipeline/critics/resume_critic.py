@@ -30,12 +30,15 @@ class ResumeCritic:
                     "system",
                     "You evaluate resumes against job descriptions for senior technical roles. "
                     "Assess: (1) JD alignment - coverage of must-haves, keyword usage, seniority fit; "
-                    "(2) Resume quality - ATS safety, structure, clarity, impact, chronology; "
-                    "(3) Length - must be ≤2 pages when rendered (~1000 words max). "
+                    "(2) Domain alignment - how well the resume's domain expertise matches the JD's domain_focus; "
+                    "(3) Resume quality - ATS safety, structure, clarity, impact, chronology; "
+                    "(4) Length - must be ≤2 pages when rendered (~1000 words max). "
                     "Score generously if content is strong but slightly under keyword threshold - "
                     "brevity and impact matter more than keyword density. "
-                    "Output JSON only with: score (0-1), jd_keyword_coverage (0-1), ats_ok (bool), "
-                    "length_ok (bool), strengths (list), weaknesses (list), suggestions (list).",
+                    "Output JSON only with: score (0-1), jd_keyword_coverage (0-1), domain_match_coverage (0-1), "
+                    "ats_ok (bool), length_ok (bool), strengths (list), weaknesses (list), suggestions (list). "
+                    "For domain_match_coverage, evaluate what fraction of the JD's domain_focus areas "
+                    "are demonstrated by achievements in the resume.",
                 ),
                 (
                     "user",
@@ -88,6 +91,9 @@ class ResumeCritic:
         # Note: config stores it as 0-1 scale, advanced_settings uses 0-10 scale
         min_quality_score = getattr(self.config, "critique_threshold", 0.8)
 
+        # Get min domain coverage threshold (default 0.6)
+        min_domain_coverage = getattr(self.config, "domain_threshold", 0.6)
+
         print(f"\n{'=' * 80}")
         print("CRITIQUE & REFINEMENT")
         print(f"{'=' * 80}\n")
@@ -102,14 +108,24 @@ class ResumeCritic:
             # Log critique results
             self._log_critique(critique, iteration + 1)
 
-            # Check if quality threshold met
+            # Check if quality threshold met (including domain coverage)
+            domain_ok = critique.domain_match_coverage >= min_domain_coverage
             if (
                 critique.score >= min_quality_score
                 and critique.ats_ok
                 and critique.length_ok
+                and domain_ok
             ):
-                print(f"  ✓ Quality threshold met (score: {critique.score:.2f})")
+                print(
+                    f"  ✓ Quality threshold met (score: {critique.score:.2f}, domain: {critique.domain_match_coverage:.1%})"
+                )
                 break
+
+            # Log why we're continuing
+            if not domain_ok:
+                print(
+                    f"  → Domain coverage {critique.domain_match_coverage:.1%} below threshold {min_domain_coverage:.1%}"
+                )
 
             # If not last iteration, refine
             if iteration < max_loops - 1:
@@ -125,6 +141,7 @@ class ResumeCritic:
             "final_ats_ok": all_critiques[-1].ats_ok,
             "final_length_ok": all_critiques[-1].length_ok,
             "final_keyword_coverage": all_critiques[-1].jd_keyword_coverage,
+            "final_domain_coverage": all_critiques[-1].domain_match_coverage,
             "all_critiques": [c.model_dump() for c in all_critiques],
         }
 
@@ -206,6 +223,7 @@ class ResumeCritic:
         """
         print(f"    Score: {critique.score:.2f}/1.0")
         print(f"    Keyword Coverage: {critique.jd_keyword_coverage:.1%}")
+        print(f"    Domain Coverage: {critique.domain_match_coverage:.1%}")
         print(f"    ATS Safe: {'✓' if critique.ats_ok else '✗'}")
         print(f"    Length OK: {'✓' if critique.length_ok else '✗'}")
 
@@ -232,6 +250,7 @@ class ResumeCritic:
         parts = [
             f"Score: {critique.score:.2f}/1.0",
             f"Keyword Coverage: {critique.jd_keyword_coverage:.1%}",
+            f"Domain Match Coverage: {critique.domain_match_coverage:.1%}",
             f"ATS Safe: {critique.ats_ok}",
             f"Length OK: {critique.length_ok}",
         ]

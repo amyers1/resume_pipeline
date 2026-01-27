@@ -26,6 +26,7 @@ class PipelineConfig(BaseModel):
     top_k_heuristic: int = Field(default=20)
     top_k_final: int = Field(default=12)
     critique_threshold: float = Field(default=0.80)
+    domain_threshold: float = Field(default=0.60)  # Min domain coverage required
     max_critique_loops: int = Field(default=2)
     escalate_on_second_pass: bool = Field(default=False)
 
@@ -119,6 +120,7 @@ class PipelineConfig(BaseModel):
             "top_k_heuristic": int(os.getenv("TOP_K_HEURISTIC", "20")),
             "top_k_final": int(os.getenv("TOP_K_FINAL", "12")),
             "critique_threshold": float(os.getenv("CRITIQUE_THRESHOLD", "0.80")),
+            "domain_threshold": float(os.getenv("DOMAIN_THRESHOLD", "0.60")),
             "max_critique_loops": int(os.getenv("MAX_CRITIQUE_LOOPS", "2")),
             "escalate_on_second_pass": (
                 os.getenv("ESCALATE_ON_SECOND_PASS", "false").lower() == "true"

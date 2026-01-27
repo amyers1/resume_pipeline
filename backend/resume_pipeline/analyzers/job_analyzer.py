@@ -113,18 +113,171 @@ class JobAnalyzer:
         Extract technical domains from job description text.
 
         Returns:
-            List of domain keywords (e.g., ["aerospace", "defense", "radar"])
+            List of domain keywords matching the expanded taxonomy used in achievement matching.
         """
-        # Simple keyword matching - could be enhanced with NLP
         domains = []
+
+        # Expanded domain keywords - aligned with achievement_matcher.py taxonomy
         domain_keywords = {
-            "aerospace": ["aerospace", "aircraft", "aviation", "flight"],
-            "defense": ["defense", "military", "dod", "clearance"],
-            "software": ["software", "programming", "development"],
-            "hardware": ["hardware", "embedded", "firmware"],
-            "radar": ["radar", "rf", "signal processing"],
-            "ai_ml": ["machine learning", "ai", "deep learning", "neural"],
-            "cloud": ["cloud", "aws", "azure", "gcp"],
+            # Core Technical Domains
+            "EW": [
+                "electronic warfare",
+                "ew ",
+                "jamming",
+                "countermeasures",
+                "threat library",
+                "reprogramming",
+            ],
+            "ISR": [
+                "isr",
+                "intelligence",
+                "surveillance",
+                "reconnaissance",
+                "sigint",
+                "collection",
+                "geoint",
+            ],
+            "RF": [
+                "rf ",
+                "radio frequency",
+                "antenna",
+                "electromagnetic",
+                "signal processing",
+                "spectrum",
+            ],
+            "Radar": ["radar", "synthetic aperture", "sar ", "aesa", "phased array"],
+            "Cyber": [
+                "cyber",
+                "cybersecurity",
+                "infosec",
+                "penetration",
+                "rmf",
+                "ato",
+                "vulnerability",
+            ],
+            "PNT": ["pnt", "gps", "navigation", "positioning", "timing", "gnss"],
+            "Satellite_Ops": [
+                "satellite",
+                "spacecraft",
+                "on-orbit",
+                "launch",
+                "space systems",
+                "ground segment",
+            ],
+            "C2": ["command and control", "c2 ", "c4isr", "battle management"],
+            # Engineering & Development
+            "Systems_Engineering": [
+                "systems engineer",
+                "requirements",
+                "integration",
+                "verification",
+                "mbse",
+            ],
+            "Electrical_Engineering": [
+                "electrical engineer",
+                "circuit",
+                "power systems",
+                "pcb",
+                "asic",
+            ],
+            "Software_Dev": [
+                "software",
+                "developer",
+                "programming",
+                "python",
+                "java",
+                "c++",
+                "code",
+            ],
+            "Data_Science": [
+                "data science",
+                "analytics",
+                "machine learning",
+                "ai ",
+                "ml ",
+                "deep learning",
+                "neural",
+            ],
+            "Test_Eval": [
+                "test",
+                "evaluation",
+                "t&e",
+                "verification",
+                "validation",
+                "hitl",
+                "qualification",
+            ],
+            "R&D": [
+                "research",
+                "r&d",
+                "laboratory",
+                "prototype",
+                "technology development",
+            ],
+            # Leadership & Management
+            "Program_Mgmt": [
+                "program manag",
+                "project manag",
+                "portfolio",
+                "acquisition",
+                "budget",
+                "schedule",
+            ],
+            "Technical_Leadership": [
+                "technical lead",
+                "chief engineer",
+                "architect",
+                "principal engineer",
+            ],
+            "Executive_Leadership": ["director", "vice president", "vp ", "executive"],
+            # Operations
+            "Operations": [
+                "operations",
+                "mission",
+                "deployment",
+                "operational",
+                "sustainment",
+            ],
+            "Flight_Test": [
+                "flight test",
+                "developmental test",
+                "airborne",
+                "airworthiness",
+            ],
+            # Industries
+            "Defense": [
+                "defense",
+                "military",
+                "dod",
+                "clearance",
+                "classified",
+                "air force",
+                "army",
+                "navy",
+            ],
+            "Aerospace": [
+                "aerospace",
+                "aircraft",
+                "aviation",
+                "lockheed",
+                "northrop",
+                "raytheon",
+                "boeing",
+                "l3harris",
+            ],
+            # Technologies
+            "Cloud": [
+                "cloud",
+                "aws",
+                "azure",
+                "gcp",
+                "devops",
+                "kubernetes",
+                "containerization",
+            ],
+            "Automation": ["automation", "automated", "scripting", "ci/cd", "pipeline"],
+            "Sensors": ["sensor", "detector", "imaging", "electro-optical", "infrared"],
+            "UAS": ["uas", "uav", "drone", "unmanned", "autonomous"],
         }
 
         text_lower = full_text.lower()

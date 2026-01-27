@@ -477,7 +477,8 @@ async def update_profile(
         db.add(exp)
         await db.flush()
 
-        for hl in work.get("highlights", []):
+        highlights = work.get("achievements") or work.get("highlights") or []
+        for hl in highlights:
             if isinstance(hl, str):
                 highlight = CareerExperienceHighlight(
                     id=str(uuid.uuid4()), experience_id=exp.id, description=hl
