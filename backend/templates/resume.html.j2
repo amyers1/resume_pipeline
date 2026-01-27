@@ -102,7 +102,7 @@
             <div class="section-content">
                 <ul class="simple-list">
                     {% for cert in certifications %}
-                    <li>{{ cert }}</li>
+                    <li>{{ cert.name }}, {{ cert.issuer }} ({{ cert.date }})</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -113,7 +113,7 @@
             <div class="section-content">
                 <ul class="simple-list">
                     {% for award in awards %}
-                    <li>{{ award }}</li>
+                    <li>{{ award.title }} ({{ award.date }})</li>
                     {% endfor %}
                 </ul>
             </div>

@@ -88,6 +88,8 @@ class CareerProfile(Base):
                 "name": self.name,
                 "label": self.label,
                 "email": self.email,
+                "phone": self.phone,
+                "url": self.url,
                 "summary": self.summary,
                 "location": {
                     "city": self.city,

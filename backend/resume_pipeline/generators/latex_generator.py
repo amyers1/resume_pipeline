@@ -3,10 +3,11 @@ LaTeX resume generation with template support.
 """
 
 import jinja2
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from ..models import StructuredResume
-from ..templates import ModernDeedyTemplate, AwesomeCVTemplate
+from langchain_openai import ChatOpenAI
+
+from ..models import CareerProfile, StructuredResume
+from ..templates import AwesomeCVTemplate, ModernDeedyTemplate
 
 
 class LaTeXGenerator:
@@ -50,27 +51,49 @@ class StructuredResumeParser:
 
     def _setup_prompt(self):
         """Initialize parsing prompt."""
-        self.parser_prompt = ChatPromptTemplate.from_messages([
-            ("system",
-             "You convert markdown resumes to structured JSON. "
-             "Extract: full_name, email, phone, location, linkedin, role_title, "
-             "professional_summary (list), core_competencies (list), "
-             "experience (list of entries with title, organization, location, dates (in 'Mmm YYYY' format), bullets, is_grouped flag), "
-             "education (list), certifications (list), awards (list). "
-             "For experience entries under 'Other Relevant Experience' heading, set is_grouped=true. "
-             "Preserve all content accurately. Return StructuredResume JSON only."),
-            ("user", "Markdown resume:\n{resume_md}\n\nConvert to StructuredResume JSON.")
-        ])
+        self.parser_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You convert markdown resumes to structured JSON. "
+                    "Extract: full_name, email, phone, location, linkedin, role_title, "
+                    "professional_summary (list), core_competencies (list), "
+                    "experience (list of entries with title, organization, location, dates (in 'Mmm YYYY' format), bullets, is_grouped flag), "
+                    "education (list), certifications (list), awards (list). "
+                    "For experience entries under 'Other Relevant Experience' heading, set is_grouped=true. "
+                    "Preserve all content accurately. Return StructuredResume JSON only.",
+                ),
+                (
+                    "user",
+                    "Markdown resume:\n{resume_md}\n\nConvert to StructuredResume JSON.",
+                ),
+            ]
+        )
 
-    def parse(self, resume_md: str) -> StructuredResume:
+    def parse(self, resume_md: str, career_profile: CareerProfile) -> StructuredResume:
         """
         Parse markdown resume to structured format.
 
         Args:
             resume_md: Resume in markdown format
+            career_profile: The user's career profile for sourcing contact info.
 
         Returns:
             Structured resume object
         """
         chain = self.parser_prompt | self.llm.with_structured_output(StructuredResume)
-        return chain.invoke({"resume_md": resume_md})
+        structured_resume = chain.invoke({"resume_md": resume_md})
+
+        # Overwrite contact info with the authoritative source from the profile
+        if career_profile and career_profile.basics:
+            basics = career_profile.basics
+            structured_resume.full_name = basics.name
+            structured_resume.email = basics.email
+            structured_resume.phone = basics.phone
+            structured_resume.linkedin = basics.url
+            if basics.location:
+                structured_resume.location = (
+                    f"{basics.location.city}, {basics.location.region}"
+                )
+
+        return structured_resume

@@ -205,7 +205,7 @@ class ResumePipeline:
 
         # Step 6: Generate structured output
         self._report_progress("refining", 85, "Structuring data")
-        structured_resume = self.parser.parse(final_resume)
+        structured_resume = self.parser.parse(final_resume, career_profile)
 
         if critique and "final_score" in critique:
             structured_resume.final_score = critique["final_score"]
