@@ -73,7 +73,7 @@ export default function JobDetailPage() {
             stage: payload.stage || currentStatus?.stage || "queued",
             progress_percent: payload.progress_percent || payload.percent || 0,
             message: payload.message || "",
-            status: payload.status,
+            status: payload.type, // Use payload.type
             job_id: payload.job_id,
         };
 
@@ -87,24 +87,24 @@ export default function JobDetailPage() {
                 stage: statusUpdate.stage,
                 message: statusUpdate.message,
                 progress: statusUpdate.progress_percent,
-                type: payload.status,
+                type: payload.type, // Use payload.type
             },
         ]);
 
         // FIX #3: Update job status in state based on message type
-        if (payload.status === "job_completed") {
+        if (payload.type === "JOB_COMPLETED") {
             setJob((prev) => ({ ...prev, status: "completed" }));
             // Fetch files when job completes
             fetchJobFiles();
-        } else if (payload.status === "job_failed") {
+        } else if (payload.type === "JOB_FAILED") {
             setJob((prev) => ({
                 ...prev,
                 status: "failed",
                 error: payload.error || payload.message,
             }));
-        } else if (payload.status === "job_started") {
+        } else if (payload.type === "JOB_STARTED") {
             setJob((prev) => ({ ...prev, status: "processing" }));
-        } else if (payload.status === "job_progress") {
+        } else if (payload.type === "JOB_PROGRESS") {
             // Keep status as processing during progress updates
             setJob((prev) => ({ ...prev, status: "processing" }));
         }
