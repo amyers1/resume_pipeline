@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from database import AsyncSessionLocal
-from models import CareerProfile, Job
+from models import CareerExperience, CareerProfile, Job
 from rabbitmq import (
     AsyncRabbitMQClient,
     JobRequest,
@@ -27,6 +27,7 @@ from resume_pipeline.config import PipelineConfig
 from resume_pipeline.pipeline import ResumePipeline
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 # Configure logging
 logging.basicConfig(
@@ -81,30 +82,40 @@ class DatabaseResumeWorker:
         """
         logger.info(f"📥 Processing Job ID: {request.job_id}")
 
+        # Extract data we need outside the session
+        job_id = request.job_id
+        company = None
+        job_title = None
+        template = None
+        output_backend = None
+        advanced_settings = None
+        job_data = None
+        profile_data = None
+        start_time = None
+
         async with AsyncSessionLocal() as db:
             try:
-                # 1. Fetch Job (Async)
-                result = await db.execute(select(Job).where(Job.id == request.job_id))
+                # 1. Fetch Job
+                result = await db.execute(select(Job).where(Job.id == job_id))
                 job = result.scalars().first()
 
                 if not job:
-                    logger.error(f"❌ Job {request.job_id} not found in database")
+                    logger.error(f"❌ Job {job_id} not found in database")
                     return
 
-                # 2. Update Status to Processing (Async)
-                job.status = "processing"
-                job.started_at = datetime.now(timezone.utc)
-                await db.commit()
-
-                await self.rabbitmq.publish_job_status(
-                    job_id=job.id, status=MessageType.JOB_STARTED
-                )
-
-                # 3. Fetch User's Current Career Profile
+                # 2. Fetch Career Profile
                 result = await db.execute(
                     select(CareerProfile)
                     .where(CareerProfile.user_id == job.user_id)
                     .order_by(CareerProfile.updated_at.desc())
+                    .options(
+                        selectinload(CareerProfile.experience).selectinload(
+                            CareerExperience.highlights
+                        ),
+                        selectinload(CareerProfile.education),
+                        selectinload(CareerProfile.projects),
+                        selectinload(CareerProfile.certifications),
+                    )
                 )
                 career_profile = result.scalars().first()
 
@@ -115,99 +126,121 @@ class DatabaseResumeWorker:
                     await db.commit()
                     return
 
-                persistent_output = Path("output") / str(job.id)
-                persistent_output.mkdir(parents=True, exist_ok=True)
+                # 3. Extract ALL data as plain dicts/values BEFORE leaving the session
+                job_data = job.to_schema_json()
+                profile_data = career_profile.to_full_json()
+                company = job.company
+                job_title = job.job_title
+                template = job.template
+                output_backend = job.output_backend
+                advanced_settings = job.advanced_settings
 
-                pipeline_overrides = {
-                    "company_name": job.company,
-                    "job_title": job.job_title,
-                    "base_filename": f"{job.company}_{job.job_title}".replace(" ", "_"),
-                    "job_json_path": job.to_schema_json(),  # Passing python dict vs path
-                    "career_profile_path": career_profile.to_full_json(),  # Passing python dict vs path
-                    "latex_template": job.template,
-                    "output_backend": job.output_backend,
-                    "output_dir": persistent_output,
-                    "use_flat_structure": True,
-                }
-
-                if job.advanced_settings:
-                    pipeline_overrides.update(job.advanced_settings)
-
-                config = PipelineConfig.from_env(**pipeline_overrides)
-
-                # 4. Run Pipeline in Thread (Offload blocking work)
-                logger.info(f"🚀 Starting pipeline for {job.company} - {job.job_title}")
-
-                start_time = datetime.now(timezone.utc)
-
-                # Pass the captured loop explicitly to the sync wrapper
-                (
-                    structured_resume,
-                    output_artifact,
-                    pdf_path,
-                ) = await asyncio.to_thread(
-                    self._run_pipeline_sync, config, job.id, self.loop
-                )
-
-                end_time = datetime.now(timezone.utc)
-                processing_time = (end_time - start_time).total_seconds()
-                logger.info(f"✅ Pipeline completed in {processing_time:.1f}s")
-
-                # 5. Collect Results
-                output_files = {}
-                if pdf_path and pdf_path.exists():
-                    output_files["pdf"] = str(pdf_path)
-
-                for ext in [".tex", ".json", ".md"]:
-                    files = list(persistent_output.glob(f"*{ext}"))
-                    if files:
-                        output_files[ext.lstrip(".")] = str(files[0])
-
-                # 6. Update Database (Async)
-                job.status = "completed"
-                job.completed_at = end_time
-                job.processing_time_seconds = processing_time
-                job.output_files = output_files
-                if hasattr(structured_resume, "final_score"):
-                    job.final_score = structured_resume.final_score
-
+                # 4. Update Status
+                job.status = "processing"
+                job.started_at = datetime.now(timezone.utc)
+                start_time = job.started_at
                 await db.commit()
 
-                await self.rabbitmq.publish_completion(
-                    job_id=job.id,
-                    output_files=output_files,
-                    started_at=start_time.isoformat(),
-                )
-                logger.info(f"✅ Job {job.id} completed successfully")
-
             except Exception as e:
-                # Error Handling
-                error_msg = str(e)
-                error_trace = traceback.format_exc()
-                logger.error(f"❌ Pipeline failed: {error_msg}")
-                logger.debug(error_trace)
+                logger.error(f"❌ Database error: {e}")
+                logger.debug(traceback.format_exc())
+                return
 
-                try:
-                    # Async Re-fetch for error update
-                    result = await db.execute(
-                        select(Job).where(Job.id == request.job_id)
+        # 5. NOW we're outside the async session - safe to create config and run pipeline
+        try:
+            await self.rabbitmq.publish_job_status(
+                job_id=job_id, status=MessageType.JOB_STARTED
+            )
+
+            persistent_output = Path("output") / str(job_id)
+            persistent_output.mkdir(parents=True, exist_ok=True)
+
+            pipeline_overrides = {
+                "company_name": company,
+                "job_title": job_title,
+                "base_filename": f"{company}_{job_title}".replace(" ", "_"),
+                "job_json_path": job_data,
+                "career_profile_path": profile_data,
+                "latex_template": template,
+                "output_backend": output_backend,
+                "output_dir": persistent_output,
+                "use_flat_structure": True,
+            }
+
+            if advanced_settings:
+                pipeline_overrides.update(advanced_settings)
+
+            config = PipelineConfig.from_env(**pipeline_overrides)
+
+            # 6. Run Pipeline in Thread
+            logger.info(f"🚀 Starting pipeline for {company} - {job_title}")
+
+            (
+                structured_resume,
+                output_artifact,
+                pdf_path,
+            ) = await asyncio.to_thread(
+                self._run_pipeline_sync, config, job_id, self.loop
+            )
+
+            end_time = datetime.now(timezone.utc)
+            processing_time = (end_time - start_time).total_seconds()
+            logger.info(f"✅ Pipeline completed in {processing_time:.1f}s")
+
+            # 7. Collect Results
+            output_files = {}
+            if pdf_path and pdf_path.exists():
+                output_files["pdf"] = str(pdf_path)
+
+            for ext in [".tex", ".json", ".md"]:
+                files = list(persistent_output.glob(f"*{ext}"))
+                if files:
+                    output_files[ext.lstrip(".")] = str(files[0])
+
+            # 8. Update Database with success (new session)
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(select(Job).where(Job.id == job_id))
+                job = result.scalars().first()
+
+                if job:
+                    job.status = "completed"
+                    job.completed_at = end_time
+                    job.processing_time_seconds = processing_time
+                    job.output_files = output_files
+                    if hasattr(structured_resume, "final_score"):
+                        job.final_score = structured_resume.final_score
+                    await db.commit()
+
+            await self.rabbitmq.publish_completion(
+                job_id=job_id,
+                output_files=output_files,
+                started_at=start_time.isoformat(),
+            )
+            logger.info(f"✅ Job {job_id} completed successfully")
+
+        except Exception as e:
+            # Pipeline execution error
+            error_msg = str(e)
+            error_trace = traceback.format_exc()
+            logger.error(f"❌ Pipeline failed: {error_msg}")
+            logger.debug(error_trace)
+
+            # Update job with error (new session)
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(select(Job).where(Job.id == job_id))
+                job = result.scalars().first()
+
+                if job:
+                    job.status = "failed"
+                    job.completed_at = datetime.now(timezone.utc)
+                    job.error_message = error_msg
+                    await db.commit()
+
+                    await self.rabbitmq.publish_error(
+                        job_id=job_id,
+                        error_msg=error_msg,
+                        started_at=start_time.isoformat() if start_time else "",
                     )
-                    job = result.scalars().first()
-                    if job:
-                        job.status = "failed"
-                        job.completed_at = datetime.now(timezone.utc)
-                        job.error_message = error_msg
-                        await db.commit()
-
-                        await self.rabbitmq.publish_error(
-                            job_id=job.id,
-                            error_msg=error_msg,
-                            started_at=job.started_at.isoformat()
-                            if job.started_at
-                            else "",
-                        )
-                except Exception as db_err:
-                    logger.error(f"Failed to update job error state: {db_err}")
 
     async def start(self) -> None:
         """

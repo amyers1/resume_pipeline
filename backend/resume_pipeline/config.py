@@ -87,17 +87,32 @@ class PipelineConfig(BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
-    def from_env(cls, job_json_path: str = None, **overrides) -> "PipelineConfig":
+    def from_env(
+        cls, job_json_path: Union[str, dict] = None, **overrides
+    ) -> "PipelineConfig":
         """Create configuration from environment variables."""
 
-        # Get job path from parameter or environment
+        # Handle job_json_path - can be path string or dict
         if job_json_path:
-            job_path = Path(job_json_path)
+            if isinstance(job_json_path, dict):
+                job_path = job_json_path  # Pass dict directly
+            else:
+                job_path = Path(job_json_path)  # Convert string to Path
         else:
             job_path_str = os.getenv("JOB_JSON_PATH")
             if not job_path_str:
                 raise ValueError("JOB_JSON_PATH must be set")
             job_path = Path(job_path_str)
+
+        # Handle career_profile_path similarly
+        career_profile = overrides.get("career_profile_path")
+        if career_profile:
+            if not isinstance(career_profile, dict):
+                career_profile = Path(career_profile)
+        else:
+            career_profile = Path(
+                os.getenv("CAREER_PROFILE_PATH", "career_profile.json")
+            )
 
         config_dict = {
             "base_file_name": os.getenv("BASE_FILE_NAME", "resume"),
@@ -116,9 +131,7 @@ class PipelineConfig(BaseModel):
             "strong_model": os.getenv("STRONG_MODEL", "gpt-5-mini"),
             # Paths
             "job_json_path": job_path,
-            "career_profile_path": Path(
-                os.getenv("CAREER_PROFILE_PATH", "career_profile.json")
-            ),
+            "career_profile_path": career_profile,
             "output_dir": Path(os.getenv("OUTPUT_DIR", "./output")),
             # Output backend
             "output_backend": os.getenv("OUTPUT_BACKEND", "weasyprint"),
