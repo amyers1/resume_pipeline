@@ -86,6 +86,7 @@ class ProfileEducation(BaseModel):
     studyType: str | None = None
     startDate: str | None = None
     endDate: str | None = None
+    location: str | None = None
     score: str | None = None
     courses: list[str] = Field(default_factory=list)
 
@@ -257,8 +258,11 @@ class CareerProfile(BaseModel):
 
         # Certifications
         if self.certifications:
-            cert_names = [c.name for c in self.certifications[:5]]  # Top 5 certs
-            parts.append(f"Certifications: {', '.join(cert_names)}")
+            parts.append("\Certifications:")
+            for cert in self.certifications[:5]:  # Limit to top 5
+                date_str = f" ({cert.date})" if cert.date else ""
+                issuer_str = f" - {cert.issuer}" if cert.issuer else ""
+                parts.append(f"  - {cert.name}{issuer_str}{date_str}")
 
         # Awards
         if self.awards:

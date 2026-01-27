@@ -113,7 +113,7 @@
             <div class="section-content">
                 <ul class="simple-list">
                     {% for award in awards %}
-                    <li>{{ award.title }} ({{ award.date }})</li>
+                    <li>{{ award.title }}{% if award.awarder %}, {{ award.awarder }} {% endif %} ({{ award.date }})</li>
                     {% endfor %}
                 </ul>
             </div>

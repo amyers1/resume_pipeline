@@ -38,6 +38,20 @@ def add_missing_columns():
             logger.warning(f"Could not add FK constraint (might already exist): {e}")
             conn.rollback()
 
+        # 3. Add location column to career_education
+        try:
+            logger.info("Attempting to add location column to career_education...")
+            conn.execute(
+                text("ALTER TABLE career_education ADD COLUMN location VARCHAR")
+            )
+            conn.commit()
+            logger.info("Successfully added location column to career_education.")
+        except Exception as e:
+            logger.warning(
+                f"Could not add location to career_education (might already exist): {e}"
+            )
+            conn.rollback()
+
 
 if __name__ == "__main__":
     add_missing_columns()

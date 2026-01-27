@@ -72,7 +72,7 @@ class ModernDeedyTemplate(BaseTemplate):
 
 \section{Education}
 \BLOCK{for edu in education}
-\educationHeading{\VAR{edu.degree | latex_escape}}{\VAR{edu.institution | latex_escape}}{}{\VAR{edu.graduation_date | latex_escape}}
+\educationHeading{\VAR{edu.degree | latex_escape}}{\VAR{edu.institution | latex_escape}}{\BLOCK{if edu.location}\VAR{edu.location | latex_escape}\BLOCK{endif}}{\VAR{edu.graduation_date | latex_escape}}
 \BLOCK{endfor}
 \sectionsep
 

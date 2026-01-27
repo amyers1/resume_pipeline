@@ -6,7 +6,7 @@ import jinja2
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-from ..models import CareerProfile, StructuredResume
+from ..models import CareerProfile, EducationEntry, StructuredResume
 from ..templates import AwesomeCVTemplate, ModernDeedyTemplate
 
 
@@ -57,10 +57,10 @@ class StructuredResumeParser:
                     "system",
                     "You convert markdown resumes to structured JSON. "
                     "Extract: full_name, email, phone, location, linkedin, role_title, "
-                    "professional_summary (list), core_competencies (list), "
-                    "experience (list of entries with title, organization, location, dates (in 'Mmm YYYY' format), bullets, is_grouped flag), "
-                    "education (list), certifications (list), awards (list). "
+                    "professional_summary (list of strings), core_competencies (list of strings), "
+                    "experience (list of entries with: organization, role_title, location, start_date, end_date (dates in 'Mmm YYYY' format), bullets (list of strings), is_grouped (bool) = false). "
                     "For experience entries under 'Other Relevant Experience' heading, set is_grouped=true. "
+                    "Education, certifications, and awards will be populated from the career profile, so leave them as empty lists. "
                     "Preserve all content accurately. Return StructuredResume JSON only.",
                 ),
                 (
@@ -95,5 +95,24 @@ class StructuredResumeParser:
                 structured_resume.location = (
                     f"{basics.location.city}, {basics.location.region}"
                 )
+
+        # Populate education, certifications, and awards from career profile
+        if career_profile:
+            # Convert education entries to EducationEntry format
+            structured_resume.education = [
+                EducationEntry(
+                    institution=edu.institution,
+                    degree=f"{edu.studyType} {edu.area}".strip()
+                    if edu.studyType or edu.area
+                    else "",
+                    location=edu.location,
+                    graduation_date=edu.endDate,
+                )
+                for edu in career_profile.education
+            ]
+
+            # Certifications and awards are already in the correct format
+            structured_resume.certifications = career_profile.certifications
+            structured_resume.awards = career_profile.awards
 
         return structured_resume

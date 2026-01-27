@@ -302,6 +302,7 @@ async def create_profile(
             study_type=edu.get("studyType"),
             start_date=edu.get("startDate"),
             end_date=edu.get("endDate"),
+            location=edu.get("location"),
             score=edu.get("score"),
             courses=edu.get("courses", []),
         )
@@ -501,6 +502,7 @@ async def update_profile(
             study_type=edu.get("studyType"),
             start_date=edu.get("startDate"),
             end_date=edu.get("endDate"),
+            location=edu.get("location"),
             score=edu.get("score"),
             courses=edu.get("courses", []),
         )

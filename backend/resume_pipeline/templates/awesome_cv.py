@@ -63,7 +63,7 @@ class AwesomeCVTemplate(BaseTemplate):
 \BLOCK{for exp in experience}
 \BLOCK{if not exp.is_grouped}
   \cventry
-    {\VAR{exp.title | latex_escape}}
+    {\VAR{exp.role_title | latex_escape}}
     {\VAR{exp.organization | latex_escape}}
     {\VAR{exp.location | latex_escape}}
     {\VAR{exp.start_date | latex_escape}--\VAR{exp.end_date | latex_escape}}

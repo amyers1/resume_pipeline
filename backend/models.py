@@ -187,6 +187,7 @@ class CareerEducation(Base):
     study_type = Column(String, nullable=True)
     start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)
+    location = Column(String, nullable=True)
     score = Column(String, nullable=True)
     courses = Column(ARRAY(String), default=[])
 
@@ -198,6 +199,7 @@ class CareerEducation(Base):
             "area": self.area,
             "studyType": self.study_type,
             "endDate": self.end_date,
+            "location": self.location,
         }
 
 
