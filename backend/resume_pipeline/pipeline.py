@@ -6,7 +6,7 @@ Simplified version without Google Drive integration.
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
@@ -123,7 +123,9 @@ class ResumePipeline:
             except Exception as e:
                 logger.error(f"Error in progress callback: {e}")
 
-    def run(self) -> Tuple[StructuredResume, str, Optional[Path]]:
+    def run(
+        self,
+    ) -> Tuple[StructuredResume, str, Optional[Path], Dict[str, Any], Dict[str, Any]]:
         """
         Execute the full resume generation pipeline.
         """
@@ -226,7 +228,13 @@ class ResumePipeline:
 
             self._handle_uploads(latex_path)
             self._report_progress("completed", 100, "LaTeX generation complete")
-            return structured_resume, latex_output, None
+            return (
+                structured_resume,
+                latex_output,
+                None,
+                critique,
+                jd_requirements.model_dump(),
+            )
 
         else:
             # WeasyPrint backend
@@ -255,7 +263,13 @@ class ResumePipeline:
             self._handle_uploads(latex_path)
 
             self._report_progress("completed", 100, "PDF generation complete")
-            return structured_resume, latex_output, pdf_path
+            return (
+                structured_resume,
+                latex_output,
+                pdf_path,
+                critique,
+                jd_requirements.model_dump(),
+            )
 
     def compile_existing_json(self, json_path: Path) -> Optional[Path]:
         """Compile an existing structured_resume.json to PDF without running AI."""

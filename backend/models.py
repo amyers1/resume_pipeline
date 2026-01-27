@@ -300,6 +300,7 @@ class Job(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     processing_time_seconds = Column(Float, nullable=True)
     final_score = Column(Float, nullable=True)
+    critique_json = Column(JSON, nullable=True)  # Full critique results
 
     output_files = Column(JSON, nullable=True)
     error_message = Column(Text, nullable=True)
@@ -361,6 +362,27 @@ class JobSubmitRequest(BaseModel):
     advanced_settings: Optional[AdvancedSettings] = None
 
 
+class CritiqueResponse(BaseModel):
+    """Critique results for API response."""
+
+    score: Optional[float] = None
+    ats_ok: Optional[bool] = None
+    length_ok: Optional[bool] = None
+    jd_keyword_coverage: Optional[float] = None
+    domain_match_coverage: Optional[float] = None
+    strengths: List[str] = []
+    weaknesses: List[str] = []
+    suggestions: List[str] = []
+
+
+class JDRequirementsSummary(BaseModel):
+    """Summary of JD requirements for display."""
+
+    domain_focus: List[str] = []
+    must_have_skills: List[str] = []
+    nice_to_have_skills: List[str] = []
+
+
 class JobResponse(BaseModel):
     id: str
     user_id: Optional[str] = None
@@ -371,6 +393,8 @@ class JobResponse(BaseModel):
     created_at: datetime
     job_description_json: Optional[Dict[str, Any]] = None
     final_score: Optional[float] = None
+    critique: Optional[CritiqueResponse] = None
+    jd_requirements: Optional[JDRequirementsSummary] = None
     output_files: Optional[Dict[str, str]] = None
     advanced_settings: Optional[Dict[str, Any]] = None
     history: List[JobHistoryItem] = []

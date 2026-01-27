@@ -55,6 +55,18 @@ async def add_missing_columns():
             )
             await conn.rollback()
 
+        # 4. Add critique_json column to jobs
+        try:
+            logger.info("Attempting to add critique_json column to jobs...")
+            await conn.execute(text("ALTER TABLE jobs ADD COLUMN critique_json JSON"))
+            await conn.commit()
+            logger.info("Successfully added critique_json column to jobs.")
+        except Exception as e:
+            logger.warning(
+                f"Could not add critique_json to jobs (might already exist): {e}"
+            )
+            await conn.rollback()
+
 
 if __name__ == "__main__":
     asyncio.run(add_missing_columns())

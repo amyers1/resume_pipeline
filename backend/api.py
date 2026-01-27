@@ -21,6 +21,8 @@ from models import (
     CareerExperienceHighlight,
     CareerProfile,
     CareerProject,
+    CritiqueResponse,
+    JDRequirementsSummary,
     Job,
     JobListResponse,
     JobResponse,
@@ -839,6 +841,34 @@ async def get_job(job_id: str, db: AsyncSession = Depends(get_db)):
     resp = JobResponse.model_validate(job, from_attributes=True)
     resp.job_description_json = job.to_schema_json()
     resp.history = history_items
+
+    # Populate critique and jd_requirements from stored critique_json
+    if job.critique_json:
+        critique_data = job.critique_json
+        # Extract the last critique from all_critiques for detailed info
+        all_critiques = critique_data.get("all_critiques", [])
+        last_critique = all_critiques[-1] if all_critiques else {}
+
+        resp.critique = CritiqueResponse(
+            score=critique_data.get("final_score"),
+            ats_ok=critique_data.get("final_ats_ok"),
+            length_ok=critique_data.get("final_length_ok"),
+            jd_keyword_coverage=critique_data.get("final_keyword_coverage"),
+            domain_match_coverage=critique_data.get("final_domain_coverage"),
+            strengths=last_critique.get("strengths", []),
+            weaknesses=last_critique.get("weaknesses", []),
+            suggestions=last_critique.get("suggestions", []),
+        )
+
+        # Extract jd_requirements if available
+        jd_req = critique_data.get("jd_requirements", {})
+        if jd_req:
+            resp.jd_requirements = JDRequirementsSummary(
+                domain_focus=jd_req.get("domain_focus", []),
+                must_have_skills=jd_req.get("must_have_skills", []),
+                nice_to_have_skills=jd_req.get("nice_to_have_skills", []),
+            )
+
     return resp
 
 

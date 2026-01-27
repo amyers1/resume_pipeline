@@ -179,6 +179,8 @@ class DatabaseResumeWorker:
                 structured_resume,
                 output_artifact,
                 pdf_path,
+                critique_data,
+                jd_requirements_data,
             ) = await asyncio.to_thread(
                 self._run_pipeline_sync, config, job_id, self.loop
             )
@@ -209,6 +211,15 @@ class DatabaseResumeWorker:
                     job.output_files = output_files
                     if hasattr(structured_resume, "final_score"):
                         job.final_score = structured_resume.final_score
+
+                    # Save critique data with jd_requirements for frontend display
+                    if critique_data:
+                        critique_to_save = {
+                            **critique_data,
+                            "jd_requirements": jd_requirements_data,
+                        }
+                        job.critique_json = critique_to_save
+
                     await db.commit()
 
             await self.rabbitmq.publish_completion(
