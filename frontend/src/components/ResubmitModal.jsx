@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { TEMPLATES, OUTPUT_BACKENDS, MODEL_OPTIONS } from "../utils/constants";
+import {
+    TEMPLATES,
+    OUTPUT_BACKENDS,
+    BASE_MODEL_OPTIONS,
+    STRONG_MODEL_OPTIONS,
+} from "../utils/constants";
 
 // Collapsible advanced section
 const AdvancedSettings = ({ config, setConfig }) => {
@@ -33,15 +38,15 @@ const AdvancedSettings = ({ config, setConfig }) => {
                     {/* Model Selectors */}
                     <div className="col-span-1">
                         <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Base Model
+                            Base Model (Analysis & Fast Tasks)
                         </label>
                         <select
                             name="base_model"
                             value={config.advanced_settings.base_model}
                             onChange={handleChange}
-                            className="w-full form-select"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
-                            {MODEL_OPTIONS.map((m) => (
+                            {BASE_MODEL_OPTIONS.map((m) => (
                                 <option key={m.value} value={m.value}>
                                     {m.label}
                                 </option>
@@ -50,15 +55,15 @@ const AdvancedSettings = ({ config, setConfig }) => {
                     </div>
                     <div className="col-span-1">
                         <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Strong Model
+                            Strong Model (Reasoning & Drafting)
                         </label>
                         <select
                             name="strong_model"
                             value={config.advanced_settings.strong_model}
                             onChange={handleChange}
-                            className="w-full form-select"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
-                            {MODEL_OPTIONS.map((m) => (
+                            {STRONG_MODEL_OPTIONS.map((m) => (
                                 <option key={m.value} value={m.value}>
                                     {m.label}
                                 </option>
@@ -67,21 +72,25 @@ const AdvancedSettings = ({ config, setConfig }) => {
                     </div>
 
                     {/* Sliders */}
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                         <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Temperature:{" "}
-                            {config.advanced_settings.temperature?.toFixed(2)}
+                            Creativity (Temperature)
                         </label>
-                        <input
-                            type="range"
-                            name="temperature"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={config.advanced_settings.temperature}
-                            onChange={handleChange}
-                            className="w-full"
-                        />
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                name="temperature"
+                                value={config.advanced_settings.temperature}
+                                onChange={handleChange}
+                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                            />
+                            <span className="text-sm font-mono text-gray-900 dark:text-white w-10">
+                                {config.advanced_settings.temperature}
+                            </span>
+                        </div>
                     </div>
                     <div className="col-span-2">
                         <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -101,21 +110,22 @@ const AdvancedSettings = ({ config, setConfig }) => {
                             className="w-full"
                         />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                         <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Max Critique Loops:{" "}
-                            {config.advanced_settings.max_critique_loops}
+                            Max Critique Loops (0-3)
                         </label>
                         <input
-                            type="range"
-                            name="max_critique_loops"
+                            type="number"
                             min="0"
                             max="3"
-                            step="1"
                             value={config.advanced_settings.max_critique_loops}
                             onChange={handleChange}
-                            className="w-full"
+                            name="max_critique_loops"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                            More loops = higher quality, slower generation.
+                        </p>
                     </div>
 
                     {/* Cover Letter Checkbox */}
@@ -128,13 +138,13 @@ const AdvancedSettings = ({ config, setConfig }) => {
                                 config.advanced_settings.enable_cover_letter
                             }
                             onChange={handleChange}
-                            className="form-checkbox"
+                            className="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
                         <label
                             htmlFor="enable_cover_letter"
-                            className="font-medium text-gray-700 dark:text-gray-300"
+                            className="text-sm text-gray-700 dark:text-gray-300"
                         >
-                            Generate Cover Letter
+                            Generate Cover Letter (Experimental)
                         </label>
                     </div>
                 </div>
@@ -154,8 +164,8 @@ export default function ResubmitModal({
         output_backend: job.output_backend || "weasyprint",
         priority: Math.min((job.priority || 5) + 1, 10),
         advanced_settings: {
-            base_model: "gpt-4-mini",
-            strong_model: "gpt-4",
+            base_model: "gpt-5-mini",
+            strong_model: "gpt-5",
             temperature: 0.7,
             max_critique_loops: 1,
             min_quality_score: 8.0,

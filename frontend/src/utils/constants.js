@@ -89,10 +89,34 @@ export const FILE_ICONS = {
 
 // Model Options
 export const MODEL_OPTIONS = [
-    { value: "gpt-4o", label: "GPT-4o (Latest)" },
-    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-    { value: "gpt-4", label: "GPT-4" },
-    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-    { value: "gemini-1.0-pro", label: "Gemini 1.0 Pro" },
+    { value: "gpt-5", label: "GPT-5 (OpenAI)" },
+    { value: "gpt-5-mini", label: "GPT-5 Mini (OpenAI)" },
+    { value: "gpt-5-nano", label: "GPT-5 Nano (OpenAI)" },
+    { value: "gpt-4o", label: "GPT-4o (OpenAI)" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)" },
+    { value: "gpt-4-turbo", label: "GPT-4 Turbo (OpenAI)" },
+    { value: "gpt-4", label: "GPT-4 (OpenAI)" },
+    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo (OpenAI)" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Google)" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Google)" },
+    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite (Google)" },
+    { value: "gemini-3.0-flash-preview", label: "Gemini 3.0 Flash Preview (Google)" },
+];
+
+// Base Model Options (for analysis & fast tasks)
+export const BASE_MODEL_OPTIONS = [
+    { value: "gpt-5-mini", label: "GPT-5 Mini (OpenAI)" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)" },
+    { value: "gemini-3.0-flash-preview", label: "Gemini 3.0 Flash Preview (Google)" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Google)" },
+    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite (Google)" },
+];
+
+// Strong Model Options (for reasoning & drafting)
+export const STRONG_MODEL_OPTIONS = [
+    ...BASE_MODEL_OPTIONS,
+    { value: "gpt-5", label: "GPT-5 (OpenAI)" },
+    { value: "gpt-4o", label: "GPT-4o (OpenAI)" },
+    { value: "gpt-4", label: "GPT-4 (OpenAI)" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Google)" },
 ];
