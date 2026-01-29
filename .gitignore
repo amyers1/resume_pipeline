@@ -11,3 +11,4 @@ __pycache__/
 
 # ignore all job files except the schema
 !data/jobs/schema.json
+!references/design_specification.md
