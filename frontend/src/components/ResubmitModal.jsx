@@ -44,7 +44,7 @@ const AdvancedSettings = ({ config, setConfig }) => {
                             name="base_model"
                             value={config.advanced_settings.base_model}
                             onChange={handleChange}
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {BASE_MODEL_OPTIONS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -61,7 +61,7 @@ const AdvancedSettings = ({ config, setConfig }) => {
                             name="strong_model"
                             value={config.advanced_settings.strong_model}
                             onChange={handleChange}
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {STRONG_MODEL_OPTIONS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -121,7 +121,7 @@ const AdvancedSettings = ({ config, setConfig }) => {
                             value={config.advanced_settings.max_critique_loops}
                             onChange={handleChange}
                             name="max_critique_loops"
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             More loops = higher quality, slower generation.
@@ -196,7 +196,7 @@ export default function ResubmitModal({
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-background-surface rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                         Regenerate Resume

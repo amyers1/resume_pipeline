@@ -106,7 +106,7 @@ export default function ProfileView() {
             </div>
 
             {/* Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="bg-white dark:bg-background-surface rounded-lg shadow">
                 {/* Basic Information */}
                 <section className="p-8 border-b border-gray-200 dark:border-gray-700">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
@@ -226,7 +226,7 @@ export default function ProfileView() {
                             {data.work.map((job, index) => (
                                 <div
                                     key={index}
-                                    className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                    className="p-6 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
                                 >
                                     <div className="mb-4">
                                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -295,7 +295,7 @@ export default function ProfileView() {
                             {data.education.map((edu, index) => (
                                 <div
                                     key={index}
-                                    className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                    className="p-6 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
                                 >
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {edu.institution}
@@ -331,7 +331,7 @@ export default function ProfileView() {
                                 {data.certifications.map((cert, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                        className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
                                     >
                                         <span className="text-2xl">🏆</span>
                                         <div className="flex-1">
@@ -371,7 +371,7 @@ export default function ProfileView() {
                             {data.projects.map((project, index) => (
                                 <div
                                     key={index}
-                                    className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                                    className="p-6 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
                                 >
                                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                                         {project.name}

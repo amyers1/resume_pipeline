@@ -23,7 +23,7 @@ const InputField = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             required={required}
-            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         />
     </div>
 );
@@ -45,7 +45,7 @@ const TextAreaField = ({
             onChange={(e) => onChange(e.target.value)}
             rows={rows}
             placeholder={placeholder}
-            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         />
     </div>
 );
@@ -344,7 +344,7 @@ export default function ProfileEditor() {
                 </h1>
                 <button
                     onClick={() => navigate("/profiles")}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-background-surface hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                     Back to Profiles
                 </button>
@@ -352,7 +352,7 @@ export default function ProfileEditor() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Basic Information */}
-                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
                         Basic Information
                     </h2>
@@ -402,7 +402,7 @@ export default function ProfileEditor() {
                 </section>
 
                 {/* Location */}
-                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
                         Location
                     </h2>
@@ -429,7 +429,7 @@ export default function ProfileEditor() {
                 </section>
 
                 {/* Skills */}
-                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white">
                             Skills
@@ -456,7 +456,7 @@ export default function ProfileEditor() {
                                         handleSkillChange(index, e.target.value)
                                     }
                                     placeholder="e.g. Python"
-                                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                                 />
                                 <button
                                     type="button"
@@ -477,7 +477,7 @@ export default function ProfileEditor() {
                 </section>
 
                 {/* Work Experience */}
-                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
                     <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white">
                             Work Experience
@@ -606,7 +606,7 @@ export default function ProfileEditor() {
                                             return (
                                                 <div
                                                     key={hIndex}
-                                                    className="bg-white dark:bg-gray-800 rounded-md p-3 border border-gray-200 dark:border-gray-600"
+                                                    className="bg-white dark:bg-background-surface rounded-md p-3 border border-gray-200 dark:border-gray-600"
                                                 >
                                                     <div className="flex gap-2 items-start mb-2">
                                                         <textarea
@@ -621,7 +621,7 @@ export default function ProfileEditor() {
                                                                 )
                                                             }
                                                             rows={2}
-                                                            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                                                            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
                                                             placeholder="Achievement or responsibility..."
                                                         />
                                                         <button
@@ -670,7 +670,7 @@ export default function ProfileEditor() {
                                                                         ),
                                                                 )
                                                             }
-                                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs"
+                                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs"
                                                             placeholder="e.g. Python, AWS, Leadership"
                                                         />
                                                     </div>
@@ -685,7 +685,7 @@ export default function ProfileEditor() {
                 </section>
 
                 {/* Education */}
-                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
                     <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white">
                             Education
@@ -790,7 +790,7 @@ export default function ProfileEditor() {
                 </section>
 
                 {/* Certifications */}
-                <section className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
                     <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white">
                             Certifications
@@ -887,7 +887,7 @@ export default function ProfileEditor() {
                     <button
                         type="button"
                         onClick={() => navigate("/profiles")}
-                        className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        className="px-4 py-2 bg-white dark:bg-background-surface text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                         disabled={saving}
                     >
                         Cancel

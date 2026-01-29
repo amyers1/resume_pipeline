@@ -48,7 +48,7 @@ export const STATUS_COLORS = {
     processing:
         "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400",
     failed: "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400",
-    queued: "text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400",
+    queued: "text-gray-600 bg-gray-100 dark:bg-background-surface dark:text-gray-400",
 };
 
 // Health status colors
@@ -100,14 +100,20 @@ export const MODEL_OPTIONS = [
     { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Google)" },
     { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Google)" },
     { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite (Google)" },
-    { value: "gemini-3.0-flash-preview", label: "Gemini 3.0 Flash Preview (Google)" },
+    {
+        value: "gemini-3.0-flash-preview",
+        label: "Gemini 3.0 Flash Preview (Google)",
+    },
 ];
 
 // Base Model Options (for analysis & fast tasks)
 export const BASE_MODEL_OPTIONS = [
     { value: "gpt-5-mini", label: "GPT-5 Mini (OpenAI)" },
     { value: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)" },
-    { value: "gemini-3.0-flash-preview", label: "Gemini 3.0 Flash Preview (Google)" },
+    {
+        value: "gemini-3.0-flash-preview",
+        label: "Gemini 3.0 Flash Preview (Google)",
+    },
     { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Google)" },
     { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite (Google)" },
 ];

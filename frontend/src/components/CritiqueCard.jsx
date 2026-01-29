@@ -63,7 +63,7 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
     // Handle loading/pending states
     if (!critique && status !== "completed") {
         return (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Critique Score
                 </h3>
@@ -97,7 +97,7 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
                   : "text-red-600 dark:text-red-400";
 
         return (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     Critique Score
                 </h3>
@@ -142,7 +142,7 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
               : "bg-red-500";
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Critique Score
             </h3>

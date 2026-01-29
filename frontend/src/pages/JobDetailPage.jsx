@@ -335,7 +335,7 @@ export default function JobDetailPage() {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Progress Card */}
                     {(isProcessing || job.status === "queued") && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                 Generation Progress
                             </h2>
@@ -352,7 +352,7 @@ export default function JobDetailPage() {
 
                     {/* Results Card */}
                     {isCompleted && files.length > 0 && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                 Results
                             </h2>
@@ -393,7 +393,7 @@ export default function JobDetailPage() {
 
                     {/* Live Log */}
                     {events.length > 0 && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <LiveLog events={events} />
                         </div>
                     )}
@@ -403,7 +403,7 @@ export default function JobDetailPage() {
                 <div className="space-y-6">
                     {/* Job History / Versions Card */}
                     {job && job.history && job.history.length > 0 && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                                 Version History
                             </h2>
@@ -483,7 +483,7 @@ export default function JobDetailPage() {
                     {(isProcessing ||
                         job.status === "queued" ||
                         isCompleted) && (
-                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                 Pipeline Stages
                             </h2>
@@ -498,7 +498,7 @@ export default function JobDetailPage() {
                     )}
 
                     {/* Job Details Card */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             Job Details
                         </h2>
@@ -547,7 +547,7 @@ export default function JobDetailPage() {
             {/* Document Viewer Modal */}
             {(viewingFile || loadingFile) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm p-4 sm:p-6">
-                    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+                    <div className="bg-white dark:bg-background rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
@@ -562,7 +562,7 @@ export default function JobDetailPage() {
                         </div>
 
                         {/* Modal Content */}
-                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 relative">
+                        <div className="flex-1 bg-gray-100 dark:bg-background-surface relative">
                             {loadingFile ? (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <div className="flex flex-col items-center gap-3">
@@ -593,7 +593,7 @@ export default function JobDetailPage() {
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+                    <div className="bg-white dark:bg-background-surface rounded-lg p-6 max-w-md w-full mx-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             Delete Job?
                         </h3>

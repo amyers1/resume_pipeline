@@ -82,7 +82,7 @@ export default function ProfilesList() {
             </div>
 
             {profiles.length === 0 ? (
-                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div className="text-center py-12 bg-white dark:bg-background-surface rounded-lg shadow">
                     <div className="text-6xl mb-4">📄</div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                         No profiles yet
@@ -112,7 +112,7 @@ export default function ProfilesList() {
                         return (
                             <div
                                 key={profile.id}
-                                className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
+                                className="bg-white dark:bg-background-surface rounded-lg p-6 shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
                             >
                                 <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">

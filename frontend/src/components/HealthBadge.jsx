@@ -53,7 +53,7 @@ export default function HealthBadge() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-background-surface rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                             System Status

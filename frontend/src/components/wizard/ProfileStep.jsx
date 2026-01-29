@@ -86,7 +86,7 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
 
     return (
         <div className="space-y-6">
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="p-4 bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -100,7 +100,7 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                                     profile_id: e.target.value,
                                 }))
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                         >
                             <option value="">-- Select Profile --</option>
                             {profiles.map((p) => (
@@ -153,7 +153,7 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Profile Preview
                     </label>
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 max-h-80 overflow-y-auto shadow-inner">
+                    <div className="p-4 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700 max-h-80 overflow-y-auto shadow-inner">
                         <pre className="text-xs text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap">
                             {profilePreview}
                         </pre>

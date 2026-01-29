@@ -188,7 +188,7 @@ export default function NewJobPage() {
                         return (
                             <div
                                 key={step.id}
-                                className="flex flex-col items-center bg-gray-50 dark:bg-gray-900 px-4"
+                                className="flex flex-col items-center bg-gray-50 dark:bg-background px-4"
                             >
                                 <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-2 ${isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}
@@ -206,7 +206,7 @@ export default function NewJobPage() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-background-surface p-8 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 {currentStep === 1 && (
                     <JobDetailsStep
                         formData={formData}

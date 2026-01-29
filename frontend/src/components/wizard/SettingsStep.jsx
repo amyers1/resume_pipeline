@@ -59,7 +59,7 @@ export default function SettingsStep({
                                     template: e.target.value,
                                 }))
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {TEMPLATES.map((t) => (
                                 <option key={t.value} value={t.value}>
@@ -80,7 +80,7 @@ export default function SettingsStep({
                                     output_backend: e.target.value,
                                 }))
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {OUTPUT_BACKENDS.map((b) => (
                                 <option key={b.value} value={b.value}>
@@ -109,7 +109,7 @@ export default function SettingsStep({
                             onChange={(e) =>
                                 updateAdvanced("base_model", e.target.value)
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {BASE_MODELS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -127,7 +127,7 @@ export default function SettingsStep({
                             onChange={(e) =>
                                 updateAdvanced("strong_model", e.target.value)
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {STRONG_MODELS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -155,7 +155,7 @@ export default function SettingsStep({
                                     parseInt(e.target.value),
                                 )
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             More loops = higher quality, slower generation.

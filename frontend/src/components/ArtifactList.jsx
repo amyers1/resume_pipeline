@@ -64,7 +64,7 @@ export default function ArtifactList({ jobId, files = [], onFileSelect }) {
                 return (
                     <div
                         key={file.name}
-                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700"
                     >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             {/* FIXED: Infer icon from filename since API doesn't return type */}

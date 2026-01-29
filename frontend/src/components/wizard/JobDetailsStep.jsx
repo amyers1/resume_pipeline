@@ -87,7 +87,7 @@ export default function JobDetailsStep({
                 type={type}
                 value={value || ""}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                 placeholder={placeholder}
                 required={required}
             />
@@ -109,7 +109,7 @@ export default function JobDetailsStep({
                 rows={rows}
                 value={Array.isArray(value) ? value.join("\n") : value || ""}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 font-mono text-sm"
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 font-mono text-sm"
                 placeholder={placeholder}
             />
         </div>
@@ -141,7 +141,7 @@ export default function JobDetailsStep({
                     <select
                         value={selectedJobId}
                         onChange={handleJobSelect}
-                        className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                        className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm"
                     >
                         <option value="">-- Start Fresh --</option>
                         {existingJobs.map((job) => (
@@ -279,7 +279,7 @@ export default function JobDetailsStep({
                                 onChange={(e) =>
                                     updateDetails("remote_type", e.target.value)
                                 }
-                                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm"
                             >
                                 <option value="onsite">On-site</option>
                                 <option value="hybrid">Hybrid</option>

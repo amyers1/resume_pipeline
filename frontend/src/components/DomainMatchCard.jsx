@@ -82,7 +82,7 @@ export default function DomainMatchCard({ jdRequirements, critique }) {
     const matchedDomains = new Set(requiredDomains.slice(0, matchedCount));
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Domain Alignment
@@ -149,7 +149,8 @@ export default function DomainMatchCard({ jdRequirements, critique }) {
                                 {jdRequirements.nice_to_have_skills
                                     .slice(0, 5)
                                     .join(", ")}
-                                {jdRequirements.nice_to_have_skills.length > 5 &&
+                                {jdRequirements.nice_to_have_skills.length >
+                                    5 &&
                                     ` +${jdRequirements.nice_to_have_skills.length - 5} more`}
                             </span>
                         </div>

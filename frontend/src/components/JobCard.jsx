@@ -25,7 +25,7 @@ export default function JobCard({ job }) {
     return (
         <Link
             to={`/jobs/${id}`}
-            className="block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:shadow-lg"
+            className="block bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:shadow-lg"
         >
             <div className="p-5">
                 {/* Header */}
