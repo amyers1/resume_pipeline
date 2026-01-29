@@ -18,7 +18,49 @@ export default function Header() {
                         <Link to="/" className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                                 <span className="text-white font-bold text-lg">
-                                    R
+                                    <svg
+                                        width="40"
+                                        height="40"
+                                        viewBox="0 0 40 40"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M8 20H32"
+                                            stroke="#334155"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                        />
+
+                                        <circle
+                                            cx="8"
+                                            cy="20"
+                                            r="4"
+                                            class="fill-slate-400 dark:fill-slate-500"
+                                        />
+
+                                        <circle
+                                            cx="20"
+                                            cy="20"
+                                            r="6"
+                                            class="fill-primary-500 animate-pulse"
+                                        />
+                                        <circle
+                                            cx="20"
+                                            cy="20"
+                                            r="10"
+                                            stroke="#06b6d4"
+                                            stroke-width="1.5"
+                                            class="opacity-30"
+                                        />
+
+                                        <circle
+                                            cx="32"
+                                            cy="20"
+                                            r="4"
+                                            class="fill-slate-400 dark:fill-slate-500"
+                                        />
+                                    </svg>
                                 </span>
                             </div>
                             <span className="text-xl font-bold text-gray-900 dark:text-white">
