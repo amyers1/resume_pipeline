@@ -113,14 +113,14 @@ export default function Dashboard() {
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                             Resume Jobs
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-slate-600 dark:text-slate-400 mt-1">
                             Manage and monitor your resume generation jobs
                         </p>
                         {/* Debug info */}
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-slate-400 mt-1">
                             Showing {jobsList.length} of {pagination.totalCount}{" "}
                             total jobs
                         </p>
@@ -141,7 +141,7 @@ export default function Dashboard() {
                             type="text"
                             placeholder="Search by company..."
                             onChange={(e) => debouncedSearch(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                     </div>
 
@@ -153,7 +153,7 @@ export default function Dashboard() {
                                 sortBy: e.target.value,
                             }))
                         }
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                         <option value="created_at">Sort by Date</option>
                         <option value="company">Sort by Company</option>
@@ -168,7 +168,7 @@ export default function Dashboard() {
                                 sortOrder: e.target.value,
                             }))
                         }
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                         <option value="desc">Newest First</option>
                         <option value="asc">Oldest First</option>
@@ -184,10 +184,10 @@ export default function Dashboard() {
             ) : jobsList.length === 0 ? (
                 <div className="text-center py-12">
                     <div className="text-6xl mb-4">📄</div>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                         No jobs yet
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    <p className="text-slate-600 dark:text-slate-400 mb-6">
                         Get started by creating your first resume generation job
                     </p>
                     <Link
@@ -209,7 +209,7 @@ export default function Dashboard() {
                     {/* Pagination */}
                     {pagination.totalPages > 1 && (
                         <div className="mt-8 flex items-center justify-between">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
                                 Showing page {pagination.page} of{" "}
                                 {pagination.totalPages} ({pagination.totalCount}{" "}
                                 total jobs)
@@ -221,7 +221,7 @@ export default function Dashboard() {
                                         handlePageChange(pagination.page - 1)
                                     }
                                     disabled={pagination.page === 1}
-                                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
                                     Previous
                                 </button>
@@ -233,7 +233,7 @@ export default function Dashboard() {
                                         pagination.page ===
                                         pagination.totalPages
                                     }
-                                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
                                     Next
                                 </button>

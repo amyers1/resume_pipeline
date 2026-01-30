@@ -86,10 +86,10 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
 
     return (
         <div className="space-y-6">
-            <div className="p-4 bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="p-4 bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Select Career Profile *
                         </label>
                         <select
@@ -100,7 +100,7 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                                     profile_id: e.target.value,
                                 }))
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                         >
                             <option value="">-- Select Profile --</option>
                             {profiles.map((p) => (
@@ -135,14 +135,14 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
-                            className="px-4 py-2 bg-gray-50 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 border border-gray-200 dark:border-gray-600 disabled:opacity-50"
+                            className="px-4 py-2 bg-slate-50 text-slate-700 dark:bg-background-elevated dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors flex items-center gap-2 border border-slate-200 dark:border-slate-600 disabled:opacity-50"
                         >
                             {uploading ? "Importing..." : "📂 Import JSON"}
                         </button>
                     </div>
                 </div>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
                     Choose a profile from the database to use as the base for
                     this resume.
                 </p>
@@ -150,21 +150,21 @@ export default function ProfileStep({ formData, setFormData, onNext, onBack }) {
 
             {profilePreview && (
                 <div className="mt-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Profile Preview
                     </label>
-                    <div className="p-4 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700 max-h-80 overflow-y-auto shadow-inner">
-                        <pre className="text-xs text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap">
+                    <div className="p-4 bg-slate-50 dark:bg-background rounded-lg border border-slate-200 dark:border-slate-700 max-h-80 overflow-y-auto shadow-inner">
+                        <pre className="text-xs text-slate-600 dark:text-slate-400 font-mono whitespace-pre-wrap">
                             {profilePreview}
                         </pre>
                     </div>
                 </div>
             )}
 
-            <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700 mt-8">
+            <div className="flex justify-between pt-6 border-t border-slate-200 dark:border-slate-700 mt-8">
                 <button
                     onClick={onBack}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
+                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm"
                 >
                     ← Back
                 </button>

@@ -64,7 +64,7 @@ export default function ProfileView() {
         return (
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="text-center py-12">
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
                         Profile not found
                     </p>
                     <button
@@ -85,15 +85,15 @@ export default function ProfileView() {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate("/profiles")}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                         ← Back
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                         {profile.name || basics.name || "Untitled Profile"}
                     </h1>
                 </div>
@@ -108,54 +108,54 @@ export default function ProfileView() {
             {/* Content */}
             <div className="bg-white dark:bg-background-surface rounded-lg shadow">
                 {/* Basic Information */}
-                <section className="p-8 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
                         Basic Information
                     </h2>
                     <div className="grid gap-4 md:grid-cols-2">
                         {basics.name && (
                             <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
                                     Name
                                 </p>
-                                <p className="text-gray-900 dark:text-white font-medium">
+                                <p className="text-slate-900 dark:text-white font-medium">
                                     {basics.name}
                                 </p>
                             </div>
                         )}
                         {basics.label && (
                             <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
                                     Title
                                 </p>
-                                <p className="text-gray-900 dark:text-white font-medium">
+                                <p className="text-slate-900 dark:text-white font-medium">
                                     {basics.label}
                                 </p>
                             </div>
                         )}
                         {basics.email && (
                             <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
                                     Email
                                 </p>
-                                <p className="text-gray-900 dark:text-white font-medium">
+                                <p className="text-slate-900 dark:text-white font-medium">
                                     {basics.email}
                                 </p>
                             </div>
                         )}
                         {basics.phone && (
                             <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
                                     Phone
                                 </p>
-                                <p className="text-gray-900 dark:text-white font-medium">
+                                <p className="text-slate-900 dark:text-white font-medium">
                                     {basics.phone}
                                 </p>
                             </div>
                         )}
                         {basics.url && (
                             <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
                                     Website
                                 </p>
                                 <a
@@ -168,10 +168,10 @@ export default function ProfileView() {
                         )}
                         {(location.city || location.region) && (
                             <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
                                     Location
                                 </p>
-                                <p className="text-gray-900 dark:text-white font-medium">
+                                <p className="text-slate-900 dark:text-white font-medium">
                                     {[
                                         location.city,
                                         location.region,
@@ -185,10 +185,10 @@ export default function ProfileView() {
                     </div>
                     {basics.summary && (
                         <div className="mt-6">
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
                                 Summary
                             </p>
-                            <p className="text-gray-900 dark:text-white leading-relaxed">
+                            <p className="text-slate-900 dark:text-white leading-relaxed">
                                 {basics.summary}
                             </p>
                         </div>
@@ -197,8 +197,8 @@ export default function ProfileView() {
 
                 {/* Skills */}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
-                    <section className="p-8 border-b border-gray-200 dark:border-gray-700">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                    <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
                             Skills
                         </h2>
                         <div className="flex flex-wrap gap-2">
@@ -218,24 +218,24 @@ export default function ProfileView() {
 
                 {/* Work Experience */}
                 {Array.isArray(data.work) && data.work.length > 0 && (
-                    <section className="p-8 border-b border-gray-200 dark:border-gray-700">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                    <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
                             Work Experience
                         </h2>
                         <div className="space-y-6">
                             {data.work.map((job, index) => (
                                 <div
                                     key={index}
-                                    className="p-6 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
+                                    className="p-6 bg-slate-50 dark:bg-background rounded-lg border border-slate-200 dark:border-slate-700"
                                 >
                                     <div className="mb-4">
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                                             {job.position}
                                         </h3>
                                         <p className="text-primary-600 dark:text-primary-400 font-medium">
                                             {job.name}
                                         </p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                             {job.startDate && (
                                                 <>
                                                     {job.startDate}{" "}
@@ -247,14 +247,14 @@ export default function ProfileView() {
                                         </p>
                                     </div>
                                     {job.summary && (
-                                        <p className="text-gray-700 dark:text-gray-300 mb-3">
+                                        <p className="text-slate-700 dark:text-slate-300 mb-3">
                                             {job.summary}
                                         </p>
                                     )}
                                     {Array.isArray(job.highlights) &&
                                         job.highlights.length > 0 && (
                                             <div>
-                                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                                     Key Achievements:
                                                 </p>
                                                 <ul className="space-y-2">
@@ -267,7 +267,7 @@ export default function ProfileView() {
                                                                 <span className="text-primary-600 dark:text-primary-400 mt-1">
                                                                     •
                                                                 </span>
-                                                                <span className="text-gray-700 dark:text-gray-300">
+                                                                <span className="text-slate-700 dark:text-slate-300">
                                                                     {typeof highlight ===
                                                                     "string"
                                                                         ? highlight
@@ -287,17 +287,17 @@ export default function ProfileView() {
 
                 {/* Education */}
                 {Array.isArray(data.education) && data.education.length > 0 && (
-                    <section className="p-8 border-b border-gray-200 dark:border-gray-700">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                    <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
                             Education
                         </h2>
                         <div className="space-y-4">
                             {data.education.map((edu, index) => (
                                 <div
                                     key={index}
-                                    className="p-6 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
+                                    className="p-6 bg-slate-50 dark:bg-background rounded-lg border border-slate-200 dark:border-slate-700"
                                 >
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                                         {edu.institution}
                                     </h3>
                                     <p className="text-primary-600 dark:text-primary-400 font-medium">
@@ -305,12 +305,12 @@ export default function ProfileView() {
                                         {edu.area && `in ${edu.area}`}
                                     </p>
                                     {edu.endDate && (
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                             Graduated: {edu.endDate}
                                         </p>
                                     )}
                                     {edu.score && (
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">
                                             GPA: {edu.score}
                                         </p>
                                     )}
@@ -323,19 +323,19 @@ export default function ProfileView() {
                 {/* Certifications */}
                 {Array.isArray(data.certifications) &&
                     data.certifications.length > 0 && (
-                        <section className="p-8 border-b border-gray-200 dark:border-gray-700">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                        <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                            <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
                                 Certifications
                             </h2>
                             <div className="space-y-4">
                                 {data.certifications.map((cert, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
+                                        className="flex items-start gap-4 p-4 bg-slate-50 dark:bg-background rounded-lg border border-slate-200 dark:border-slate-700"
                                     >
                                         <span className="text-2xl">🏆</span>
                                         <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                                            <h3 className="font-semibold text-slate-900 dark:text-white">
                                                 {typeof cert === "string"
                                                     ? cert
                                                     : cert.name}
@@ -348,7 +348,7 @@ export default function ProfileView() {
                                                         </p>
                                                     )}
                                                     {cert.date && (
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                        <p className="text-sm text-slate-600 dark:text-slate-400">
                                                             {cert.date}
                                                         </p>
                                                     )}
@@ -364,20 +364,20 @@ export default function ProfileView() {
                 {/* Projects */}
                 {Array.isArray(data.projects) && data.projects.length > 0 && (
                     <section className="p-8">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
                             Projects
                         </h2>
                         <div className="space-y-4">
                             {data.projects.map((project, index) => (
                                 <div
                                     key={index}
-                                    className="p-6 bg-gray-50 dark:bg-background rounded-lg border border-gray-200 dark:border-gray-700"
+                                    className="p-6 bg-slate-50 dark:bg-background rounded-lg border border-slate-200 dark:border-slate-700"
                                 >
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                                         {project.name}
                                     </h3>
                                     {project.description && (
-                                        <p className="text-gray-700 dark:text-gray-300 mt-2">
+                                        <p className="text-slate-700 dark:text-slate-300 mt-2">
                                             {project.description}
                                         </p>
                                     )}

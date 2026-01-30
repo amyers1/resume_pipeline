@@ -177,26 +177,26 @@ export default function NewJobPage() {
         <div className="max-w-5xl mx-auto px-4 py-8">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
                     Create New Resume
                 </h1>
                 <div className="flex items-center justify-between relative">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 dark:bg-gray-700 -z-10" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-background-elevated -z-10" />
                     {STEPS.map((step) => {
                         const isCompleted = step.id < currentStep;
                         const isCurrent = step.id === currentStep;
                         return (
                             <div
                                 key={step.id}
-                                className="flex flex-col items-center bg-gray-50 dark:bg-background px-4"
+                                className="flex flex-col items-center bg-slate-50 dark:bg-background px-4"
                             >
                                 <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-2 ${isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900" : "bg-gray-200 dark:bg-gray-700 text-gray-500"}`}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-2 ${isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900" : "bg-slate-200 dark:bg-background-elevated text-slate-500"}`}
                                 >
                                     {isCompleted ? "✓" : step.id}
                                 </div>
                                 <span
-                                    className={`text-sm font-medium ${isCurrent ? "text-primary-600 dark:text-primary-400" : "text-gray-500"}`}
+                                    className={`text-sm font-medium ${isCurrent ? "text-primary-600 dark:text-primary-400" : "text-slate-500"}`}
                                 >
                                     {step.title}
                                 </span>
@@ -206,7 +206,7 @@ export default function NewJobPage() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-background-surface p-8 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-background-surface p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                 {currentStep === 1 && (
                     <JobDetailsStep
                         formData={formData}

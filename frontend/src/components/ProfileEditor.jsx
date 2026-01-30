@@ -14,7 +14,7 @@ const InputField = ({
     className = "",
 }) => (
     <div className={className}>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             {label} {required && "*"}
         </label>
         <input
@@ -23,7 +23,7 @@ const InputField = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             required={required}
-            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         />
     </div>
 );
@@ -37,7 +37,7 @@ const TextAreaField = ({
     className = "",
 }) => (
     <div className={className}>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             {label}
         </label>
         <textarea
@@ -45,7 +45,7 @@ const TextAreaField = ({
             onChange={(e) => onChange(e.target.value)}
             rows={rows}
             placeholder={placeholder}
-            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         />
     </div>
 );
@@ -339,12 +339,12 @@ export default function ProfileEditor() {
     return (
         <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                     {profileId ? "Edit Profile" : "Create Profile"}
                 </h1>
                 <button
                     onClick={() => navigate("/profiles")}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-background-surface hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-background-surface hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                     Back to Profiles
                 </button>
@@ -353,7 +353,7 @@ export default function ProfileEditor() {
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Basic Information */}
                 <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
                         Basic Information
                     </h2>
                     <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
@@ -403,7 +403,7 @@ export default function ProfileEditor() {
 
                 {/* Location */}
                 <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
                         Location
                     </h2>
                     <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3">
@@ -430,8 +430,8 @@ export default function ProfileEditor() {
 
                 {/* Skills */}
                 <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h2 className="text-lg font-medium text-slate-900 dark:text-white">
                             Skills
                         </h2>
                         <button
@@ -456,7 +456,7 @@ export default function ProfileEditor() {
                                         handleSkillChange(index, e.target.value)
                                     }
                                     placeholder="e.g. Python"
-                                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                                 />
                                 <button
                                     type="button"
@@ -469,7 +469,7 @@ export default function ProfileEditor() {
                             </div>
                         ))}
                         {formData.skills.length === 0 && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 col-span-full">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 col-span-full">
                                 No skills added yet.
                             </p>
                         )}
@@ -478,8 +478,8 @@ export default function ProfileEditor() {
 
                 {/* Work Experience */}
                 <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h2 className="text-lg font-medium text-slate-900 dark:text-white">
                             Work Experience
                         </h2>
                         <button
@@ -495,12 +495,12 @@ export default function ProfileEditor() {
                         {formData.work.map((job, index) => (
                             <div
                                 key={index}
-                                className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 relative border border-gray-200 dark:border-gray-700"
+                                className="bg-slate-50 dark:bg-background-elevated/30 rounded-lg p-4 relative border border-slate-200 dark:border-slate-700"
                             >
                                 <button
                                     type="button"
                                     onClick={() => removeWorkExperience(index)}
-                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors"
                                     title="Remove Position"
                                 >
                                     <svg
@@ -517,7 +517,7 @@ export default function ProfileEditor() {
                                     </svg>
                                 </button>
 
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">
                                     Position {index + 1}
                                 </h3>
 
@@ -578,7 +578,7 @@ export default function ProfileEditor() {
 
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                             Highlights
                                         </label>
                                         <button
@@ -606,7 +606,7 @@ export default function ProfileEditor() {
                                             return (
                                                 <div
                                                     key={hIndex}
-                                                    className="bg-white dark:bg-background-surface rounded-md p-3 border border-gray-200 dark:border-gray-600"
+                                                    className="bg-white dark:bg-background-surface rounded-md p-3 border border-slate-200 dark:border-slate-600"
                                                 >
                                                     <div className="flex gap-2 items-start mb-2">
                                                         <textarea
@@ -621,7 +621,7 @@ export default function ProfileEditor() {
                                                                 )
                                                             }
                                                             rows={2}
-                                                            className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                                                            className="flex-1 rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
                                                             placeholder="Achievement or responsibility..."
                                                         />
                                                         <button
@@ -632,13 +632,13 @@ export default function ProfileEditor() {
                                                                     hIndex,
                                                                 )
                                                             }
-                                                            className="text-gray-400 hover:text-red-600 mt-2"
+                                                            className="text-slate-400 hover:text-red-600 mt-2"
                                                         >
                                                             &times;
                                                         </button>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                                                             Tags
                                                             (comma-separated)
                                                         </label>
@@ -670,7 +670,7 @@ export default function ProfileEditor() {
                                                                         ),
                                                                 )
                                                             }
-                                                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs"
+                                                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs"
                                                             placeholder="e.g. Python, AWS, Leadership"
                                                         />
                                                     </div>
@@ -686,8 +686,8 @@ export default function ProfileEditor() {
 
                 {/* Education */}
                 <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h2 className="text-lg font-medium text-slate-900 dark:text-white">
                             Education
                         </h2>
                         <button
@@ -703,12 +703,12 @@ export default function ProfileEditor() {
                         {formData.education.map((edu, index) => (
                             <div
                                 key={index}
-                                className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 relative border border-gray-200 dark:border-gray-700"
+                                className="bg-slate-50 dark:bg-background-elevated/30 rounded-lg p-4 relative border border-slate-200 dark:border-slate-700"
                             >
                                 <button
                                     type="button"
                                     onClick={() => removeEducation(index)}
-                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -791,8 +791,8 @@ export default function ProfileEditor() {
 
                 {/* Certifications */}
                 <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">
-                        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <h2 className="text-lg font-medium text-slate-900 dark:text-white">
                             Certifications
                         </h2>
                         <button
@@ -808,12 +808,12 @@ export default function ProfileEditor() {
                         {formData.certifications.map((cert, index) => (
                             <div
                                 key={index}
-                                className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 relative border border-gray-200 dark:border-gray-700"
+                                className="bg-slate-50 dark:bg-background-elevated/30 rounded-lg p-4 relative border border-slate-200 dark:border-slate-700"
                             >
                                 <button
                                     type="button"
                                     onClick={() => removeCertification(index)}
-                                    className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -883,11 +883,11 @@ export default function ProfileEditor() {
                 </section>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-end gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
                     <button
                         type="button"
                         onClick={() => navigate("/profiles")}
-                        className="px-4 py-2 bg-white dark:bg-background-surface text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        className="px-4 py-2 bg-white dark:bg-background-surface text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                         disabled={saving}
                     >
                         Cancel

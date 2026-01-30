@@ -25,16 +25,16 @@ export default function JobCard({ job }) {
     return (
         <Link
             to={`/jobs/${id}`}
-            className="block bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:shadow-lg"
+            className="block bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-400 transition-all duration-200 hover:shadow-lg"
         >
             <div className="p-5">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white truncate">
                             {company}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
                             {job_title}
                         </p>
                     </div>
@@ -50,9 +50,9 @@ export default function JobCard({ job }) {
                 </div>
 
                 {/* Score and Date */}
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 mb-4">
                     <div className="flex items-center gap-1.5">
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
                             Score:
                         </span>
                         <span className={`font-bold ${scoreColor}`}>
@@ -63,11 +63,11 @@ export default function JobCard({ job }) {
                 </div>
 
                 {/* Details row */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                     {template && (
                         <div className="flex items-center gap-1.5">
                             <span title="Template">📄</span>
-                            <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                            <span className="bg-slate-100 dark:bg-background-elevated px-2 py-0.5 rounded">
                                 {template}
                             </span>
                         </div>
@@ -81,7 +81,7 @@ export default function JobCard({ job }) {
                 </div>
 
                 {/* Actions */}
-                <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
                     <span className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
                         View Details →
                     </span>

@@ -27,7 +27,7 @@ export default function StageTimeline({ currentStage, status, startedAt }) {
                 );
             case "active":
                 return (
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 );
@@ -39,8 +39,8 @@ export default function StageTimeline({ currentStage, status, startedAt }) {
                 );
             default:
                 return (
-                    <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                        <div className="w-3 h-3 bg-gray-100 dark:bg-background-surface rounded-full"></div>
+                    <div className="w-8 h-8 bg-slate-300 dark:bg-slate-600 rounded-full flex items-center justify-center">
+                        <div className="w-3 h-3 bg-slate-100 dark:bg-background-surface rounded-full"></div>
                     </div>
                 );
         }
@@ -66,10 +66,10 @@ export default function StageTimeline({ currentStage, status, startedAt }) {
                                             stageStatus === "completed"
                                                 ? "bg-green-500"
                                                 : stageStatus === "active"
-                                                  ? "bg-blue-500"
+                                                  ? "bg-primary-500"
                                                   : stageStatus === "failed"
                                                     ? "bg-red-500"
-                                                    : "bg-gray-300 dark:bg-gray-600"
+                                                    : "bg-slate-300 dark:bg-slate-600"
                                         }`}
                                     ></div>
                                 )}
@@ -82,20 +82,20 @@ export default function StageTimeline({ currentStage, status, startedAt }) {
                                         <p
                                             className={`text-sm font-medium ${
                                                 stageStatus === "active"
-                                                    ? "text-gray-900 dark:text-white"
-                                                    : "text-gray-600 dark:text-gray-400"
+                                                    ? "text-slate-900 dark:text-white"
+                                                    : "text-slate-600 dark:text-slate-400"
                                             }`}
                                         >
                                             {stageInfo.label}
                                         </p>
                                         {stageStatus === "active" && (
-                                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                                                 In progress...
                                             </p>
                                         )}
                                     </div>
                                     {stageStatus === "completed" && (
-                                        <span className="text-xs text-gray-500 dark:text-gray-500">
+                                        <span className="text-xs text-slate-500 dark:text-slate-500">
                                             Complete
                                         </span>
                                     )}

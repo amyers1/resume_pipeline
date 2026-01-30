@@ -48,7 +48,7 @@ export const STATUS_COLORS = {
     processing:
         "text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400",
     failed: "text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400",
-    queued: "text-gray-600 bg-gray-100 dark:bg-background-surface dark:text-gray-400",
+    queued: "text-slate-600 bg-slate-100 dark:bg-background-surface dark:text-slate-400",
 };
 
 // Health status colors

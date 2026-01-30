@@ -25,10 +25,10 @@ const AdvancedSettings = ({ config, setConfig }) => {
     };
 
     return (
-        <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+        <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between text-sm font-medium text-gray-600 dark:text-gray-400"
+                className="w-full flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-400"
             >
                 <span>Advanced Settings</span>
                 <span>{isOpen ? "−" : "+"}</span>
@@ -37,14 +37,14 @@ const AdvancedSettings = ({ config, setConfig }) => {
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     {/* Model Selectors */}
                     <div className="col-span-1">
-                        <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Base Model (Analysis & Fast Tasks)
                         </label>
                         <select
                             name="base_model"
                             value={config.advanced_settings.base_model}
                             onChange={handleChange}
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {BASE_MODEL_OPTIONS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -54,14 +54,14 @@ const AdvancedSettings = ({ config, setConfig }) => {
                         </select>
                     </div>
                     <div className="col-span-1">
-                        <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Strong Model (Reasoning & Drafting)
                         </label>
                         <select
                             name="strong_model"
                             value={config.advanced_settings.strong_model}
                             onChange={handleChange}
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {STRONG_MODEL_OPTIONS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -73,7 +73,7 @@ const AdvancedSettings = ({ config, setConfig }) => {
 
                     {/* Sliders */}
                     <div className="col-span-1">
-                        <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Creativity (Temperature)
                         </label>
                         <div className="flex items-center gap-4">
@@ -85,15 +85,15 @@ const AdvancedSettings = ({ config, setConfig }) => {
                                 name="temperature"
                                 value={config.advanced_settings.temperature}
                                 onChange={handleChange}
-                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-background-elevated"
                             />
-                            <span className="text-sm font-mono text-gray-900 dark:text-white w-10">
+                            <span className="text-sm font-mono text-slate-900 dark:text-white w-10">
                                 {config.advanced_settings.temperature}
                             </span>
                         </div>
                     </div>
                     <div className="col-span-2">
-                        <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Min Quality Score:{" "}
                             {config.advanced_settings.min_quality_score?.toFixed(
                                 1,
@@ -111,7 +111,7 @@ const AdvancedSettings = ({ config, setConfig }) => {
                         />
                     </div>
                     <div className="col-span-1">
-                        <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Max Critique Loops (0-3)
                         </label>
                         <input
@@ -121,9 +121,9 @@ const AdvancedSettings = ({ config, setConfig }) => {
                             value={config.advanced_settings.max_critique_loops}
                             onChange={handleChange}
                             name="max_critique_loops"
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                             More loops = higher quality, slower generation.
                         </p>
                     </div>
@@ -138,11 +138,11 @@ const AdvancedSettings = ({ config, setConfig }) => {
                                 config.advanced_settings.enable_cover_letter
                             }
                             onChange={handleChange}
-                            className="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="rounded border-slate-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
                         <label
                             htmlFor="enable_cover_letter"
-                            className="text-sm text-gray-700 dark:text-gray-300"
+                            className="text-sm text-slate-700 dark:text-slate-300"
                         >
                             Generate Cover Letter (Experimental)
                         </label>
@@ -198,12 +198,12 @@ export default function ResubmitModal({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-background-surface rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                         Regenerate Resume
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl"
                     >
                         ×
                     </button>
@@ -212,7 +212,7 @@ export default function ResubmitModal({
                 <div className="space-y-4">
                     {/* Backend Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Output Backend
                         </label>
                         <select
@@ -239,7 +239,7 @@ export default function ResubmitModal({
                     {/* Template Selector */}
                     {isLatex && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                 LaTeX Template
                             </label>
                             <select
@@ -268,7 +268,7 @@ export default function ResubmitModal({
 
                     {/* Priority Slider */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Priority: {config.priority}
                         </label>
                         <input
@@ -299,7 +299,7 @@ export default function ResubmitModal({
                     </button>
                     <button
                         onClick={onClose}
-                        className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                        className="flex-1 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
                     >
                         Cancel
                     </button>

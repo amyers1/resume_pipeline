@@ -50,7 +50,7 @@ export default function ArtifactList({ jobId, files = [], onFileSelect }) {
 
     if (!files || files.length === 0) {
         return (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                 No files available yet
             </div>
         );
@@ -64,7 +64,7 @@ export default function ArtifactList({ jobId, files = [], onFileSelect }) {
                 return (
                     <div
                         key={file.name}
-                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="flex items-center justify-between p-4 bg-slate-50 dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700"
                     >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             {/* FIXED: Infer icon from filename since API doesn't return type */}
@@ -72,10 +72,10 @@ export default function ArtifactList({ jobId, files = [], onFileSelect }) {
                                 {getFileIcon(file.name)}
                             </span>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                                     {file.name}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                     {formatFileSize(file.size)}
                                 </p>
                             </div>
@@ -95,7 +95,7 @@ export default function ArtifactList({ jobId, files = [], onFileSelect }) {
                                             );
                                         }
                                     }}
-                                    className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                    className="px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
                                 >
                                     View
                                 </button>

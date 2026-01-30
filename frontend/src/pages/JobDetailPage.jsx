@@ -247,7 +247,7 @@ export default function JobDetailPage() {
         return (
             <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                         Job Not Found
                     </h1>
                     <button
@@ -286,7 +286,7 @@ export default function JobDetailPage() {
                 <div className="flex items-start justify-between">
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                                 {job.company}
                             </h1>
                             <span
@@ -299,10 +299,10 @@ export default function JobDetailPage() {
                                 <span className="capitalize">{job.status}</span>
                             </span>
                         </div>
-                        <p className="text-xl text-gray-600 dark:text-gray-400">
+                        <p className="text-xl text-slate-600 dark:text-slate-400">
                             {job.job_title}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                        <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
                             Created {formatDate(job.created_at)}
                         </p>
                     </div>
@@ -335,8 +335,8 @@ export default function JobDetailPage() {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Progress Card */}
                     {(isProcessing || job.status === "queued") && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                                 Generation Progress
                             </h2>
                             <ProgressBar
@@ -352,11 +352,11 @@ export default function JobDetailPage() {
 
                     {/* Results Card */}
                     {isCompleted && files.length > 0 && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                                 Results
                             </h2>
-                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                                 Generated Files
                             </h3>
                             {/* Pass handleViewFile to enable in-page viewing */}
@@ -393,7 +393,7 @@ export default function JobDetailPage() {
 
                     {/* Live Log */}
                     {events.length > 0 && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
                             <LiveLog events={events} />
                         </div>
                     )}
@@ -403,8 +403,8 @@ export default function JobDetailPage() {
                 <div className="space-y-6">
                     {/* Job History / Versions Card */}
                     {job && job.history && job.history.length > 0 && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">
                                 Version History
                             </h2>
                             <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -419,17 +419,17 @@ export default function JobDetailPage() {
                                             className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between group ${
                                                 isCurrent
                                                     ? "bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800"
-                                                    : "hover:bg-gray-50 dark:hover:bg-gray-700 border border-transparent"
+                                                    : "hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent"
                                             }`}
                                         >
                                             <div className="flex flex-col">
                                                 <span
-                                                    className={`font-medium ${isCurrent ? "text-primary-700 dark:text-primary-300" : "text-gray-700 dark:text-gray-300"}`}
+                                                    className={`font-medium ${isCurrent ? "text-primary-700 dark:text-primary-300" : "text-slate-700 dark:text-slate-300"}`}
                                                 >
                                                     {ver.template ||
                                                         "Standard Resume"}
                                                 </span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-slate-500">
                                                     {new Date(
                                                         ver.created_at,
                                                     ).toLocaleDateString()}{" "}
@@ -483,8 +483,8 @@ export default function JobDetailPage() {
                     {(isProcessing ||
                         job.status === "queued" ||
                         isCompleted) && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                                 Pipeline Stages
                             </h2>
                             <StageTimeline
@@ -498,43 +498,43 @@ export default function JobDetailPage() {
                     )}
 
                     {/* Job Details Card */}
-                    <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                             Job Details
                         </h2>
                         <div className="space-y-3 text-sm">
                             <div>
-                                <p className="text-gray-500 dark:text-gray-400">
+                                <p className="text-slate-500 dark:text-slate-400">
                                     Job ID
                                 </p>
-                                <p className="text-gray-900 dark:text-white font-mono text-xs">
+                                <p className="text-slate-900 dark:text-white font-mono text-xs">
                                     {job.id || job.job_id}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-gray-500 dark:text-gray-400">
+                                <p className="text-slate-500 dark:text-slate-400">
                                     Template
                                 </p>
-                                <p className="text-gray-900 dark:text-white">
+                                <p className="text-slate-900 dark:text-white">
                                     {job.template}
                                 </p>
                             </div>
                             {job.output_backend && (
                                 <div>
-                                    <p className="text-gray-500 dark:text-gray-400">
+                                    <p className="text-slate-500 dark:text-slate-400">
                                         Output Backend
                                     </p>
-                                    <p className="text-gray-900 dark:text-white capitalize">
+                                    <p className="text-slate-900 dark:text-white capitalize">
                                         {job.output_backend}
                                     </p>
                                 </div>
                             )}
                             {job.priority !== undefined && (
                                 <div>
-                                    <p className="text-gray-500 dark:text-gray-400">
+                                    <p className="text-slate-500 dark:text-slate-400">
                                         Priority
                                     </p>
-                                    <p className="text-gray-900 dark:text-white">
+                                    <p className="text-slate-900 dark:text-white">
                                         {job.priority}
                                     </p>
                                 </div>
@@ -549,25 +549,25 @@ export default function JobDetailPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm p-4 sm:p-6">
                     <div className="bg-white dark:bg-background rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white truncate">
                                 {loadingFile ? "Loading..." : viewingFile?.name}
                             </h3>
                             <button
                                 onClick={closeViewer}
-                                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
                             >
                                 <span className="text-2xl">×</span>
                             </button>
                         </div>
 
                         {/* Modal Content */}
-                        <div className="flex-1 bg-gray-100 dark:bg-background-surface relative">
+                        <div className="flex-1 bg-slate-100 dark:bg-background-surface relative">
                             {loadingFile ? (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <div className="flex flex-col items-center gap-3">
                                         <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                                        <p className="text-gray-500 dark:text-gray-400">
+                                        <p className="text-slate-500 dark:text-slate-400">
                                             Fetching document...
                                         </p>
                                     </div>
@@ -594,10 +594,10 @@ export default function JobDetailPage() {
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white dark:bg-background-surface rounded-lg p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                             Delete Job?
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-6">
+                        <p className="text-slate-600 dark:text-slate-400 mb-6">
                             Are you sure you want to delete this job? This
                             action cannot be undone.
                         </p>
@@ -605,7 +605,7 @@ export default function JobDetailPage() {
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
                                 disabled={deleting}
-                                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
                             >
                                 Cancel
                             </button>

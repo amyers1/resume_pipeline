@@ -22,7 +22,7 @@ const DomainTag = ({ name, matched = false, required = false }) => {
     } else {
         // Not matched
         baseClasses +=
-            " bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400";
+            " bg-slate-100 text-slate-600 dark:bg-background-elevated dark:text-slate-400";
     }
 
     return (
@@ -82,9 +82,9 @@ export default function DomainMatchCard({ jdRequirements, critique }) {
     const matchedDomains = new Set(requiredDomains.slice(0, matchedCount));
 
     return (
-        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                     Domain Alignment
                 </h3>
                 <span
@@ -102,7 +102,7 @@ export default function DomainMatchCard({ jdRequirements, critique }) {
 
             {/* Required Domains */}
             <div className="mb-4">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                     Required Domains ({requiredDomains.length})
                 </p>
                 <div className="flex flex-wrap">
@@ -120,17 +120,17 @@ export default function DomainMatchCard({ jdRequirements, critique }) {
             {/* Skills Summary */}
             {(jdRequirements.must_have_skills?.length > 0 ||
                 jdRequirements.nice_to_have_skills?.length > 0) && (
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                         Key Skills
                     </p>
 
                     {jdRequirements.must_have_skills?.length > 0 && (
                         <div className="mb-2">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
                                 Must-have:{" "}
                             </span>
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="text-sm text-slate-700 dark:text-slate-300">
                                 {jdRequirements.must_have_skills
                                     .slice(0, 5)
                                     .join(", ")}
@@ -142,10 +142,10 @@ export default function DomainMatchCard({ jdRequirements, critique }) {
 
                     {jdRequirements.nice_to_have_skills?.length > 0 && (
                         <div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
                                 Nice-to-have:{" "}
                             </span>
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="text-sm text-slate-700 dark:text-slate-300">
                                 {jdRequirements.nice_to_have_skills
                                     .slice(0, 5)
                                     .join(", ")}

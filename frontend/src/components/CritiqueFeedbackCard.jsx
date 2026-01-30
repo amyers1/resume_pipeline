@@ -19,7 +19,7 @@ const FeedbackSection = ({ title, items, icon, colorClass }) => {
                 {items.map((item, index) => (
                     <li
                         key={index}
-                        className="text-sm text-gray-700 dark:text-gray-300 pl-4 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-current before:opacity-40"
+                        className="text-sm text-slate-700 dark:text-slate-300 pl-4 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-current before:opacity-40"
                     >
                         {item}
                     </li>
@@ -53,17 +53,17 @@ export default function CritiqueFeedbackCard({ critique }) {
     }
 
     return (
-        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Header - Always visible */}
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
             >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                     Critique Feedback
                 </h3>
                 <svg
-                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${
                         isExpanded ? "rotate-180" : ""
                     }`}
                     fill="none"
@@ -87,7 +87,7 @@ export default function CritiqueFeedbackCard({ critique }) {
                         : "max-h-0 opacity-0 overflow-hidden"
                 }`}
             >
-                <div className="px-6 pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="px-6 pb-4 border-t border-slate-200 dark:border-slate-700 pt-4">
                     {/* Strengths */}
                     <FeedbackSection
                         title="Strengths"
@@ -152,7 +152,7 @@ export default function CritiqueFeedbackCard({ critique }) {
 
             {/* Preview when collapsed */}
             {!isExpanded && (
-                <div className="px-6 pb-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="px-6 pb-4 text-sm text-slate-500 dark:text-slate-400">
                     {critique?.strengths?.length > 0 && (
                         <span className="text-green-600 dark:text-green-400">
                             {critique.strengths.length} strengths

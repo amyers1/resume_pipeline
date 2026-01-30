@@ -9,7 +9,7 @@
 @layer base {
     body {
         /* Use the new "Deep Slate" background by default in dark mode */
-        @apply bg-gray-50 text-gray-900 dark:bg-background dark:text-gray-100 font-sans antialiased;
+        @apply bg-slate-50 text-slate-900 dark:bg-background dark:text-slate-100 font-sans antialiased;
     }
 
     /* Headings look better with tighter tracking */
@@ -34,13 +34,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-background-elevated rounded-full;
+    @apply bg-slate-300 dark:bg-background-elevated rounded-full;
     border: 2px solid transparent;
     background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-slate-600;
+    @apply bg-slate-400 dark:bg-slate-600;
 }
 
 /* 4. Focus Ring Overrides (Now Cyan instead of Blue) */

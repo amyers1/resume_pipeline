@@ -14,7 +14,7 @@ function App() {
         <AppProvider>
             <UserProvider>
                 <Router>
-                    <div className="min-h-screen bg-gray-50 dark:bg-background transition-colors">
+                    <div className="min-h-screen bg-slate-50 dark:bg-background transition-colors">
                         <Header />
                         <main>
                             <Routes>

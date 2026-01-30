@@ -46,7 +46,7 @@ export default function ProfilesList() {
         return (
             <div className="flex flex-col items-center justify-center py-12">
                 <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="mt-4 text-gray-600 dark:text-gray-400">
+                <p className="mt-4 text-slate-600 dark:text-slate-400">
                     Loading profiles...
                 </p>
             </div>
@@ -69,8 +69,8 @@ export default function ProfilesList() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-slate-200 dark:border-slate-700">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                     Career Profiles
                 </h1>
                 <button
@@ -84,10 +84,10 @@ export default function ProfilesList() {
             {profiles.length === 0 ? (
                 <div className="text-center py-12 bg-white dark:bg-background-surface rounded-lg shadow">
                     <div className="text-6xl mb-4">📄</div>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                         No profiles yet
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    <p className="text-slate-600 dark:text-slate-400 mb-6">
                         Create your first career profile to get started.
                     </p>
                     <button
@@ -112,13 +112,13 @@ export default function ProfilesList() {
                         return (
                             <div
                                 key={profile.id}
-                                className="bg-white dark:bg-background-surface rounded-lg p-6 shadow hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
+                                className="bg-white dark:bg-background-surface rounded-lg p-6 shadow hover:shadow-lg transition-shadow border border-slate-200 dark:border-slate-700"
                             >
-                                <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                                <div className="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                                         {name}
                                     </h3>
-                                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">
                                         Updated:{" "}
                                         {updatedDate
                                             ? new Date(
@@ -130,38 +130,38 @@ export default function ProfilesList() {
 
                                 <div className="space-y-2 mb-4">
                                     {basics.email && (
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                                            <strong className="text-gray-900 dark:text-white">
+                                        <p className="text-sm text-slate-700 dark:text-slate-300">
+                                            <strong className="text-slate-900 dark:text-white">
                                                 Email:
                                             </strong>{" "}
                                             {basics.email}
                                         </p>
                                     )}
                                     {basics.phone && (
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                                            <strong className="text-gray-900 dark:text-white">
+                                        <p className="text-sm text-slate-700 dark:text-slate-300">
+                                            <strong className="text-slate-900 dark:text-white">
                                                 Phone:
                                             </strong>{" "}
                                             {basics.phone}
                                         </p>
                                     )}
                                     {basics.label && (
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                                            <strong className="text-gray-900 dark:text-white">
+                                        <p className="text-sm text-slate-700 dark:text-slate-300">
+                                            <strong className="text-slate-900 dark:text-white">
                                                 Title:
                                             </strong>{" "}
                                             {basics.label}
                                         </p>
                                     )}
 
-                                    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                                        <span className="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                                    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                        <span className="text-xs px-3 py-1 bg-slate-100 dark:bg-background-elevated text-slate-700 dark:text-slate-300 rounded-full">
                                             {Array.isArray(profileJson.work)
                                                 ? profileJson.work.length
                                                 : 0}{" "}
                                             Positions
                                         </span>
-                                        <span className="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                                        <span className="text-xs px-3 py-1 bg-slate-100 dark:bg-background-elevated text-slate-700 dark:text-slate-300 rounded-full">
                                             {Array.isArray(
                                                 profileJson.education,
                                             )
@@ -169,7 +169,7 @@ export default function ProfilesList() {
                                                 : 0}{" "}
                                             Education
                                         </span>
-                                        <span className="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
+                                        <span className="text-xs px-3 py-1 bg-slate-100 dark:bg-background-elevated text-slate-700 dark:text-slate-300 rounded-full">
                                             {Array.isArray(profileJson.skills)
                                                 ? profileJson.skills.length
                                                 : 0}{" "}
@@ -181,7 +181,7 @@ export default function ProfilesList() {
                                 <div className="flex gap-3 mt-4">
                                     <button
                                         onClick={() => handleView(profile.id)}
-                                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                                     >
                                         View
                                     </button>

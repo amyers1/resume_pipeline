@@ -43,12 +43,12 @@ export default function SettingsStep({
         <div className="space-y-8">
             {/* 1. Basic Output Settings */}
             <section className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2">
                     Output Configuration
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Resume Template
                         </label>
                         <select
@@ -59,7 +59,7 @@ export default function SettingsStep({
                                     template: e.target.value,
                                 }))
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {TEMPLATES.map((t) => (
                                 <option key={t.value} value={t.value}>
@@ -69,7 +69,7 @@ export default function SettingsStep({
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Output Format
                         </label>
                         <select
@@ -80,7 +80,7 @@ export default function SettingsStep({
                                     output_backend: e.target.value,
                                 }))
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {OUTPUT_BACKENDS.map((b) => (
                                 <option key={b.value} value={b.value}>
@@ -94,14 +94,14 @@ export default function SettingsStep({
 
             {/* 2. Advanced Pipeline Settings */}
             <section className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-2">
                     AI Pipeline Controls
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Model Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Base Model (Analysis & Fast Tasks)
                         </label>
                         <select
@@ -109,7 +109,7 @@ export default function SettingsStep({
                             onChange={(e) =>
                                 updateAdvanced("base_model", e.target.value)
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {BASE_MODELS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -119,7 +119,7 @@ export default function SettingsStep({
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Strong Model (Reasoning & Drafting)
                         </label>
                         <select
@@ -127,7 +127,7 @@ export default function SettingsStep({
                             onChange={(e) =>
                                 updateAdvanced("strong_model", e.target.value)
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         >
                             {STRONG_MODELS.map((m) => (
                                 <option key={m.value} value={m.value}>
@@ -139,7 +139,7 @@ export default function SettingsStep({
 
                     {/* Numeric Controls */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Max Critique Loops (0-3)
                         </label>
                         <input
@@ -155,15 +155,15 @@ export default function SettingsStep({
                                     parseInt(e.target.value),
                                 )
                             }
-                            className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                             More loops = higher quality, slower generation.
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                             Creativity (Temperature)
                         </label>
                         <div className="flex items-center gap-4">
@@ -179,9 +179,9 @@ export default function SettingsStep({
                                         parseFloat(e.target.value),
                                     )
                                 }
-                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-background-elevated"
                             />
-                            <span className="text-sm font-mono text-gray-900 dark:text-white w-10">
+                            <span className="text-sm font-mono text-slate-900 dark:text-white w-10">
                                 {formData.advanced_settings.temperature}
                             </span>
                         </div>
@@ -199,21 +199,21 @@ export default function SettingsStep({
                                 e.target.checked,
                             )
                         }
-                        className="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        className="rounded border-slate-300 text-primary-600 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                     />
                     <label
                         htmlFor="cover_letter"
-                        className="text-sm text-gray-700 dark:text-gray-300"
+                        className="text-sm text-slate-700 dark:text-slate-300"
                     >
                         Generate Cover Letter (Experimental)
                     </label>
                 </div>
             </section>
 
-            <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
                 <button
                     onClick={onBack}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                     ← Back
                 </button>

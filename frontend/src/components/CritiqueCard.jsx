@@ -8,14 +8,14 @@ const MetricBar = ({ label, value, colorClass = "bg-primary-500" }) => {
     return (
         <div className="mb-3">
             <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-slate-600 dark:text-slate-400">
                     {label}
                 </span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-slate-900 dark:text-white">
                     {percentage}%
                 </span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-slate-200 dark:bg-background-elevated rounded-full h-2">
                 <div
                     className={`${colorClass} h-2 rounded-full transition-all duration-300`}
                     style={{ width: `${percentage}%` }}
@@ -45,7 +45,7 @@ const StatusIndicator = ({ label, ok }) => (
         >
             {ok ? "✓" : "✗"}
         </span>
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-slate-600 dark:text-slate-400">
             {label}
         </span>
     </div>
@@ -63,15 +63,15 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
     // Handle loading/pending states
     if (!critique && status !== "completed") {
         return (
-            <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                     Critique Score
                 </h3>
                 <div className="text-center py-4">
-                    <div className="text-4xl font-bold text-gray-400 dark:text-gray-500 mb-2">
+                    <div className="text-4xl font-bold text-slate-400 dark:text-slate-500 mb-2">
                         -- / 10
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                         {status === "processing"
                             ? "Generating critique..."
                             : status === "queued"
@@ -97,17 +97,17 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
                   : "text-red-600 dark:text-red-400";
 
         return (
-            <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                     Critique Score
                 </h3>
                 <div className="text-center py-4">
                     <div
-                        className={`text-4xl font-bold ${displayScore ? scoreColor : "text-gray-400 dark:text-gray-500"} mb-2`}
+                        className={`text-4xl font-bold ${displayScore ? scoreColor : "text-slate-400 dark:text-slate-500"} mb-2`}
                     >
                         {displayScore || "--"} / 10
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                         {displayScore
                             ? "AI-generated quality score"
                             : "No score available"}
@@ -142,8 +142,8 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
               : "bg-red-500";
 
     return (
-        <div className="bg-white dark:bg-background-surface rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 Critique Score
             </h3>
 
@@ -152,7 +152,7 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
                 <div className={`text-4xl font-bold ${scoreColor} mb-1`}>
                     {score || "--"} / 10
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                     AI-generated quality score
                 </p>
             </div>
@@ -172,7 +172,7 @@ export default function CritiqueCard({ critique, status, fallbackScore }) {
             </div>
 
             {/* Status Indicators */}
-            <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
                 <StatusIndicator label="ATS Safe" ok={critique?.ats_ok} />
                 <StatusIndicator label="Length OK" ok={critique?.length_ok} />
             </div>

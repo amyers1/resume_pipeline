@@ -80,14 +80,14 @@ export default function JobDetailsStep({
         required,
     }) => (
         <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {label} {required && "*"}
             </label>
             <input
                 type={type}
                 value={value || ""}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500"
                 placeholder={placeholder}
                 required={required}
             />
@@ -102,14 +102,14 @@ export default function JobDetailsStep({
         placeholder,
     }) => (
         <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {label}
             </label>
             <textarea
                 rows={rows}
                 value={Array.isArray(value) ? value.join("\n") : value || ""}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 font-mono text-sm"
+                className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 font-mono text-sm"
                 placeholder={placeholder}
             />
         </div>
@@ -119,12 +119,12 @@ export default function JobDetailsStep({
         <button
             type="button"
             onClick={() => toggleSection(id)}
-            className="w-full flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+            className="w-full flex items-center justify-between py-3 px-4 bg-slate-50 dark:bg-background-elevated/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left"
         >
-            <span className="font-medium text-gray-900 dark:text-white">
+            <span className="font-medium text-slate-900 dark:text-white">
                 {title}
             </span>
-            <span className="text-gray-500">
+            <span className="text-slate-500">
                 {openSection === id ? "−" : "+"}
             </span>
         </button>
@@ -141,7 +141,7 @@ export default function JobDetailsStep({
                     <select
                         value={selectedJobId}
                         onChange={handleJobSelect}
-                        className="flex-1 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm"
+                        className="flex-1 rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm"
                     >
                         <option value="">-- Start Fresh --</option>
                         {existingJobs.map((job) => (
@@ -271,7 +271,7 @@ export default function JobDetailsStep({
                 {openSection === "work_model" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                 Remote Type
                             </label>
                             <select
@@ -279,7 +279,7 @@ export default function JobDetailsStep({
                                 onChange={(e) =>
                                     updateDetails("remote_type", e.target.value)
                                 }
-                                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-background-surface text-gray-900 dark:text-white shadow-sm"
+                                className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm"
                             >
                                 <option value="onsite">On-site</option>
                                 <option value="hybrid">Hybrid</option>
