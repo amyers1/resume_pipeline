@@ -19,6 +19,7 @@ from .config import PipelineConfig
 from .critics.resume_critic import ResumeCritic
 from .generators.draft_generator import DraftGenerator
 from .generators.latex_generator import LaTeXGenerator, StructuredResumeParser
+from .generators.strategy_generator import StrategyGenerator
 from .matchers.achievement_matcher import AchievementMatcher
 from .models import CachedPipelineState, CareerProfile, StructuredResume
 from .uploaders.nextcloud_uploader import NextcloudUploader
@@ -66,6 +67,7 @@ class ResumePipeline:
         )
         self.analyzer = JobAnalyzer(self.base_llm)
         self.matcher = AchievementMatcher(self.base_llm, self.strong_llm, config)
+        self.strategy_gen = StrategyGenerator(self.strong_llm)
         self.draft_gen = DraftGenerator(self.strong_llm, config)
         self.critic = ResumeCritic(self.base_llm, config)
         self.parser = StructuredResumeParser(self.base_llm)
@@ -162,6 +164,7 @@ class ResumePipeline:
             self._report_progress("generating_draft", 50, "Restored cached draft")
             jd_requirements = cached_state.jd_requirements
             matched_achievements = cached_state.matched_achievements
+            resume_strategy = cached_state.resume_strategy
             draft_resume = cached_state.draft_resume
         else:
             # Step 2: Analyze JD
@@ -176,10 +179,15 @@ class ResumePipeline:
                 "matched_achievements", [a.model_dump() for a in matched_achievements]
             )
 
-            # Step 4: Generate draft
-            self._report_progress("generating_draft", 45, "Generating draft resume")
+            # Step 4: Generate strategy
+            self._report_progress("generating_strategy", 40, "Generating resume strategy")
+            resume_strategy = self.strategy_gen.generate(jd_requirements, career_profile)
+            self._save_checkpoint("resume_strategy", {"strategy": resume_strategy})
+
+            # Step 5: Generate draft
+            self._report_progress("generating_draft", 50, "Generating draft resume")
             draft_resume = self.draft_gen.generate(
-                jd_requirements, career_profile, matched_achievements
+                jd_requirements, career_profile, matched_achievements, resume_strategy
             )
             self._save_checkpoint("draft_resume", draft_resume)
 
@@ -192,12 +200,13 @@ class ResumePipeline:
                         career_hash=career_hash,
                         jd_requirements=jd_requirements,
                         matched_achievements=matched_achievements,
+                        resume_strategy=resume_strategy,
                         draft_resume=draft_resume,
                         timestamp=self.config.full_timestamp,
                     ),
                 )
 
-        # Step 5: Critique and refine
+        # Step 6: Critique and refine
         self._report_progress("critiquing", 70, "Critiquing and refining")
         final_resume, critique = self.critic.critique_and_refine(
             draft_resume, jd_requirements
@@ -205,7 +214,7 @@ class ResumePipeline:
         self._save_checkpoint("final_resume", final_resume)
         self._save_checkpoint("critique", critique)
 
-        # Step 6: Generate structured output
+        # Step 7: Generate structured output
         self._report_progress("refining", 85, "Structuring data")
         structured_resume = self.parser.parse(final_resume, career_profile)
 

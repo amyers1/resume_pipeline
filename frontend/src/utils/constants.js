@@ -26,12 +26,17 @@ export const PIPELINE_STAGES = {
     },
     matching_achievements: {
         label: "Matching Experience",
-        weight: 20,
+        weight: 15,
         color: "#8b5cf6",
+    },
+    generating_strategy: {
+        label: "Generating Strategy",
+        weight: 10,
+        color: "#06b6d4",
     },
     generating_draft: {
         label: "Generating Draft",
-        weight: 25,
+        weight: 20,
         color: "#ec4899",
     },
     critiquing: { label: "AI Review", weight: 15, color: "#f59e0b" },

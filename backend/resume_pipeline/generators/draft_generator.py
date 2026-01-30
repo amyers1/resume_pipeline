@@ -33,6 +33,14 @@ CRITICAL RULES - ACCURACY AND TRUTH:
 4. Preserve ALL factual metrics exactly as provided
 5. When rephrasing, maintain the substance and scope of original claims
 
+CIVILIAN TRANSLATION PROTOCOL (STRICT):
+1. Translate "Commander" to "Director" or "Team Lead" based on team size.
+2. Translate "Flight" to "Department" or "Technical Team".
+3. Translate "Squadron" to "Organization" or "Business Unit".
+4. Translate "Materiel Leader" to "Senior Program Manager".
+5. Translate "Executive Officer" to "Chief of Staff".
+6. DO NOT use military ranks (Lt Col, Major) in the body text; use functional titles.
+
 STRUCTURE (ATS-safe markdown only):
 - Header: name, role title, location, email, phone, LinkedIn (NO repetition elsewhere)
 - # Full Name
@@ -84,6 +92,9 @@ Phone: {phone}
 Location: {location}
 LinkedIn: {linkedin}
 
+STRATEGIC DIRECTION:
+{strategy_text}
+
 IMPORTANT: Current year is {current_year}. Roles from 2014+ get detailed treatment (4-6 bullets).
 Roles from 2006-2016 go under "Other Relevant Experience" with 2-3 bullets each.
 
@@ -94,6 +105,7 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         jd: JDRequirements,
         profile: CareerProfile,
         achievements: Sequence[Achievement],
+        strategy: str | None = None,
     ) -> str:
         """
         Generate resume draft.
@@ -102,6 +114,7 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
             jd: Job requirements extracted from job description
             profile: Candidate's career profile
             achievements: Matched achievements relevant to this job
+            strategy: Optional strategic direction from StrategyGenerator
 
         Returns:
             Resume draft in markdown format
@@ -121,6 +134,9 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         # Use profile's to_prompt_string() method for clean LLM context
         profile_context = profile.to_prompt_string()
 
+        # Format strategy text (use default if not provided)
+        strategy_text = strategy if strategy else "Follow best practices for ATS-optimized resume writing."
+
         # Invoke LLM with structured data
         response = chain.invoke(
             {
@@ -136,6 +152,7 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
                 "location": location_str,
                 "linkedin": linkedin_url,
                 "current_year": self.config.current_year,
+                "strategy_text": strategy_text,
             }
         )
 

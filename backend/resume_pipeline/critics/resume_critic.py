@@ -24,47 +24,63 @@ class ResumeCritic:
 
     def _setup_prompts(self) -> None:
         """Initialize critique and refinement prompts."""
+        self.critic_system_prompt = """You evaluate resumes against job descriptions for senior technical roles.
+Assess:
+1. JD alignment - coverage of must-haves, keyword usage, seniority fit;
+2. Domain alignment - how well the resume's domain expertise matches the JD's domain_focus;
+3. Resume quality - ATS safety, structure, clarity, impact, chronology;
+4. Length - must be ≤2 pages when rendered (~1000 words max).
+Score generously if content is strong but slightly under keyword threshold - brevity and impact matter more than keyword density.
+Output JSON only with: score (0-1), jd_keyword_coverage (0-1), domain_match_coverage (0-1),
+ats_ok (bool), length_ok (bool), strengths (list), weaknesses (list), suggestions (list).
+For domain_match_coverage, evaluate what fraction of the JD's domain_focus areas
+are demonstrated by achievements in the resume.
+
+SPECIFIC EXECUTIVE CHECKS:
+1. "So What?" Test: Does every bullet have a measurable result? (e.g., $ saved, % efficiency). If not, flag as weakness.
+2. "Buzzword" Check: Flag phrases like "visionary leader" or "synergistic" as weaknesses. Replace with concrete actions.
+3. "Tech Credibility": For engineering roles, ensure specific tools (Python, Cameo, Docker) are listed, not just "software tools.
+"""
+        self.critic_user_prompt = """Job requirements:
+{jd_json}
+
+Resume:
+{resume}
+
+"Evaluate and return CritiqueResult JSON. Be generous with scoring if content is strong.
+"""
+
+        self.refine_system_prompt = """You revise resumes based on critiques. Preserve structure and factual accuracy.
+NEVER fabricate skills, metrics, or experience. Address weaknesses and suggestions
+while maintaining all verified content. CRITICAL: Keep resume ≤2 pages (~1000 words).
+Prefer concise, high-impact bullets over verbose descriptions.
+If already at length limit, only improve clarity and keyword usage - don't expand.
+Output revised resume in markdown only.
+
+"""
+        self.refine_user_prompt = """Job requirements:
+{jd_json}
+
+Original resume:
+{resume}
+
+Critique:
+{critique}
+
+Revise addressing critique. MUST stay ≤2 pages. Markdown only.
+
+"""
         self.critic_prompt = ChatPromptTemplate.from_messages(
             [
-                (
-                    "system",
-                    "You evaluate resumes against job descriptions for senior technical roles. "
-                    "Assess: (1) JD alignment - coverage of must-haves, keyword usage, seniority fit; "
-                    "(2) Domain alignment - how well the resume's domain expertise matches the JD's domain_focus; "
-                    "(3) Resume quality - ATS safety, structure, clarity, impact, chronology; "
-                    "(4) Length - must be ≤2 pages when rendered (~1000 words max). "
-                    "Score generously if content is strong but slightly under keyword threshold - "
-                    "brevity and impact matter more than keyword density. "
-                    "Output JSON only with: score (0-1), jd_keyword_coverage (0-1), domain_match_coverage (0-1), "
-                    "ats_ok (bool), length_ok (bool), strengths (list), weaknesses (list), suggestions (list). "
-                    "For domain_match_coverage, evaluate what fraction of the JD's domain_focus areas "
-                    "are demonstrated by achievements in the resume.",
-                ),
-                (
-                    "user",
-                    "Job requirements:\n{jd_json}\n\nResume:\n{resume}\n\n"
-                    "Evaluate and return CritiqueResult JSON. Be generous with scoring if content is strong.",
-                ),
+                ("system", self.critic_system_prompt),
+                ("user", self.critic_user_prompt),
             ]
         )
 
         self.refine_prompt = ChatPromptTemplate.from_messages(
             [
-                (
-                    "system",
-                    "You revise resumes based on critiques. Preserve structure and factual accuracy. "
-                    "NEVER fabricate skills, metrics, or experience. Address weaknesses and suggestions "
-                    "while maintaining all verified content. CRITICAL: Keep resume ≤2 pages (~1000 words). "
-                    "Prefer concise, high-impact bullets over verbose descriptions. "
-                    "If already at length limit, only improve clarity and keyword usage - don't expand. "
-                    "Output revised resume in markdown only.",
-                ),
-                (
-                    "user",
-                    "Job requirements:\n{jd_json}\n\nOriginal resume:\n{resume}\n\n"
-                    "Critique:\n{critique}\n\n"
-                    "Revise addressing critique. MUST stay ≤2 pages. Markdown only.",
-                ),
+                ("system", self.refine_system_prompt),
+                ("user", self.refine_user_prompt),
             ]
         )
 

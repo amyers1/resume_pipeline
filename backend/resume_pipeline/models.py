@@ -358,5 +358,6 @@ class CachedPipelineState(BaseModel):
     career_hash: str
     jd_requirements: JDRequirements
     matched_achievements: list[Achievement]
+    resume_strategy: str | None = None
     draft_resume: str
     timestamp: str
