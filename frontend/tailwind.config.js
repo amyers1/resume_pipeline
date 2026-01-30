@@ -11,31 +11,30 @@ export default {
             },
             // 2. The Color System
             colors: {
-                // "The Architect" Dark Mode Base (Deep Slate)
-                // Use these for page backgrounds instead of gray-900
+                // "True Dark" Base (Zinc-based)
                 background: {
-                    DEFAULT: "#0f172a", // Slate 900 (Main App Background)
-                    surface: "#1e293b", // Slate 800 (Cards/Headers)
-                    elevated: "#334155", // Slate 700 (Modals/Popovers)
+                    DEFAULT: "#09090b", // Almost black (Main App Background)
+                    surface: "#18181b", // Zinc 900 (Cards/Headers)
+                    elevated: "#27272a", // Zinc 800 (Modals/Popovers)
                 },
-                // "Electric Cyan" (Replaces your old Blue Primary)
+                // "Electric Cyan" (Kept the same, but now pops against black)
                 primary: {
                     50: "#ecfeff",
                     100: "#cffafe",
                     200: "#a5f3fc",
                     300: "#67e8f9",
                     400: "#22d3ee",
-                    500: "#06b6d4", // <--- Your new Brand Color
+                    500: "#06b6d4",
                     600: "#0891b2",
                     700: "#0e7490",
                     800: "#155e75",
                     900: "#164e63",
                     950: "#083344",
                 },
-                // "Warning Amber" (For alerts/warnings)
-                secondary: {
-                    500: "#f59e0b",
-                },
+                // Status Colors (Aligned with the tech vibe)
+                secondary: { 500: "#f59e0b" }, // Amber
+                success: { 500: "#10b981" }, // Emerald (Better than standard Green)
+                danger: { 500: "#ef4444" }, // Red
             },
             // 3. Custom Animations
             animation: {

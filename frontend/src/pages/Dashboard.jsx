@@ -192,10 +192,10 @@ export default function Dashboard() {
                     </p>
                     <Link
                         to="/new-job"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+                        className="px-6 py-3 bg-primary-500 hover:bg-primary-400 text-white font-bold rounded-lg transition-all shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 flex items-center gap-2"
                     >
                         <span>+</span>
-                        <span>Create New Resume</span>
+                        <span>New Resume</span>
                     </Link>
                 </div>
             ) : (

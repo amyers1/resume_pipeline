@@ -10,60 +10,65 @@ export default function Header() {
     };
 
     return (
-        <header className="bg-white dark:bg-background-surface border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
+        // Updated: Glassmorphism Header
+        <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo and Navigation */}
                     <div className="flex items-center gap-8">
-                        <Link to="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-lg">
-                                    <svg
-                                        width="40"
-                                        height="40"
-                                        viewBox="0 0 40 40"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <path
-                                            d="M8 20H32"
-                                            stroke="#334155"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                        />
+                        <Link to="/" className="flex items-center gap-2 group">
+                            {/* NEW LOGO: Standalone SVG (No wrapping box) */}
+                            <svg
+                                width="40"
+                                height="40"
+                                viewBox="0 0 40 40"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="transition-transform group-hover:scale-105"
+                            >
+                                {/* Connecting Line - Adapts to Zinc Theme */}
+                                <path
+                                    d="M8 20H32"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    className="text-zinc-300 dark:text-zinc-600"
+                                />
 
-                                        <circle
-                                            cx="8"
-                                            cy="20"
-                                            r="4"
-                                            class="fill-slate-400 dark:fill-slate-500"
-                                        />
+                                {/* Left Node (Input) */}
+                                <circle
+                                    cx="8"
+                                    cy="20"
+                                    r="4"
+                                    className="fill-zinc-400 dark:fill-zinc-500"
+                                />
 
-                                        <circle
-                                            cx="20"
-                                            cy="20"
-                                            r="6"
-                                            class="fill-primary-500 animate-pulse"
-                                        />
-                                        <circle
-                                            cx="20"
-                                            cy="20"
-                                            r="10"
-                                            stroke="#06b6d4"
-                                            stroke-width="1.5"
-                                            class="opacity-30"
-                                        />
+                                {/* Center Node (Processing - Electric Cyan) */}
+                                <circle
+                                    cx="20"
+                                    cy="20"
+                                    r="6"
+                                    className="fill-primary-500 animate-pulse"
+                                />
+                                <circle
+                                    cx="20"
+                                    cy="20"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    className="text-primary-500 opacity-30"
+                                />
 
-                                        <circle
-                                            cx="32"
-                                            cy="20"
-                                            r="4"
-                                            class="fill-slate-400 dark:fill-slate-500"
-                                        />
-                                    </svg>
-                                </span>
-                            </div>
-                            <span className="text-xl font-bold text-slate-900 dark:text-white">
+                                {/* Right Node (Output) */}
+                                <circle
+                                    cx="32"
+                                    cy="20"
+                                    r="4"
+                                    className="fill-zinc-400 dark:fill-zinc-500"
+                                />
+                            </svg>
+
+                            <span className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
                                 Resume Pipeline
                             </span>
                         </Link>
@@ -71,19 +76,19 @@ export default function Header() {
                         <nav className="hidden md:flex items-center gap-6">
                             <Link
                                 to="/"
-                                className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                             >
                                 Dashboard
                             </Link>
                             <Link
                                 to="/profiles"
-                                className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                             >
                                 Profiles
                             </Link>
                             <Link
                                 to="/new-job"
-                                className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                             >
                                 New Resume
                             </Link>
@@ -96,7 +101,7 @@ export default function Header() {
 
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            className="p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:ring-2 focus:ring-primary-500"
                             aria-label="Toggle theme"
                         >
                             {state.ui.theme === "light" ? "🌙" : "☀️"}
