@@ -66,6 +66,13 @@ EXPERIENCE GROUPING:
 - Roles from 2006-2016: Group under "Other Relevant Experience" heading
 - Grouped entries: Organization, Title, Location, Dates on one line, then 2-3 key bullets
 
+CONTEXTUAL BACKGROUND USAGE:
+You are provided with a "Candidate Biography" which contains the full narrative history.
+- USE this biography to understand the technical depth, specific equipment (e.g., "MC-130W", "GPS III"), and strategic context of the roles.
+- USE this to flesh out "Key Achievements" if the structured data is too brief.
+- DO NOT invent skills. If the biography says "managed software team," do not assume "React" or "AWS" unless explicitly stated.
+- IF a job requirement asks for a skill (e.g., "Earned Value Management") and it appears in the biography but not the structured profile, YOU MAY INCLUDE IT.
+
 CONTENT REQUIREMENTS:
 - Professional Summary: Focus on last 8-10 years, key domains, scope, value proposition
 - Core Competencies: ONLY skills/domains clearly supported by input data
@@ -78,6 +85,9 @@ OUTPUT: Complete resume in markdown. No commentary. Strict 2-page target."""
 
         self.user_prompt = """Job requirements:
 {jd_json}
+
+Candidate Biography (Source of Truth for Context):
+{biography}
 
 Candidate profile:
 {profile_context}
@@ -142,10 +152,13 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
             else "Follow best practices for ATS-optimized resume writing."
         )
 
+        bio = profile.biography or profile.summary or "No biography provided."
+
         # Invoke LLM with structured data
         response = chain.invoke(
             {
                 "jd_json": jd.model_dump_json(indent=2),
+                "biography": bio,
                 "profile_context": profile_context,
                 "achievements_json": json.dumps(
                     [a.model_dump() for a in achievements], indent=2
