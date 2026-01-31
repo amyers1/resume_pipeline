@@ -61,10 +61,12 @@ LENGTH CONSTRAINT - CRITICAL:
 - Grouped roles: 2-3 bullets each
 - Avoid redundancy across bullets
 
-EXPERIENCE GROUPING:
-- Roles from 2014 onward: Full detailed entries with 4-6 bullets each
-- Roles from 2006-2016: Group under "Other Relevant Experience" heading
-- Grouped entries: Organization, Title, Location, Dates on one line, then 2-3 key bullets
+EXPERIENCE STRATEGY:
+- Treat ALL provided roles as significant professional experience.
+- DO NOT use an "Other Relevant Experience" grouping section.
+- Recent roles (last 10 years): 4-6 high-impact bullets per role.
+- Older roles (10+ years): 2-4 technical bullets per role, focusing on hard skills (Engineering, Test, Research).
+- Maintain reverse chronological order for the entire career history.
 
 CONTEXTUAL BACKGROUND USAGE:
 You are provided with a "Candidate Biography" which contains the full narrative history.
@@ -106,8 +108,9 @@ Security Clearance: {clearance}
 STRATEGIC DIRECTION:
 {strategy_text}
 
-IMPORTANT: Current year is {current_year}. Roles from 2014+ get detailed treatment (4-6 bullets).
-Roles from 2006-2016 go under "Other Relevant Experience" with 2-3 bullets each.
+IMPORTANT: Current year is {current_year}.
+List ALL roles in the "Experience" section in reverse chronological order.
+Ensure older roles (prior to 2016) retain specific technical details (e.g., specific weapon systems, coding languages, engineering metrics) to prove long-term technical depth.
 
 Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
 
