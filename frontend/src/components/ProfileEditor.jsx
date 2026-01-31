@@ -65,6 +65,8 @@ export default function ProfileEditor() {
             email: "",
             phone: "",
             url: "",
+            linkedin: "",
+            clearance: "",
             summary: "",
             location: {
                 city: "",
@@ -78,6 +80,9 @@ export default function ProfileEditor() {
         certifications: [],
         projects: [],
         awards: [],
+        core_domains: [],
+        languages: [],
+        biography: "",
     });
 
     useEffect(() => {
@@ -100,9 +105,42 @@ export default function ProfileEditor() {
             );
             setProfile(response.data);
 
-            // Convert database format to form format
+            // Convert database format to form format, ensuring all array
+            // fields default to [] so .map() calls don't blow up on
+            // profiles that pre-date newer schema fields.
             const profileJson = response.data.profile_json || {};
-            setFormData(profileJson);
+            setFormData((prev) => ({
+                ...prev,
+                ...profileJson,
+                basics: {
+                    ...prev.basics,
+                    ...(profileJson.basics || {}),
+                    location: {
+                        ...prev.basics.location,
+                        ...((profileJson.basics || {}).location || {}),
+                    },
+                },
+                work: (profileJson.work || []).map((job) => ({
+                    ...job,
+                    // The API returns plain-string highlights AND structured
+                    // achievements (with domain_tags/skills). The editor needs
+                    // the structured form so domain tags are editable.
+                    highlights: (job.achievements || job.highlights || []).map(
+                        (h) =>
+                            typeof h === "string"
+                                ? { description: h, domain_tags: [] }
+                                : h,
+                    ),
+                })),
+                education: profileJson.education || [],
+                skills: profileJson.skills || [],
+                certifications: profileJson.certifications || [],
+                projects: profileJson.projects || [],
+                awards: profileJson.awards || [],
+                core_domains: profileJson.core_domains || [],
+                languages: profileJson.languages || [],
+                biography: profileJson.biography || "",
+            }));
         } catch (error) {
             console.error("Failed to load profile:", error);
             alert("Failed to load profile. Please try again.");
@@ -290,6 +328,57 @@ export default function ProfileEditor() {
         }));
     };
 
+    const handleBiographyChange = (value) => {
+        setFormData((prev) => ({
+            ...prev,
+            biography: value,
+        }));
+    };
+
+    const handleCoreDomainChange = (index, value) => {
+        setFormData((prev) => {
+            const newDomains = [...prev.core_domains];
+            newDomains[index] = value;
+            return { ...prev, core_domains: newDomains };
+        });
+    };
+
+    const addCoreDomain = () => {
+        setFormData((prev) => ({
+            ...prev,
+            core_domains: [...prev.core_domains, ""],
+        }));
+    };
+
+    const removeCoreDomain = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            core_domains: prev.core_domains.filter((_, i) => i !== index),
+        }));
+    };
+
+    const handleLanguageChange = (index, value) => {
+        setFormData((prev) => {
+            const newLanguages = [...prev.languages];
+            newLanguages[index] = value;
+            return { ...prev, languages: newLanguages };
+        });
+    };
+
+    const addLanguage = () => {
+        setFormData((prev) => ({
+            ...prev,
+            languages: [...prev.languages, ""],
+        }));
+    };
+
+    const removeLanguage = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            languages: prev.languages.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -386,8 +475,49 @@ export default function ProfileEditor() {
                             value={formData.basics.url}
                             onChange={(v) => handleBasicInfoChange("url", v)}
                             placeholder="https://yourwebsite.com"
-                            className="sm:col-span-2"
                         />
+                        <InputField
+                            label="LinkedIn URL"
+                            value={formData.basics.linkedin}
+                            onChange={(v) =>
+                                handleBasicInfoChange("linkedin", v)
+                            }
+                            placeholder="https://linkedin.com/in/username"
+                        />
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                Security Clearance
+                            </label>
+                            <select
+                                value={formData.basics.clearance || ""}
+                                onChange={(e) =>
+                                    handleBasicInfoChange(
+                                        "clearance",
+                                        e.target.value,
+                                    )
+                                }
+                                className="w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                            >
+                                <option value="">None</option>
+                                <option value="Secret">Secret</option>
+                                <option value="Top Secret">Top Secret</option>
+                                <option value="Top Secret/SCI">
+                                    Top Secret/SCI
+                                </option>
+                                <option value="Top Secret/SCI with Full Scope Polygraph">
+                                    Top Secret/SCI with Full Scope Polygraph
+                                </option>
+                                <option value="Top Secret/SCI with CI Polygraph">
+                                    Top Secret/SCI with CI Polygraph
+                                </option>
+                                <option value="Public Trust">
+                                    Public Trust
+                                </option>
+                                <option value="Confidential">
+                                    Confidential
+                                </option>
+                            </select>
+                        </div>
                         <TextAreaField
                             label="Professional Summary"
                             value={formData.basics.summary}
@@ -425,6 +555,31 @@ export default function ProfileEditor() {
                             }
                             placeholder="US"
                         />
+                    </div>
+                </section>
+
+                {/* Career Biography */}
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
+                    <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        Career Biography
+                    </h2>
+                    <div className="space-y-4">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Provide a detailed narrative of your career journey.
+                            This information helps the resume pipeline better
+                            understand your background and tailor resumes to
+                            highlight your most relevant experiences.
+                        </p>
+                        <TextAreaField
+                            label="Biography"
+                            value={formData.biography}
+                            onChange={handleBiographyChange}
+                            rows={10}
+                            placeholder="Describe your career path, key achievements, professional philosophy, and any context that would help create a tailored resume..."
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-500 text-right">
+                            {formData.biography?.length || 0} characters
+                        </p>
                     </div>
                 </section>
 
@@ -471,6 +626,119 @@ export default function ProfileEditor() {
                         {formData.skills.length === 0 && (
                             <p className="text-sm text-slate-500 dark:text-slate-400 col-span-full">
                                 No skills added yet.
+                            </p>
+                        )}
+                    </div>
+                </section>
+
+                {/* Core Domains */}
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <div>
+                            <h2 className="text-lg font-medium text-slate-900 dark:text-white">
+                                Core Domains
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Areas of professional expertise and industry
+                                focus
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={addCoreDomain}
+                            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium"
+                        >
+                            + Add Domain
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {formData.core_domains.map((domain, index) => (
+                            <div
+                                key={index}
+                                className="flex gap-2 items-center"
+                            >
+                                <input
+                                    type="text"
+                                    value={domain}
+                                    onChange={(e) =>
+                                        handleCoreDomainChange(
+                                            index,
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. FinTech, Healthcare"
+                                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeCoreDomain(index)}
+                                    className="text-red-600 hover:text-red-800 p-2"
+                                    title="Remove Domain"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))}
+                        {formData.core_domains.length === 0 && (
+                            <p className="text-sm text-slate-500 dark:text-slate-400 col-span-full">
+                                No domains added yet.
+                            </p>
+                        )}
+                    </div>
+                </section>
+
+                {/* Languages */}
+                <section className="bg-white dark:bg-background-surface shadow rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                        <div>
+                            <h2 className="text-lg font-medium text-slate-900 dark:text-white">
+                                Languages
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Languages you speak professionally
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={addLanguage}
+                            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium"
+                        >
+                            + Add Language
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {formData.languages.map((language, index) => (
+                            <div
+                                key={index}
+                                className="flex gap-2 items-center"
+                            >
+                                <input
+                                    type="text"
+                                    value={language}
+                                    onChange={(e) =>
+                                        handleLanguageChange(
+                                            index,
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="e.g. English, Spanish"
+                                    className="block w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-background-surface text-slate-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeLanguage(index)}
+                                    className="text-red-600 hover:text-red-800 p-2"
+                                    title="Remove Language"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))}
+                        {formData.languages.length === 0 && (
+                            <p className="text-sm text-slate-500 dark:text-slate-400 col-span-full">
+                                No languages added yet.
                             </p>
                         )}
                     </div>

@@ -10,6 +10,7 @@ export default function ProfileView() {
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState(null);
     const [error, setError] = useState(null);
+    const [biographyExpanded, setBiographyExpanded] = useState(false);
 
     useEffect(() => {
         if (currentUser && profileId) {
@@ -166,6 +167,29 @@ export default function ProfileView() {
                                 </a>
                             </div>
                         )}
+                        {basics.linkedin && (
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    LinkedIn
+                                </p>
+                                <a
+                                    href={basics.linkedin}
+                                    className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                                >
+                                    {basics.linkedin}
+                                </a>
+                            </div>
+                        )}
+                        {basics.clearance && (
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                    Security Clearance
+                                </p>
+                                <p className="text-slate-900 dark:text-white font-medium">
+                                    {basics.clearance}
+                                </p>
+                            </div>
+                        )}
                         {(location.city || location.region) && (
                             <div>
                                 <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -195,6 +219,52 @@ export default function ProfileView() {
                     )}
                 </section>
 
+                {/* Career Biography */}
+                {data.biography && (
+                    <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                                Career Biography
+                            </h2>
+                            <button
+                                onClick={() => setBiographyExpanded(!biographyExpanded)}
+                                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium"
+                            >
+                                {biographyExpanded ? "Show Less" : "Read Full Biography"}
+                            </button>
+                        </div>
+                        <div
+                            className={`text-slate-700 dark:text-slate-300 leading-relaxed ${
+                                biographyExpanded ? "" : "max-h-48 overflow-hidden relative"
+                            }`}
+                        >
+                            {data.biography}
+                            {!biographyExpanded && data.biography.length > 300 && (
+                                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white dark:from-background-surface to-transparent"></div>
+                            )}
+                        </div>
+                    </section>
+                )}
+
+                {/* Core Domains */}
+                {Array.isArray(data.core_domains) && data.core_domains.length > 0 && (
+                    <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
+                            Core Domains
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
+                            {data.core_domains.map((domain, index) => (
+                                <span
+                                    key={index}
+                                    className="px-4 py-2 bg-secondary-100 dark:bg-secondary-900/30 text-secondary-800 dark:text-secondary-300 text-sm font-medium rounded-full"
+                                >
+                                    {domain}
+                                </span>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {/* Skills */}
                 {Array.isArray(data.skills) && data.skills.length > 0 && (
                     <section className="p-8 border-b border-slate-200 dark:border-slate-700">
@@ -210,6 +280,25 @@ export default function ProfileView() {
                                     {typeof skill === "string"
                                         ? skill
                                         : skill.name}
+                                </span>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Languages */}
+                {Array.isArray(data.languages) && data.languages.length > 0 && (
+                    <section className="p-8 border-b border-slate-200 dark:border-slate-700">
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
+                            Languages
+                        </h2>
+                        <div className="flex flex-wrap gap-2">
+                            {data.languages.map((language, index) => (
+                                <span
+                                    key={index}
+                                    className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm rounded-full"
+                                >
+                                    {language}
                                 </span>
                             ))}
                         </div>

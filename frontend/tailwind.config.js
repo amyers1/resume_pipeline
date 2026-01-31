@@ -32,7 +32,19 @@ export default {
                     950: "#083344",
                 },
                 // Status Colors (Aligned with the tech vibe)
-                secondary: { 500: "#f59e0b" }, // Amber
+                secondary: { 
+                    50: "#fffbeb",
+                    100: "#fef3c7", 
+                    200: "#fde68a",
+                    300: "#fcd34d",
+                    400: "#fbbf24",
+                    500: "#f59e0b", // Amber
+                    600: "#d97706",
+                    700: "#b45309",
+                    800: "#92400e",
+                    900: "#78350f",
+                    950: "#451a03",
+                },
                 success: { 500: "#10b981" }, // Emerald (Better than standard Green)
                 danger: { 500: "#ef4444" }, // Red
             },
