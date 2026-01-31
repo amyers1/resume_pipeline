@@ -15,6 +15,7 @@ class Achievement(BaseModel):
     description: str
     impact_metric: str | None = None
     domain_tags: list[str] = Field(default_factory=list)
+    skills: list[str] = Field(default_factory=list)
 
 
 class Role(BaseModel):
@@ -52,6 +53,8 @@ class ProfileBasics(BaseModel):
     email: str | None = None
     phone: str | None = None
     url: str | None = None
+    linkedin: str | None = None
+    clearance: str | None = None
     summary: str | None = None
     location: ProfileLocation | None = None
     profiles: list[ProfileProfile] = Field(default_factory=list)
@@ -63,6 +66,7 @@ class ProfileExperienceHighlight(BaseModel):
     description: str
     impact_metric: str | None = None
     domain_tags: list[str] = Field(default_factory=list)
+    skills: list[str] = Field(default_factory=list)
 
 
 class ProfileWork(BaseModel):
@@ -72,6 +76,8 @@ class ProfileWork(BaseModel):
     position: str
     startDate: str | None = None
     endDate: str | None = None
+    location: str | None = None
+    seniority: str | None = None
     summary: str | None = None
     highlights: list[str] = Field(default_factory=list)
     # Support both structured achievements and legacy string highlights
@@ -147,6 +153,8 @@ class CareerProfile(BaseModel):
     certifications: list[ProfileCertification] = Field(default_factory=list)
     projects: list[ProfileProject] = Field(default_factory=list)
     languages: list[dict[str, str]] = Field(default_factory=list)
+    core_domains: list[str] = Field(default_factory=list)
+    biography: str | None = None
 
     # --- Convenience Properties for Template Access ---
 
@@ -230,18 +238,27 @@ class CareerProfile(BaseModel):
         parts.append(f"Name: {self.basics.name}")
         if self.basics.label:
             parts.append(f"Title: {self.basics.label}")
+        if self.basics.clearance:
+            parts.append(f"Security Clearance: {self.basics.clearance}")
         if self.basics.summary:
             parts.append(f"Summary: {self.basics.summary}")
+
+        # Core domains
+        if self.core_domains:
+            parts.append(f"Core Domains: {', '.join(self.core_domains)}")
 
         # Work experience
         if self.work:
             parts.append("\nWork Experience:")
             for job in self.work:
                 date_range = f"{job.startDate or ''} - {job.endDate or 'Present'}"
-                parts.append(f"  - {job.position} at {job.name} ({date_range})")
+                location_str = f", {job.location}" if job.location else ""
+                parts.append(
+                    f"  - {job.position} at {job.name}{location_str} ({date_range})"
+                )
                 if job.highlights:
                     for highlight in job.highlights[:3]:  # Limit to top 3
-                        parts.append(f"    • {highlight}")
+                        parts.append(f"    - {highlight}")
 
         # Education
         if self.education:
@@ -258,7 +275,7 @@ class CareerProfile(BaseModel):
 
         # Certifications
         if self.certifications:
-            parts.append("\Certifications:")
+            parts.append("\nCertifications:")
             for cert in self.certifications[:5]:  # Limit to top 5
                 date_str = f" ({cert.date})" if cert.date else ""
                 issuer_str = f" - {cert.issuer}" if cert.issuer else ""

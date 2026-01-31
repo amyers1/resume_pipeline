@@ -76,20 +76,24 @@ class ModernDeedyTemplate(BaseTemplate):
 \BLOCK{endfor}
 \sectionsep
 
+\BLOCK{if certifications}
 \section{Certifications}
 \begin{bullets}
 \BLOCK{for cert in certifications}
-    \item \VAR{cert | latex_escape}
+    \item \VAR{cert.name | latex_escape}\BLOCK{if cert.issuer}, \VAR{cert.issuer | latex_escape}\BLOCK{endif}\BLOCK{if cert.date} (\VAR{cert.date | latex_escape})\BLOCK{endif}
 \BLOCK{endfor}
 \end{bullets}
 \sectionsep
+\BLOCK{endif}
 
+\BLOCK{if awards}
 \section{Awards}
 \begin{bullets}
 \BLOCK{for award in awards}
-    \item \VAR{award | latex_escape}
+    \item \VAR{award.title | latex_escape}\BLOCK{if award.date} (\VAR{award.date | latex_escape})\BLOCK{endif}
 \BLOCK{endfor}
 \end{bullets}
 \sectionsep
+\BLOCK{endif}
 
 \end{document}"""

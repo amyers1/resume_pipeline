@@ -109,43 +109,31 @@ class AwesomeCVTemplate(BaseTemplate):
 \end{cventries}
 
 % --- 5. CERTIFICATIONS ---
+\BLOCK{if certifications}
 \cvsection{Certifications}
 \begin{cvhonors}
+\BLOCK{for cert in certifications}
   \cvhonor
-    {Project Management Professional (PMP)}
-    {Project Management Institute (PMI)}
+    {\VAR{cert.name | latex_escape}}
+    {\BLOCK{if cert.issuer}\VAR{cert.issuer | latex_escape}\BLOCK{endif}}
     {}
-    {2025}
-  \cvhonor
-    {Engineering \& Technical Management Practitioner}
-    {DAWIA}
-    {}
-    {2022}
-  \cvhonor
-    {Test \& Evaluation Practitioner (Level III)}
-    {DAWIA}
-    {}
-    {2013}
+    {\BLOCK{if cert.date}\VAR{cert.date | latex_escape}\BLOCK{endif}}
+\BLOCK{endfor}
 \end{cvhonors}
+\BLOCK{endif}
 
 % --- 6. AWARDS ---
+\BLOCK{if awards}
 \cvsection{Awards}
 \begin{cvhonors}
+\BLOCK{for award in awards}
   \cvhonor
-    {Winner}
-    {Dept. of the Air Force Outstanding Senior Military Scientist/Engineer}
-    {Washington D.C}
-    {2023}
-  \cvhonor
-    {MAJCOM Winner}
-    {Arthur S. Flemming Award}
-    {Washington D.C.}
-    {2018}
-  \cvhonor
-    {Winner}
-    {SMC Production Corps Field Grade Officer of the Year (2019)}
-    {Los Angeles, CA}
-    {2019}
+    {\VAR{award.title | latex_escape}}
+    {\BLOCK{if award.awarder}\VAR{award.awarder | latex_escape}\BLOCK{endif}}
+    {}
+    {\BLOCK{if award.date}\VAR{award.date | latex_escape}\BLOCK{endif}}
+\BLOCK{endfor}
 \end{cvhonors}
+\BLOCK{endif}
 
 \end{document}"""

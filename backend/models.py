@@ -51,6 +51,8 @@ class CareerProfile(Base):
     email = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     url = Column(String, nullable=True)
+    linkedin = Column(String, nullable=True)
+    clearance = Column(String, nullable=True)
     summary = Column(Text, nullable=True)
 
     # Location
@@ -61,9 +63,13 @@ class CareerProfile(Base):
     # Lists
     skills = Column(ARRAY(String), default=[])
     languages = Column(ARRAY(String), default=[])
+    core_domains = Column(ARRAY(String), default=[])
 
-    # NEW: Awards Array
+    # Awards
     awards = Column(ARRAY(String), default=[])
+
+    # Biography
+    biography = Column(Text, nullable=True)
 
     # Relationships
     user = relationship("User", back_populates="profiles")
@@ -83,6 +89,10 @@ class CareerProfile(Base):
 
     def to_full_json(self) -> Dict[str, Any]:
         """Reconstructs standard JSON Resume format."""
+        profiles = []
+        if self.linkedin:
+            profiles.append({"network": "LinkedIn", "url": self.linkedin})
+
         return {
             "basics": {
                 "name": self.name,
@@ -90,12 +100,15 @@ class CareerProfile(Base):
                 "email": self.email,
                 "phone": self.phone,
                 "url": self.url,
+                "linkedin": self.linkedin,
+                "clearance": self.clearance,
                 "summary": self.summary,
                 "location": {
                     "city": self.city,
                     "region": self.region,
                     "countryCode": self.country_code,
                 },
+                "profiles": profiles,
             },
             "work": [item.to_json() for item in self.experience],
             "education": [item.to_json() for item in self.education],
@@ -103,6 +116,8 @@ class CareerProfile(Base):
             "certifications": [item.to_json() for item in self.certifications],
             "awards": [{"title": a} for a in (self.awards or [])],
             "skills": [{"name": s} for s in (self.skills or [])],
+            "core_domains": self.core_domains or [],
+            "biography": self.biography,
         }
 
 
@@ -131,7 +146,9 @@ class CareerExperience(Base):
     start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)
     is_current = Column(Boolean, default=False)
-    summary = Column(Text, nullable=True)  # Can hold location/seniority info
+    location = Column(String, nullable=True)
+    seniority = Column(String, nullable=True)
+    summary = Column(Text, nullable=True)
 
     # NEW: Relationship to structured highlights (replaces old array)
     highlights = relationship(
@@ -148,6 +165,8 @@ class CareerExperience(Base):
             "position": self.position,
             "startDate": self.start_date,
             "endDate": self.end_date,
+            "location": self.location,
+            "seniority": self.seniority,
             "summary": self.summary,
             "highlights": [
                 h.description for h in self.highlights
@@ -166,6 +185,7 @@ class CareerExperienceHighlight(Base):
     description = Column(Text, nullable=False)
     impact_metric = Column(String, nullable=True)
     domain_tags = Column(ARRAY(String), default=[])
+    skills = Column(ARRAY(String), default=[])
 
     experience = relationship("CareerExperience", back_populates="highlights")
 
@@ -174,6 +194,7 @@ class CareerExperienceHighlight(Base):
             "description": self.description,
             "impact_metric": self.impact_metric,
             "domain_tags": self.domain_tags or [],
+            "skills": self.skills or [],
         }
 
 

@@ -89,17 +89,31 @@ def ensure_user_exists(session, email, full_name):
 
 
 def parse_date_range(role):
-    """Parse start/end dates from role data."""
+    """Parse start/end dates from role data.
+
+    Handles 'Present' as a valid end_date indicating a current position.
+    Returns (start_date, end_date, is_current) tuple.
+    """
     start_date = role.get("start_date")
     end_date = role.get("end_date")
+    is_current = False
+
+    # Check for "Present" or empty end_date indicating current role
+    if not end_date or (
+        isinstance(end_date, str) and end_date.strip().lower() == "present"
+    ):
+        is_current = True
+        end_date = None
+    else:
+        # Convert YYYY-MM format to proper date strings if needed
+        if len(end_date) == 7:  # YYYY-MM
+            end_date = f"{end_date}-01"
 
     # Convert YYYY-MM format to proper date strings if needed
     if start_date and len(start_date) == 7:  # YYYY-MM
         start_date = f"{start_date}-01"
-    if end_date and len(end_date) == 7:  # YYYY-MM
-        end_date = f"{end_date}-01"
 
-    return start_date, end_date
+    return start_date, end_date, is_current
 
 
 def convert_legacy_to_profile(legacy_data, user_id):
@@ -107,36 +121,47 @@ def convert_legacy_to_profile(legacy_data, user_id):
     print("🔄 Converting legacy format to database schema...")
 
     # Extract basic information
-    full_name = legacy_data.get("full_name", "Unknown")
+    full_name = legacy_data.get("name", "Unknown")
     clearance = legacy_data.get("clearance", "")
     core_domains = legacy_data.get("core_domains", [])
 
-    # Create profile summary from clearance
-    summary = f"Cleared: {clearance}" if clearance else None
+    # Extract biography content
+    biography_data = legacy_data.get("biography", {})
+    biography = (
+        biography_data.get("content")
+        if isinstance(biography_data, dict)
+        else biography_data
+    )
 
     print(f"  Profile: {full_name}")
+    print(f"  Clearance: {clearance}")
     print(f"  Domains: {len(core_domains)} core domains")
     print(f"  Roles: {len(legacy_data.get('roles', []))} positions")
     print(f"  Education: {len(legacy_data.get('education', []))} entries")
     print(f"  Certifications: {len(legacy_data.get('certifications', []))} entries")
     print(f"  Awards: {len(legacy_data.get('awards', []))} entries")
+    print(f"  Biography: {'yes' if biography else 'no'}")
 
-    # Create the profile
+    # Create the profile with dedicated columns
     profile = CareerProfile(
         id=str(uuid.uuid4()),
         user_id=user_id,
         name=full_name,
-        label="Technical Leader and Systems Engineer",  # Can be customized
-        email="aaron.t.myers@gmail.com",  # Not in legacy format
-        phone="405-249-2897",  # Not in legacy format
-        url=None,  # Not in legacy format
-        summary=summary,
-        city="OKC Metro",  # Not in legacy format
-        region="OK",  # Not in legacy format
-        country_code="US",  # Default
-        skills=core_domains,
+        label=legacy_data.get("title", ""),
+        email=legacy_data.get("email", ""),
+        phone=legacy_data.get("phone", ""),
+        url=legacy_data.get("url"),
+        linkedin=legacy_data.get("linkedin"),
+        clearance=clearance or None,
+        summary=legacy_data.get("summary"),
+        city=legacy_data.get("city", ""),
+        region=legacy_data.get("region", ""),
+        country_code=legacy_data.get("country", "US"),
+        skills=legacy_data.get("skills", []),
+        core_domains=core_domains,
         languages=[],
         awards=legacy_data.get("awards", []),
+        biography=biography,
     )
 
     return profile, legacy_data
@@ -152,15 +177,11 @@ def import_work_experience(session, profile_id, roles):
         location = role.get("location", "")
         seniority = role.get("seniority", "")
 
-        start_date, end_date = parse_date_range(role)
+        start_date, end_date, is_current = parse_date_range(role)
 
-        # Create summary from location and seniority
-        summary_parts = [p for p in [location, seniority] if p]
-        summary = " | ".join(summary_parts) if summary_parts else None
+        print(f"  {idx}. {title} at {org} ({location})")
 
-        print(f"  {idx}. {title} at {org}")
-
-        # Create experience record
+        # Create experience record with dedicated location/seniority columns
         exp = CareerExperience(
             id=str(uuid.uuid4()),
             profile_id=profile_id,
@@ -168,8 +189,10 @@ def import_work_experience(session, profile_id, roles):
             position=title,
             start_date=start_date,
             end_date=end_date,
-            is_current=(end_date is None or end_date == ""),
-            summary=summary,
+            is_current=is_current,
+            location=location or None,
+            seniority=seniority or None,
+            summary=None,
         )
         session.add(exp)
         session.flush()  # Get the ID
@@ -185,6 +208,7 @@ def import_work_experience(session, profile_id, roles):
                 description=ach.get("description", ""),
                 impact_metric=ach.get("impact_metric"),
                 domain_tags=ach.get("domain_tags", []),
+                skills=ach.get("skills", []),
             )
             session.add(highlight)
 
@@ -192,40 +216,28 @@ def import_work_experience(session, profile_id, roles):
 
 
 def import_education(session, profile_id, education_list):
-    """Import education records."""
+    """Import education records.
+
+    Supports structured education objects with fields:
+        institution, area, studyType, endDate, location
+    Falls back to flat string parsing for legacy format.
+    """
     if not education_list:
         return
 
     print(f"\n🎓 Importing {len(education_list)} education entries...")
 
-    for idx, edu_str in enumerate(education_list, 1):
-        # Parse education string format:
-        # "M.S., Electrical Engineering – Air Force Institute of Technology, WPAFB, OH (2013)"
-        # "B.S., Electrical Engineering – University of Oklahoma, Norman, OK (2005)"
-
+    for idx, edu_entry in enumerate(education_list, 1):
         try:
-            # Split by '–' to separate degree from institution
-            parts = edu_str.split("–")
+            if isinstance(edu_entry, dict):
+                # Structured format: {institution, area, studyType, endDate, location}
+                institution = edu_entry.get("institution", "Unknown")
+                area = edu_entry.get("area")
+                study_type = edu_entry.get("studyType")
+                end_date = edu_entry.get("endDate")
+                location = edu_entry.get("location")
 
-            if len(parts) >= 2:
-                degree_part = parts[0].strip()
-                school_part = parts[1].strip()
-
-                # Extract degree type and area
-                degree_split = degree_part.split(",", 1)
-                study_type = degree_split[0].strip() if degree_split else ""
-                area = degree_split[1].strip() if len(degree_split) > 1 else ""
-
-                # Extract year from parentheses
-                import re
-
-                year_match = re.search(r"\((\d{4})\)", school_part)
-                end_date = year_match.group(1) if year_match else None
-
-                # Institution is everything before the year
-                institution = re.sub(r"\s*\(\d{4}\)\s*$", "", school_part).strip()
-
-                print(f"  {idx}. {study_type} - {institution} ({end_date})")
+                print(f"  {idx}. {study_type} {area} - {institution} ({end_date})")
 
                 edu = CareerEducation(
                     id=str(uuid.uuid4()),
@@ -240,67 +252,110 @@ def import_education(session, profile_id, education_list):
                 )
                 session.add(edu)
             else:
-                # Fallback for non-standard format
-                print(f"  {idx}. {edu_str} (non-standard format)")
+                # Legacy flat string format fallback:
+                # "M.S., Electrical Engineering – Air Force Institute of Technology, WPAFB, OH (2013)"
+                import re
+
+                edu_str = str(edu_entry)
+                parts = edu_str.split("–")
+
+                if len(parts) >= 2:
+                    degree_part = parts[0].strip()
+                    school_part = parts[1].strip()
+
+                    degree_split = degree_part.split(",", 1)
+                    study_type = degree_split[0].strip() if degree_split else ""
+                    area = degree_split[1].strip() if len(degree_split) > 1 else ""
+
+                    year_match = re.search(r"\((\d{4})\)", school_part)
+                    end_date = year_match.group(1) if year_match else None
+                    institution = re.sub(r"\s*\(\d{4}\)\s*$", "", school_part).strip()
+                else:
+                    institution = edu_str
+                    area = None
+                    study_type = None
+                    end_date = None
+
+                print(
+                    f"  {idx}. {study_type or ''} {area or ''} - {institution} ({end_date})"
+                )
+
                 edu = CareerEducation(
                     id=str(uuid.uuid4()),
                     profile_id=profile_id,
-                    institution=edu_str,
-                    area=None,
-                    study_type=None,
+                    institution=institution,
+                    area=area,
+                    study_type=study_type,
                     start_date=None,
-                    end_date=None,
+                    end_date=end_date,
                     score=None,
                     courses=[],
                 )
                 session.add(edu)
         except Exception as e:
-            print(f"  ⚠️  Error parsing education entry: {edu_str}")
+            print(f"  ⚠️  Error parsing education entry: {edu_entry}")
             print(f"     {e}")
 
     print(f"  ✅ Imported {len(education_list)} education entries")
 
 
 def import_certifications(session, profile_id, cert_list):
-    """Import certifications."""
+    """Import certifications.
+
+    Supports structured certification objects with fields:
+        name, issuer, date
+    Falls back to flat string parsing for legacy format.
+    """
     if not cert_list:
         return
 
     print(f"\n📜 Importing {len(cert_list)} certifications...")
 
-    for idx, cert_str in enumerate(cert_list, 1):
-        # Parse certification string format:
-        # "Project Management Professional (PMP), Project Management Institute (2025)"
-        # "Engineering and Technical Management Practitioner, DAWIA (2022)"
-
+    for idx, cert_entry in enumerate(cert_list, 1):
         try:
-            import re
+            if isinstance(cert_entry, dict):
+                # Structured format: {name, issuer, date}
+                name = cert_entry.get("name", "Unknown")
+                organization = cert_entry.get("issuer")
+                date = cert_entry.get("date")
 
-            # Extract year from end
-            year_match = re.search(r"\((\d{4})\)\s*$", cert_str)
-            date = year_match.group(1) if year_match else None
+                print(f"  {idx}. {name} - {organization} ({date})")
 
-            # Remove year to get name and organization
-            cert_without_year = re.sub(r"\s*\(\d{4}\)\s*$", "", cert_str).strip()
+                cert = CareerCertification(
+                    id=str(uuid.uuid4()),
+                    profile_id=profile_id,
+                    name=name,
+                    organization=organization,
+                    date=date,
+                )
+                session.add(cert)
+            else:
+                # Legacy flat string format fallback:
+                # "Project Management Professional (PMP), Project Management Institute (2025)"
+                import re
 
-            # Split by comma to separate name from organization
-            parts = cert_without_year.split(",")
+                cert_str = str(cert_entry)
+                year_match = re.search(r"\((\d{4})\)\s*$", cert_str)
+                date = year_match.group(1) if year_match else None
 
-            name = parts[0].strip()
-            organization = parts[1].strip() if len(parts) > 1 else None
+                cert_without_year = re.sub(r"\s*\(\d{4}\)\s*$", "", cert_str).strip()
+                parts = cert_without_year.split(",")
 
-            print(f"  {idx}. {name} - {organization} ({date})")
+                name = parts[0].strip()
+                organization = parts[1].strip() if len(parts) > 1 else None
 
-            cert = CareerCertification(
-                id=str(uuid.uuid4()),
-                profile_id=profile_id,
-                name=name,
-                organization=organization,
-                date=date,
-            )
-            session.add(cert)
+                print(f"  {idx}. {name} - {organization} ({date})")
+
+                cert = CareerCertification(
+                    id=str(uuid.uuid4()),
+                    profile_id=profile_id,
+                    name=name,
+                    organization=organization,
+                    date=date,
+                )
+                session.add(cert)
         except Exception as e:
-            print(f"  ⚠️  Error parsing certification: {cert_str}")
+            print(f"  ⚠️  Error parsing certification: {cert_entry}")
             print(f"     {e}")
 
     print(f"  ✅ Imported {len(cert_list)} certifications")
@@ -342,7 +397,7 @@ def main():
 
         # Step 3: Ensure user exists
         email = "aaron.t.myers@gmail.com"  # Default email
-        full_name = legacy_data.get("full_name", "Aaron T. Myers")
+        full_name = legacy_data.get("name", "Aaron T. Myers")
         user = ensure_user_exists(session, email, full_name)
 
         # Step 4: Convert and create profile

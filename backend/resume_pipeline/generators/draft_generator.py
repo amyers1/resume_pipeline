@@ -91,6 +91,7 @@ Email: {email}
 Phone: {phone}
 Location: {location}
 LinkedIn: {linkedin}
+Security Clearance: {clearance}
 
 STRATEGIC DIRECTION:
 {strategy_text}
@@ -135,7 +136,11 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         profile_context = profile.to_prompt_string()
 
         # Format strategy text (use default if not provided)
-        strategy_text = strategy if strategy else "Follow best practices for ATS-optimized resume writing."
+        strategy_text = (
+            strategy
+            if strategy
+            else "Follow best practices for ATS-optimized resume writing."
+        )
 
         # Invoke LLM with structured data
         response = chain.invoke(
@@ -151,6 +156,7 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
                 "phone": profile.basics.phone or "",
                 "location": location_str,
                 "linkedin": linkedin_url,
+                "clearance": profile.basics.clearance or "",
                 "current_year": self.config.current_year,
                 "strategy_text": strategy_text,
             }
@@ -163,9 +169,14 @@ Generate complete ATS-optimized resume in markdown. Target 2 pages maximum."""
         """
         Extract LinkedIn URL from profile.
 
+        Prefers the dedicated linkedin field, falls back to searching profiles[].
+
         Returns:
             LinkedIn URL or empty string if not found
         """
+        if profile.basics.linkedin:
+            return profile.basics.linkedin
+
         if not profile.basics.profiles:
             return ""
 

@@ -99,7 +99,7 @@ class StructuredResumeParser:
             structured_resume.full_name = basics.name
             structured_resume.email = basics.email
             structured_resume.phone = basics.phone
-            structured_resume.linkedin = basics.url
+            structured_resume.linkedin = basics.linkedin or basics.url or ""
             if basics.location:
                 structured_resume.location = (
                     f"{basics.location.city}, {basics.location.region}"

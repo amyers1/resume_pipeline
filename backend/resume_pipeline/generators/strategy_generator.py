@@ -77,10 +77,12 @@ Provide exactly 4 bullets in the specified format."""
         jd_summary = self._summarize_jd(jd)
         profile_summary = self._summarize_profile(profile)
 
-        response = chain.invoke({
-            "jd_summary": jd_summary,
-            "profile_summary": profile_summary,
-        })
+        response = chain.invoke(
+            {
+                "jd_summary": jd_summary,
+                "profile_summary": profile_summary,
+            }
+        )
 
         return response.content if hasattr(response, "content") else str(response)
 
@@ -116,18 +118,25 @@ Provide exactly 4 bullets in the specified format."""
         if profile.basics.label:
             parts.append(f"Current Title: {profile.basics.label}")
 
+        if profile.basics.clearance:
+            parts.append(f"Security Clearance: {profile.basics.clearance}")
+
         if profile.basics.summary:
             parts.append(f"Professional Summary: {profile.basics.summary}")
+
+        if profile.core_domains:
+            parts.append(f"Core Domains: {', '.join(profile.core_domains)}")
 
         if profile.work:
             parts.append("\nRecent Experience:")
             # Get 2 most recent roles
             recent_work = profile.work[:2]
             for job in recent_work:
-                parts.append(f"  - {job.position} at {job.name}")
+                location_str = f" ({job.location})" if job.location else ""
+                parts.append(f"  - {job.position} at {job.name}{location_str}")
                 if job.highlights:
                     for highlight in job.highlights[:2]:
-                        parts.append(f"    • {highlight}")
+                        parts.append(f"    - {highlight}")
 
         if profile.skills:
             top_skills = [s.name for s in profile.skills[:8]]

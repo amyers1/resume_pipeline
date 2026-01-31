@@ -246,12 +246,16 @@ async def create_profile(
         email=basics.get("email"),
         phone=basics.get("phone"),
         url=basics.get("url"),
+        linkedin=basics.get("linkedin"),
+        clearance=basics.get("clearance"),
         summary=basics.get("summary"),
         city=location.get("city"),
         region=location.get("region"),
         country_code=location.get("countryCode"),
         skills=[s.get("name") for s in data.get("skills", []) if s.get("name")],
+        core_domains=data.get("core_domains", []),
         awards=data.get("awards", []),
+        biography=data.get("biography"),
     )
     db.add(new_profile)
     await db.flush()
@@ -274,6 +278,8 @@ async def create_profile(
             position=work.get("position", ""),
             start_date=work.get("startDate"),
             end_date=work.get("endDate"),
+            location=work.get("location"),
+            seniority=work.get("seniority"),
             summary=work.get("summary"),
         )
         db.add(exp)
@@ -292,6 +298,7 @@ async def create_profile(
                     description=h.get("description", ""),
                     impact_metric=h.get("impact_metric"),
                     domain_tags=h.get("domain_tags", []),
+                    skills=h.get("skills", []),
                 )
             db.add(hl)
 
@@ -423,14 +430,18 @@ async def update_profile(
     profile.email = basics.get("email")
     profile.phone = basics.get("phone")
     profile.url = basics.get("url")
+    profile.linkedin = basics.get("linkedin")
+    profile.clearance = basics.get("clearance")
     profile.summary = basics.get("summary")
     profile.city = location.get("city")
     profile.region = location.get("region")
     profile.country_code = location.get("countryCode")
     profile.skills = [s.get("name") for s in data.get("skills", []) if s.get("name")]
+    profile.core_domains = data.get("core_domains", [])
     profile.awards = [
         a.get("title") if isinstance(a, dict) else a for a in data.get("awards", [])
     ]
+    profile.biography = data.get("biography")
     profile.updated_at = datetime.utcnow()
 
     # FIX: Delete child records (Highlights) explicitly first to prevent FK violation
@@ -474,6 +485,8 @@ async def update_profile(
             start_date=work.get("startDate"),
             end_date=work.get("endDate"),
             is_current=not work.get("endDate"),
+            location=work.get("location"),
+            seniority=work.get("seniority"),
             summary=work.get("summary"),
         )
         db.add(exp)
@@ -493,6 +506,7 @@ async def update_profile(
                     description=hl.get("description", ""),
                     impact_metric=hl.get("impact_metric"),
                     domain_tags=hl.get("domain_tags", []),
+                    skills=hl.get("skills", []),
                 )
                 db.add(highlight)
 

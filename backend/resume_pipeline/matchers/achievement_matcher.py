@@ -198,6 +198,7 @@ Return top 15-20 achievements as JSON array, sorted by overall relevance."""
                                 description=highlight.get("description", ""),
                                 impact_metric=highlight.get("impact_metric"),
                                 domain_tags=domain_tags,
+                                skills=highlight.get("skills", []),
                             )
                         )
                     else:
@@ -227,6 +228,7 @@ Return top 15-20 achievements as JSON array, sorted by overall relevance."""
                                 description=achievement.get("description", ""),
                                 impact_metric=achievement.get("impact_metric"),
                                 domain_tags=domain_tags,
+                                skills=achievement.get("skills", []),
                             )
                         )
                     elif isinstance(achievement, str):
