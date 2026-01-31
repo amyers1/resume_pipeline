@@ -9,19 +9,20 @@ This script:
 4. Imports all data with proper relationships
 
 Usage:
-    python import_legacy_profile.py <path_to_legacy_career_profile.json>
+    python migrate_profiles.py <path_to_legacy_career_profile.json>
 """
 
+import asyncio
 import json
+import re
 import sys
 import uuid
-from datetime import datetime
 from pathlib import Path
 
 # Add backend to path if running from different directory
 sys.path.insert(0, str(Path(__file__).parent))
 
-from database import Base, SessionLocal, engine
+from database import AsyncSessionLocal, Base, engine
 from models import (
     CareerCertification,
     CareerEducation,
@@ -31,10 +32,10 @@ from models import (
     CareerProject,
     User,
 )
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 
-def drop_career_tables(session):
+async def drop_career_tables(session):
     """Drop all career profile related tables in correct order (respecting foreign keys)."""
     print("🗑️  Dropping existing career profile tables...")
 
@@ -49,27 +50,29 @@ def drop_career_tables(session):
 
     for table in tables_to_drop:
         try:
-            session.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+            await session.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
             print(f"  ✓ Dropped {table}")
         except Exception as e:
             print(f"  ⚠️  Could not drop {table}: {e}")
 
-    session.commit()
+    await session.commit()
     print("✅ Tables dropped successfully\n")
 
 
-def create_career_tables():
+async def create_career_tables():
     """Recreate career profile tables using SQLAlchemy models."""
     print("🔨 Creating career profile tables...")
-    Base.metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     print("✅ Tables created successfully\n")
 
 
-def ensure_user_exists(session, email, full_name):
+async def ensure_user_exists(session, email, full_name):
     """Ensure a user exists for the profile."""
     print(f"👤 Checking for user: {email}")
 
-    user = session.query(User).filter(User.email == email).first()
+    result = await session.execute(select(User).filter(User.email == email))
+    user = result.scalars().first()
 
     if not user:
         print(f"  Creating new user: {full_name}")
@@ -79,8 +82,8 @@ def ensure_user_exists(session, email, full_name):
             full_name=full_name,
         )
         session.add(user)
-        session.commit()
-        session.refresh(user)
+        await session.commit()
+        await session.refresh(user)
         print(f"  ✓ User created: {user.id}")
     else:
         print(f"  ✓ User exists: {user.id}")
@@ -167,7 +170,7 @@ def convert_legacy_to_profile(legacy_data, user_id):
     return profile, legacy_data
 
 
-def import_work_experience(session, profile_id, roles):
+async def import_work_experience(session, profile_id, roles):
     """Import work experience and achievements."""
     print(f"\n💼 Importing {len(roles)} work experiences...")
 
@@ -195,7 +198,7 @@ def import_work_experience(session, profile_id, roles):
             summary=None,
         )
         session.add(exp)
-        session.flush()  # Get the ID
+        await session.flush()  # Get the ID
 
         # Add achievements as highlights
         achievements = role.get("achievements", [])
@@ -215,7 +218,7 @@ def import_work_experience(session, profile_id, roles):
     print(f"  ✅ Imported {len(roles)} work experiences")
 
 
-def import_education(session, profile_id, education_list):
+async def import_education(session, profile_id, education_list):
     """Import education records.
 
     Supports structured education objects with fields:
@@ -235,7 +238,6 @@ def import_education(session, profile_id, education_list):
                 area = edu_entry.get("area")
                 study_type = edu_entry.get("studyType")
                 end_date = edu_entry.get("endDate")
-                location = edu_entry.get("location")
 
                 print(f"  {idx}. {study_type} {area} - {institution} ({end_date})")
 
@@ -254,8 +256,6 @@ def import_education(session, profile_id, education_list):
             else:
                 # Legacy flat string format fallback:
                 # "M.S., Electrical Engineering – Air Force Institute of Technology, WPAFB, OH (2013)"
-                import re
-
                 edu_str = str(edu_entry)
                 parts = edu_str.split("–")
 
@@ -299,7 +299,7 @@ def import_education(session, profile_id, education_list):
     print(f"  ✅ Imported {len(education_list)} education entries")
 
 
-def import_certifications(session, profile_id, cert_list):
+async def import_certifications(session, profile_id, cert_list):
     """Import certifications.
 
     Supports structured certification objects with fields:
@@ -332,8 +332,6 @@ def import_certifications(session, profile_id, cert_list):
             else:
                 # Legacy flat string format fallback:
                 # "Project Management Professional (PMP), Project Management Institute (2025)"
-                import re
-
                 cert_str = str(cert_entry)
                 year_match = re.search(r"\((\d{4})\)\s*$", cert_str)
                 date = year_match.group(1) if year_match else None
@@ -361,10 +359,10 @@ def import_certifications(session, profile_id, cert_list):
     print(f"  ✅ Imported {len(cert_list)} certifications")
 
 
-def main():
+async def main():
     """Main import process."""
     if len(sys.argv) < 2:
-        print("Usage: python import_legacy_profile.py <path_to_career_profile.json>")
+        print("Usage: python migrate_profiles.py <path_to_career_profile.json>")
         sys.exit(1)
 
     profile_path = Path(sys.argv[1])
@@ -386,66 +384,70 @@ def main():
     print("✅ Legacy data loaded\n")
 
     # Database session
-    session = SessionLocal()
+    async with AsyncSessionLocal() as session:
+        try:
+            # Step 1: Drop existing tables
+            await drop_career_tables(session)
 
-    try:
-        # Step 1: Drop existing tables
-        drop_career_tables(session)
+            # Step 2: Recreate tables
+            await create_career_tables()
 
-        # Step 2: Recreate tables
-        create_career_tables()
+            # Step 3: Ensure user exists
+            email = "aaron.t.myers@gmail.com"  # Default email
+            full_name = legacy_data.get("name", "Aaron T. Myers")
+            user = await ensure_user_exists(session, email, full_name)
 
-        # Step 3: Ensure user exists
-        email = "aaron.t.myers@gmail.com"  # Default email
-        full_name = legacy_data.get("name", "Aaron T. Myers")
-        user = ensure_user_exists(session, email, full_name)
+            # Step 4: Convert and create profile
+            profile, legacy_data = convert_legacy_to_profile(legacy_data, user.id)
+            session.add(profile)
+            await session.flush()  # Get profile ID
+            print(f"✅ Profile created: {profile.id}\n")
 
-        # Step 4: Convert and create profile
-        profile, legacy_data = convert_legacy_to_profile(legacy_data, user.id)
-        session.add(profile)
-        session.flush()  # Get profile ID
-        print(f"✅ Profile created: {profile.id}\n")
+            # Step 5: Import work experience
+            await import_work_experience(
+                session, profile.id, legacy_data.get("roles", [])
+            )
 
-        # Step 5: Import work experience
-        import_work_experience(session, profile.id, legacy_data.get("roles", []))
+            # Step 6: Import education
+            await import_education(
+                session, profile.id, legacy_data.get("education", [])
+            )
 
-        # Step 6: Import education
-        import_education(session, profile.id, legacy_data.get("education", []))
+            # Step 7: Import certifications
+            await import_certifications(
+                session, profile.id, legacy_data.get("certifications", [])
+            )
 
-        # Step 7: Import certifications
-        import_certifications(
-            session, profile.id, legacy_data.get("certifications", [])
-        )
+            # Commit all changes
+            await session.commit()
 
-        # Commit all changes
-        session.commit()
+            print("\n" + "=" * 70)
+            print("✅ IMPORT COMPLETED SUCCESSFULLY")
+            print("=" * 70)
+            print(f"Profile ID: {profile.id}")
+            print(f"User ID: {user.id}")
+            print(f"User Email: {user.email}")
+            print()
+            print("You can now:")
+            print("  1. View the profile in the web UI at /profiles")
+            print("  2. Use it in resume generation")
+            print("  3. Edit it through the profile editor")
+            print()
 
-        print("\n" + "=" * 70)
-        print("✅ IMPORT COMPLETED SUCCESSFULLY")
-        print("=" * 70)
-        print(f"Profile ID: {profile.id}")
-        print(f"User ID: {user.id}")
-        print(f"User Email: {user.email}")
-        print()
-        print("You can now:")
-        print("  1. View the profile in the web UI at /profiles")
-        print("  2. Use it in resume generation")
-        print("  3. Edit it through the profile editor")
-        print()
+        except Exception as e:
+            await session.rollback()
+            print("\n" + "=" * 70)
+            print("❌ IMPORT FAILED")
+            print("=" * 70)
+            print(f"Error: {e}")
+            import traceback
 
-    except Exception as e:
-        session.rollback()
-        print("\n" + "=" * 70)
-        print("❌ IMPORT FAILED")
-        print("=" * 70)
-        print(f"Error: {e}")
-        import traceback
+            traceback.print_exc()
+            sys.exit(1)
 
-        traceback.print_exc()
-        sys.exit(1)
-    finally:
-        session.close()
+    # Dispose the engine to cleanly close all connections
+    await engine.dispose()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
