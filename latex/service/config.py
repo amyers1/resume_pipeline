@@ -1,6 +1,7 @@
 """Configuration for LaTeX service."""
 
 from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 
@@ -36,7 +37,7 @@ class Settings(BaseSettings):
     latex_status_queue: str = "latex_status"
 
     # Paths
-    templates_dir: Path = Path("/app/templates")
+    templates_dir: Path = Path("/workspace/templates")
     temp_dir: Path = Path("/tmp/latex-compile")
 
     # Limits

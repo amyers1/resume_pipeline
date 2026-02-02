@@ -18,20 +18,36 @@ RUN apt-get update && apt-get install -y \
 # 2. Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
+WORKDIR /service
 
 # Install Python dependencies for compilation service
-COPY requirements.txt /tmp/
+COPY ./service/requirements.txt /tmp/
 RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN uv pip install -r /tmp/requirements.txt
 
-RUN mkdir -p /app/templates /tmp/latex-compile
+# Copy application code
+COPY ./service .
+
+# Create runtime directories
+RUN mkdir -p /workspace/templates /tmp/latex-compile
+
+# Update font cache
 RUN fc-cache -fv
+
+# Verify LaTeX installation
 RUN xelatex --version
 
-# Run as non-root for security
-RUN useradd -m -u 1000 latex && chown -R latex:latex /service /tmp/latex-compile
-USER latex
+# Create non-root user with UID 1001
+RUN if ! id -u 1001 >/dev/null 2>&1; then \
+        groupadd -g 1001 latex && \
+        useradd -m -u 1001 -g latex latex; \
+    fi
+
+# Set ownership
+RUN chown -R 1001:1001 /service /workspace /tmp/latex-compile
+
+# Switch to non-root user
+USER 1001
 
 CMD ["python3", "latex_service.py"]

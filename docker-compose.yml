@@ -1,190 +1,191 @@
 services:
-  # PostgreSQL Database (New)
-  db:
-    image: postgres
-    container_name: resume-postgres
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-resume_pipeline}
-    ports:
-      - "5432:5432" # Expose to host for local inspection tools
-    volumes:
-      - pg_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - default
+    # PostgreSQL Database (New)
+    db:
+        image: postgres
+        container_name: resume-postgres
+        environment:
+            - POSTGRES_USER=${POSTGRES_USER:-postgres}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+            - POSTGRES_DB=${POSTGRES_DB:-resume_pipeline}
+        ports:
+            - "5432:5432" # Expose to host for local inspection tools
+        volumes:
+            - pg_data:/var/lib/postgresql
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        restart: unless-stopped
+        networks:
+            - default
 
-  # Redis Cache Server
-  redis:
-    image: redis:7-alpine
-    container_name: resume-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - ./data/redis:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    restart: unless-stopped
-    networks:
-      - default
+    # Redis Cache Server
+    redis:
+        image: redis:7-alpine
+        container_name: resume-redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - ./data/redis:/data
+        command: redis-server --appendonly yes
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+        restart: unless-stopped
+        networks:
+            - default
 
     # LaTeX Compilation Service
-    latex-compiler:
-      build:
-        context: ./latex
-        dockerfile: Dockerfile
-      container_name: resume-latex-compiler
-      restart: unless-stopped
-      volumes:
-        # Template files (read-only)
-        - ./latex/templates:/app/templates:ro
-        # Temporary compilation directory (local, ephemeral)
-        - latex-temp:/tmp/latex-compile
-      environment:
-        # LaTeX configuration
-        - LATEX_COMPILER=xelatex
-        - LATEX_TIMEOUT=60
-        - LATEX_COMPILE_PASSES=2
-        - LATEX_KEEP_AUX_FILES=false
+    latex:
+        build:
+            context: ./latex
+            dockerfile: Dockerfile
+        container_name: resume-latex-compiler
+        restart: unless-stopped
+        user: "${LATEX_USER_ID:-1001}:${LATEX_GROUP_ID:-1001}"
+        volumes:
+            # Template files (read-only)
+            - ./latex/workspace/templates:/app/templates:ro
+            # Temporary compilation directory (local, ephemeral)
+            - latex-temp:/tmp/latex-compile
+        environment:
+            # LaTeX configuration
+            - LATEX_COMPILER=xelatex
+            - LATEX_TIMEOUT=60
+            - LATEX_COMPILE_PASSES=2
+            - LATEX_KEEP_AUX_FILES=false
 
-        # S3 configuration (reuse from main pipeline)
-        - ENABLE_S3=${ENABLE_S3:-true}
-        - S3_ENDPOINT=${S3_ENDPOINT}
-        - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-        - S3_SECRET_KEY=${S3_SECRET_KEY}
-        - S3_BUCKET=${S3_BUCKET}
-        - S3_SECURE=${S3_SECURE:-true}
+            # S3 configuration (reuse from main pipeline)
+            - ENABLE_S3=${ENABLE_S3:-true}
+            - S3_ENDPOINT=${S3_ENDPOINT}
+            - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+            - S3_SECRET_KEY=${S3_SECRET_KEY}
+            - S3_BUCKET=${S3_BUCKET}
+            - S3_SECURE=${S3_SECURE:-true}
 
-        # RabbitMQ configuration
-        - RABBITMQ_HOST=${RABBITMQ_HOST}
-        - RABBITMQ_PORT=5672
-        - RABBITMQ_USER=${RABBITMQ_USER:-guest}
-        - RABBITMQ_PASS=${RABBITMQ_PASS:-guest}
+            # RabbitMQ configuration
+            - RABBITMQ_HOST=${RABBITMQ_HOST}
+            - RABBITMQ_PORT=5672
+            - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+            - RABBITMQ_PASS=${RABBITMQ_PASS:-guest}
 
-        # Queues
-        - LATEX_COMPILE_QUEUE=latex_compile
-        - LATEX_PROGRESS_QUEUE=latex_progress
-        - LATEX_STATUS_QUEUE=latex_status
+            # Queues
+            - LATEX_COMPILE_QUEUE=${LATEX_COMPILE_QUEUE:-latex_compile}
+            - LATEX_PROGRESS_QUEUE=${LATEX_PROGRESS_QUEUE:-latex_progress}
+            - LATEX_STATUS_QUEUE=${LATEX_STATUS_QUEUE:-latex_status}
 
-        # Rate limiting
-        - LATEX_MAX_COMPILATIONS_PER_MINUTE=5
-        - LATEX_MAX_VERSIONS_PER_JOB=10
-      # depends_on:
-      #   - rabbitmq
-      #   - s3 # Assuming you have MinIO/S3 in docker-compose
-      networks:
-        - default
-      healthcheck:
-        test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
-        interval: 30s
-        timeout: 10s
-        retries: 3
-        start_period: 10s
+            # Rate limiting
+            - LATEX_MAX_COMPILATIONS_PER_MINUTE=5
+            - LATEX_MAX_VERSIONS_PER_JOB=10
+        # depends_on:
+        #   - rabbitmq
+        #   - s3 # Assuming you have MinIO/S3 in docker-compose
+        networks:
+            - default
+        healthcheck:
+            test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
 
-  # API Service
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: resume-pipeline-api
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    environment:
-      # Ensure DB URL uses the service name 'db'
-      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
-    volumes:
-      # Map the entire backend directory for hot-reloading
-      - ./backend:/app
-      # Persist output outside the container if needed
-      - ./backend/output:/app/output
-      # For one time migration of legacy data
-      - ./backend/jobs:/app/jobs
-    command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      redis:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.resume_api.rule=Host(`api.resume-pipeline.myerslab.me`)"
-      - "traefik.http.routers.resume_api.entrypoints=websecure"
-      - "traefik.http.routers.resume_api.tls.certresolver=cloudflare"
-      - "traefik.http.services.resume_api.loadbalancer.server.port=8000"
-      - "traefik.docker.network=proxy"
+    # API Service
+    api:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: resume-pipeline-api
+        ports:
+            - "8000:8000"
+        env_file:
+            - .env
+        environment:
+            # Ensure DB URL uses the service name 'db'
+            - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
+        volumes:
+            # Map the entire backend directory for hot-reloading
+            - ./backend:/app
+            # Persist output outside the container if needed
+            - ./backend/output:/app/output
+            # For one time migration of legacy data
+            - ./backend/jobs:/app/jobs
+        command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+        depends_on:
+            redis:
+                condition: service_healthy
+            db:
+                condition: service_healthy
+        restart: unless-stopped
+        networks:
+            - default
+            - proxy
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.resume_api.rule=Host(`api.resume-pipeline.myerslab.me`)"
+            - "traefik.http.routers.resume_api.entrypoints=websecure"
+            - "traefik.http.routers.resume_api.tls.certresolver=cloudflare"
+            - "traefik.http.services.resume_api.loadbalancer.server.port=8000"
+            - "traefik.docker.network=proxy"
 
-  # Worker Service
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
-    volumes:
-      - ./backend:/app
-      - ./backend/output:/app/output
-    # Updated command to use the new filename
-    command: python worker.py
-    depends_on:
-      redis:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    deploy:
-      replicas: 2
-    restart: unless-stopped
-    networks:
-      - default
+    # Worker Service
+    worker:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        environment:
+            - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-resume_pipeline}
+        volumes:
+            - ./backend:/app
+            - ./backend/output:/app/output
+        # Updated command to use the new filename
+        command: python worker.py
+        depends_on:
+            redis:
+                condition: service_healthy
+            db:
+                condition: service_healthy
+        deploy:
+            replicas: 2
+        restart: unless-stopped
+        networks:
+            - default
 
-  # Frontend
-  frontend:
-    build: ./frontend
-    container_name: resume-pipeline-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - api
-    environment:
-      - VITE_API_URL=${VITE_API_URL:-/api}
-    restart: unless-stopped
-    networks:
-      - default
-      - proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.resume_pipeline.rule=Host(`app.resume-pipeline.myerslab.me`)"
-      - "traefik.http.routers.resume_pipeline.entrypoints=websecure"
-      - "traefik.http.routers.resume_pipeline.tls.certresolver=cloudflare"
-      - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
-      - "traefik.http.routers.resume_pipeline.middlewares=authentik-external@file"
-      - "traefik.docker.network=proxy"
+    # Frontend
+    frontend:
+        build: ./frontend
+        container_name: resume-pipeline-frontend
+        ports:
+            - "3000:80"
+        depends_on:
+            - api
+        environment:
+            - VITE_API_URL=${VITE_API_URL:-/api}
+        restart: unless-stopped
+        networks:
+            - default
+            - proxy
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.resume_pipeline.rule=Host(`app.resume-pipeline.myerslab.me`)"
+            - "traefik.http.routers.resume_pipeline.entrypoints=websecure"
+            - "traefik.http.routers.resume_pipeline.tls.certresolver=cloudflare"
+            - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
+            - "traefik.http.routers.resume_pipeline.middlewares=authentik-external@file"
+            - "traefik.docker.network=proxy"
 
 volumes:
-  pg_data:
-  # temp volume for latex compilation
-  latex-temp:
-    driver: local
+    pg_data:
+    # temp volume for latex compilation
+    latex-temp:
+        driver: local
 
 networks:
-  default:
-    name: resume-pipeline-network
-  proxy:
-    external: true
+    default:
+        name: resume-pipeline-network
+    proxy:
+        external: true
