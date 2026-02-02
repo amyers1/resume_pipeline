@@ -1077,3 +1077,97 @@ async def list_job_templates():
         {"name": "Modern Deedy", "filename": "modern-deedy", "type": "latex"},
         {"name": "Standard HTML", "filename": "resume.html.j2", "type": "html"},
     ]
+
+# ==========================
+# LATEX ENDPOINTS
+# ==========================
+
+@app.post("/jobs/{job_id}/latex/compile")
+async def compile_latex(job_id: str, request: dict):
+    """
+    Request LaTeX compilation via RabbitMQ.
+
+    This is async - returns immediately and compilation happens in background.
+    """
+    # Validate job exists
+    async with get_db() as db:
+        result = await db.execute(select(Job).where(Job.id == job_id))
+        job = result.scalars().first()
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+    # Publish to LaTeX compilation queue
+    await rabbitmq.channel.default_exchange.publish(
+        aio_pika.Message(
+            body=json.dumps({
+                "job_id": job_id,
+                "content": request["content"],
+                "filename": request.get("filename", "resume.tex"),
+                "engine": request.get("engine", "xelatex"),
+                "create_backup": request.get("create_backup", True)
+            }).encode(),
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+        ),
+        routing_key="latex_compile"
+    )
+
+    return {
+        "message": "Compilation request submitted",
+        "job_id": job_id
+    }
+
+
+@app.get("/jobs/{job_id}/latex/source")
+async def get_latex_source(job_id: str):
+    """Get LaTeX source from S3."""
+    s3_key = f"{job_id}/resume.tex"
+    content = s3_manager.get_bytes(s3_key)
+
+    if not content:
+        raise HTTPException(status_code=404, detail="LaTeX source not found")
+
+    return {
+        "job_id": job_id,
+        "content": content.decode("utf-8"),
+        "s3_key": s3_key
+    }
+
+
+@app.put("/jobs/{job_id}/latex/source")
+async def save_latex_source(job_id: str, request: dict):
+    """Save LaTeX source to S3 (without compiling)."""
+    s3_key = f"{job_id}/resume.tex"
+    content = request["content"]
+
+    # Create backup first
+    if request.get("create_backup", True):
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        backup_key = f"{job_id}/backups/resume_backup_{timestamp}.tex"
+        s3_manager.upload_bytes(
+            content.encode("utf-8"),
+            backup_key,
+            content_type="text/x-tex"
+        )
+
+    # Save current version
+    success = s3_manager.upload_bytes(
+        content.encode("utf-8"),
+        s3_key,
+        content_type="text/x-tex"
+    )
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to save to S3")
+
+    return {
+        "success": True,
+        "job_id": job_id,
+        "s3_key": s3_key
+    }
+
+
+@app.get("/jobs/{job_id}/latex/backups")
+async def list_latex_backups(job_id: str):
+    """List backup versions from S3."""
+    versions = s3_manager.list_versions(job_id)
+    return versions

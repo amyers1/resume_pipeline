@@ -1,0 +1,12 @@
+# Messaging
+aio-pika==9.3.0
+
+# S3 storage
+minio==7.2.0
+
+# Logging
+structlog==23.2.0
+
+# Config
+pydantic==2.5.0
+pydantic-settings==2.1.0

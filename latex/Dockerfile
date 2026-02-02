@@ -1,5 +1,8 @@
 FROM ubuntu:24.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
 # Install LaTeX distribution
 RUN apt-get update && apt-get install -y \
     texlive-xetex \
@@ -23,10 +26,12 @@ RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN uv pip install -r /tmp/requirements.txt
 
+RUN mkdir -p /app/templates /tmp/latex-compile
+RUN fc-cache -fv
+RUN xelatex --version
 
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD xelatex --version || exit 1
+# Run as non-root for security
+RUN useradd -m -u 1000 latex && chown -R latex:latex /service /tmp/latex-compile
+USER latex
 
 CMD ["python3", "latex_service.py"]
