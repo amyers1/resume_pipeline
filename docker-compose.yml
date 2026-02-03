@@ -48,7 +48,7 @@ services:
         user: "${LATEX_USER_ID:-1001}:${LATEX_GROUP_ID:-1001}"
         volumes:
             # Template files (read-only)
-            - ./latex/workspace/templates:/app/templates:ro
+            - ./latex/workspace/templates:/workspace/templates:ro
             # Temporary compilation directory (local, ephemeral)
             - latex-temp:/tmp/latex-compile
         environment:
