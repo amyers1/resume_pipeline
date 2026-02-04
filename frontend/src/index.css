@@ -66,3 +66,55 @@
 *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-background;
 }
+
+/* Toast notification styles with dark mode support */
+:root {
+    --toast-bg: #ffffff;
+    --toast-color: #1e293b;
+    --toast-border: #e2e8f0;
+}
+
+.dark {
+    --toast-bg: #1e293b;
+    --toast-color: #f1f5f9;
+    --toast-border: #475569;
+}
+
+/* Custom toast container styling */
+[data-sonner-toaster] {
+    font-family: inherit;
+}
+
+/* Override react-hot-toast default styles for dark mode */
+.dark .go3958317564 {
+    background: var(--toast-bg) !important;
+    color: var(--toast-color) !important;
+    border: 1px solid var(--toast-border) !important;
+}
+
+/* Toast icons */
+.go3958317564 > div:first-child {
+    display: flex;
+    align-items: center;
+}
+
+/* Success toast in dark mode */
+.dark .go3958317564[data-type="success"] {
+    background: #064e3b !important;
+    color: #d1fae5 !important;
+    border-color: #10b981 !important;
+}
+
+/* Error toast in dark mode */
+.dark .go3958317564[data-type="error"] {
+    background: #7f1d1d !important;
+    color: #fecaca !important;
+    border-color: #ef4444 !important;
+}
+
+/* Loading toast in dark mode */
+.dark .go3958317564[data-type="loading"] {
+    background: #1e3a8a !important;
+    color: #dbeafe !important;
+    border-color: #3b82f6 !important;
+}

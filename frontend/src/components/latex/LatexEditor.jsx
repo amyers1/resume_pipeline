@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { latexApi } from "../../services/latexApi";
+import { createLatexCompilationSSE } from "../../services/latexSSE";
+import { showToast } from "../../utils/toast";
 import CodeEditor from "./CodeEditor";
 import PdfViewer from "./PdfViewer";
 import CompilationLog from "./CompilationLog";
@@ -18,11 +20,15 @@ export default function LatexEditor({ jobId }) {
     const [error, setError] = useState(null);
     const [backups, setBackups] = useState([]);
     const autoSaveTimer = useRef(null);
+    const sseCleanup = useRef(null);
+    const compilationToastId = useRef(null);
 
     // Load initial content
     useEffect(() => {
         loadSource();
         loadBackups();
+        // Set initial PDF URL if job is completed
+        setPdfUrl(`/api/jobs/${jobId}/files/resume.pdf?t=${Date.now()}`);
     }, [jobId]);
 
     // Auto-save every 30 seconds if dirty
@@ -64,6 +70,15 @@ export default function LatexEditor({ jobId }) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [content]);
 
+    // Cleanup SSE on unmount
+    useEffect(() => {
+        return () => {
+            if (sseCleanup.current) {
+                sseCleanup.current();
+            }
+        };
+    }, []);
+
     const loadSource = async () => {
         try {
             const data = await latexApi.getSource(jobId);
@@ -73,8 +88,10 @@ export default function LatexEditor({ jobId }) {
         } catch (err) {
             if (err.response?.status === 404) {
                 setError("LaTeX source not found. Generate a resume first.");
+                showToast.error("LaTeX source not found");
             } else {
                 setError("Failed to load LaTeX source");
+                showToast.error("Failed to load LaTeX source");
             }
             console.error("Load error:", err);
         }
@@ -98,13 +115,15 @@ export default function LatexEditor({ jobId }) {
             setOriginalContent(content);
             setLastSaved(new Date());
             setIsDirty(false);
+
             if (showNotification) {
-                // Could add toast notification here
-                console.log("Saved successfully");
+                showToast.latex.saved();
             }
+
             loadBackups(); // Refresh backup list
         } catch (err) {
             setError("Failed to save");
+            showToast.error("Failed to save LaTeX source");
             console.error("Save error:", err);
         } finally {
             setSaving(false);
@@ -117,43 +136,114 @@ export default function LatexEditor({ jobId }) {
         setError(null);
 
         try {
-            // Save first
+            // Save first if dirty
             if (isDirty) {
                 await handleSave(false);
             }
 
-            // Request compilation
-            const response = await latexApi.compile(jobId, content);
+            // Show loading toast
+            compilationToastId.current = showToast.latex.compiling();
 
-            // Compilation happens async via RabbitMQ
-            // Poll for result or listen via SSE
-            setCompilationResult({
-                status: "pending",
-                message: "Compilation request submitted...",
-            });
+            // Request compilation via RabbitMQ
+            await latexApi.compile(jobId, content);
 
-            // Set up polling or SSE listener here
-            // For now, we'll just update PDF URL after a delay
-            setTimeout(() => {
+            // Set up SSE listener for real-time updates
+            setupCompilationSSE();
+        } catch (err) {
+            setError("Compilation request failed");
+            showToast.latex.compileFailed(err.message);
+            setCompiling(false);
+
+            // Dismiss loading toast
+            if (compilationToastId.current) {
+                showToast.dismiss(compilationToastId.current);
+            }
+        }
+    };
+
+    const setupCompilationSSE = () => {
+        // Clean up existing SSE connection
+        if (sseCleanup.current) {
+            sseCleanup.current();
+        }
+
+        // Create new SSE connection
+        sseCleanup.current = createLatexCompilationSSE(jobId, {
+            onConnect: () => {
+                console.log("Listening for LaTeX compilation updates...");
+            },
+
+            onProgress: (progress) => {
+                console.log("Compilation progress:", progress);
+                setCompilationResult({
+                    status: "compiling",
+                    message: progress.message,
+                    stage: progress.stage,
+                    percent: progress.percent,
+                });
+            },
+
+            onComplete: (result) => {
+                console.log("Compilation completed:", result);
+
+                // Dismiss loading toast
+                if (compilationToastId.current) {
+                    showToast.dismiss(compilationToastId.current);
+                }
+
+                // Show success toast
+                showToast.latex.compiled();
+
+                // Update PDF URL with cache buster
                 setPdfUrl(
                     `/api/jobs/${jobId}/files/resume.pdf?t=${Date.now()}`,
                 );
+
+                // Update compilation result
                 setCompilationResult({
                     status: "success",
-                    message: "Compilation completed",
+                    message: "Compilation completed successfully",
+                    warnings: result.warnings || [],
                 });
+
                 setCompiling(false);
-            }, 5000);
-        } catch (err) {
-            setError("Compilation failed");
-            setCompilationResult({
-                status: "error",
-                errors: err.response?.data?.errors || [
-                    { message: err.message },
-                ],
-            });
-            setCompiling(false);
-        }
+
+                // Clean up SSE connection
+                if (sseCleanup.current) {
+                    sseCleanup.current();
+                    sseCleanup.current = null;
+                }
+            },
+
+            onError: (result) => {
+                console.error("Compilation failed:", result);
+
+                // Dismiss loading toast
+                if (compilationToastId.current) {
+                    showToast.dismiss(compilationToastId.current);
+                }
+
+                // Show error toast
+                const errorMsg =
+                    result.errors?.[0]?.message || "Compilation failed";
+                showToast.latex.compileFailed(errorMsg);
+
+                // Update compilation result
+                setCompilationResult({
+                    status: "error",
+                    errors: result.errors || [],
+                    log: result.log,
+                });
+
+                setCompiling(false);
+
+                // Clean up SSE connection
+                if (sseCleanup.current) {
+                    sseCleanup.current();
+                    sseCleanup.current = null;
+                }
+            },
+        });
     };
 
     const handleRestoreBackup = async (versionId) => {
@@ -170,8 +260,13 @@ export default function LatexEditor({ jobId }) {
             setContent(data.content);
             setOriginalContent(data.content);
             setIsDirty(false);
+
+            // Find backup name for toast
+            const backup = backups.find((b) => b.version_id === versionId);
+            showToast.latex.restored(backup?.filename || "backup");
         } catch (err) {
             setError("Failed to restore backup");
+            showToast.error("Failed to restore backup");
             console.error("Restore error:", err);
         }
     };

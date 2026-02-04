@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { AppProvider } from "./contexts/AppContext";
 import { UserProvider } from "./contexts/UserContext";
 import Header from "./components/Header";
@@ -47,6 +48,41 @@ function App() {
                                 />
                             </Routes>
                         </main>
+
+                        {/* Toast Notifications */}
+                        <Toaster
+                            position="top-right"
+                            reverseOrder={false}
+                            gutter={8}
+                            toastOptions={{
+                                // Default options
+                                duration: 3000,
+                                style: {
+                                    background: "var(--toast-bg, #363636)",
+                                    color: "var(--toast-color, #fff)",
+                                },
+                                // Success
+                                success: {
+                                    duration: 3000,
+                                    iconTheme: {
+                                        primary: "#10b981",
+                                        secondary: "#fff",
+                                    },
+                                },
+                                // Error
+                                error: {
+                                    duration: 4000,
+                                    iconTheme: {
+                                        primary: "#ef4444",
+                                        secondary: "#fff",
+                                    },
+                                },
+                                // Loading
+                                loading: {
+                                    duration: Infinity,
+                                },
+                            }}
+                        />
                     </div>
                 </Router>
             </UserProvider>
