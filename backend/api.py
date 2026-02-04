@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-import aioboto3
+import httpx
 from database import Base, engine, get_db
 from fastapi import Body, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,8 +33,6 @@ from models import (
     UserCreate,
     UserResponse,
 )
-
-# Ensure rabbitmq.py exports these from the previous refactor
 from rabbitmq import AsyncRabbitMQClient, RabbitMQConfig, publish_job_request
 from sqlalchemy import delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,31 +41,6 @@ from sse_starlette.sse import EventSourceResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-# ==========================
-# ASYNC S3 CLIENT
-# ==========================
-class AsyncS3Manager:
-    def __init__(self):
-        self.session = aioboto3.Session()
-        self.endpoint = os.getenv("S3_ENDPOINT")
-        self.access_key = os.getenv("S3_ACCESS_KEY")
-        self.secret_key = os.getenv("S3_SECRET_KEY")
-        self.bucket = os.getenv("S3_BUCKET", "resume-pipeline")
-        self.enabled = os.getenv("ENABLE_S3", "false").lower() == "true"
-
-    def client(self):
-        return self.session.client(
-            "s3",
-            endpoint_url=self.endpoint,
-            aws_access_key_id=self.access_key,
-            aws_secret_access_key=self.secret_key,
-            use_ssl=True,  # Set to False if using local Minio without SSL
-        )
-
-
-s3_manager = AsyncS3Manager()
 
 app = FastAPI(title="Resume Pipeline API")
 OUTPUT_DIR = Path("output")
@@ -999,31 +972,11 @@ def get_local_file_response(job_id: str, filename: str) -> FileResponse:
 
 @app.get("/jobs/{job_id}/files")
 async def list_job_files(job_id: str):
+    # This endpoint now only lists local files.
+    # S3 files are managed by the latex service.
     files = []
-    filenames = set()
-
-    if s3_manager.enabled:
-        try:
-            async with s3_manager.client() as s3:
-                paginator = s3.get_paginator("list_objects_v2")
-                async for page in paginator.paginate(
-                    Bucket=s3_manager.bucket, Prefix=f"{job_id}/"
-                ):
-                    for obj in page.get("Contents", []):
-                        filename = os.path.basename(obj["Key"])
-                        files.append(
-                            {
-                                "name": filename,
-                                "size": obj["Size"],
-                                "modified": obj["LastModified"],
-                            }
-                        )
-                        filenames.add(filename)
-        except Exception as e:
-            logger.error(f"S3 List Error for job {job_id}: {e}")
-
     try:
-        local_files = get_local_files(job_id, exclude_names=filenames)
+        local_files = get_local_files(job_id)
         files.extend(local_files)
     except Exception as e:
         logger.error(f"Local File Error for job {job_id}: {e}")
@@ -1034,38 +987,8 @@ async def list_job_files(job_id: str):
 
 @app.get("/jobs/{job_id}/files/{filename}")
 async def download_job_file(job_id: str, filename: str):
-    if s3_manager.enabled:
-        try:
-            async with s3_manager.client() as s3_check:
-                metadata = await s3_check.head_object(
-                    Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
-                )
-
-            file_size = metadata.get("ContentLength")
-            content_type = metadata.get("ContentType", "application/octet-stream")
-
-            async def s3_stream_generator():
-                async with s3_manager.client() as s3:
-                    obj = await s3.get_object(
-                        Bucket=s3_manager.bucket, Key=f"{job_id}/{filename}"
-                    )
-                    async for chunk in obj["Body"].iter_chunks(chunk_size=4096):
-                        yield chunk
-
-            return StreamingResponse(
-                s3_stream_generator(),
-                media_type=content_type,
-                headers={
-                    "Content-Disposition": f"inline; filename={filename}",
-                    "Content-Length": str(file_size) if file_size else None,
-                },
-            )
-
-        except Exception as e:
-            if "404" not in str(e):
-                logger.warning(f"S3 download failed for {filename}: {e}")
-            pass
-
+    # This endpoint now only serves local files.
+    # S3 files are served by the latex service.
     logger.info(f"Fetching {filename} from local storage")
     return get_local_file_response(job_id, filename)
 
@@ -1078,96 +1001,51 @@ async def list_job_templates():
         {"name": "Standard HTML", "filename": "resume.html.j2", "type": "html"},
     ]
 
+
 # ==========================
 # LATEX ENDPOINTS
 # ==========================
 
+LATEX_SERVICE_URL = os.getenv("LATEX_SERVICE_URL", "http://latex")
+
+
+async def forward_request(method: str, path: str, json_data: dict = None):
+    """Helper to forward requests to the LaTeX service."""
+    try:
+        async with httpx.AsyncClient() as client:
+            url = f"{LATEX_SERVICE_URL}{path}"
+            response = await client.request(method, url, json=json_data, timeout=30.0)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        # Forward the error response from the downstream service
+        raise HTTPException(
+            status_code=e.response.status_code, detail=e.response.json()
+        )
+    except httpx.RequestError as e:
+        logger.error(f"Error connecting to LaTeX service: {e}")
+        raise HTTPException(status_code=503, detail="LaTeX service is unavailable")
+
+
 @app.post("/jobs/{job_id}/latex/compile")
 async def compile_latex(job_id: str, request: dict):
-    """
-    Request LaTeX compilation via RabbitMQ.
-
-    This is async - returns immediately and compilation happens in background.
-    """
-    # Validate job exists
-    async with get_db() as db:
-        result = await db.execute(select(Job).where(Job.id == job_id))
-        job = result.scalars().first()
-        if not job:
-            raise HTTPException(status_code=404, detail="Job not found")
-
-    # Publish to LaTeX compilation queue
-    await rabbitmq.channel.default_exchange.publish(
-        aio_pika.Message(
-            body=json.dumps({
-                "job_id": job_id,
-                "content": request["content"],
-                "filename": request.get("filename", "resume.tex"),
-                "engine": request.get("engine", "xelatex"),
-                "create_backup": request.get("create_backup", True)
-            }).encode(),
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT
-        ),
-        routing_key="latex_compile"
-    )
-
-    return {
-        "message": "Compilation request submitted",
-        "job_id": job_id
-    }
+    """Proxy a compilation request to the LaTeX service."""
+    return await forward_request("POST", f"/jobs/{job_id}/compile", json_data=request)
 
 
 @app.get("/jobs/{job_id}/latex/source")
 async def get_latex_source(job_id: str):
-    """Get LaTeX source from S3."""
-    s3_key = f"{job_id}/resume.tex"
-    content = s3_manager.get_bytes(s3_key)
-
-    if not content:
-        raise HTTPException(status_code=404, detail="LaTeX source not found")
-
-    return {
-        "job_id": job_id,
-        "content": content.decode("utf-8"),
-        "s3_key": s3_key
-    }
+    """Proxy a get source request to the LaTeX service."""
+    return await forward_request("GET", f"/jobs/{job_id}/source")
 
 
 @app.put("/jobs/{job_id}/latex/source")
 async def save_latex_source(job_id: str, request: dict):
-    """Save LaTeX source to S3 (without compiling)."""
-    s3_key = f"{job_id}/resume.tex"
-    content = request["content"]
-
-    # Create backup first
-    if request.get("create_backup", True):
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        backup_key = f"{job_id}/backups/resume_backup_{timestamp}.tex"
-        s3_manager.upload_bytes(
-            content.encode("utf-8"),
-            backup_key,
-            content_type="text/x-tex"
-        )
-
-    # Save current version
-    success = s3_manager.upload_bytes(
-        content.encode("utf-8"),
-        s3_key,
-        content_type="text/x-tex"
-    )
-
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to save to S3")
-
-    return {
-        "success": True,
-        "job_id": job_id,
-        "s3_key": s3_key
-    }
+    """Proxy a save source request to the LaTeX service."""
+    return await forward_request("PUT", f"/jobs/{job_id}/source", json_data=request)
 
 
 @app.get("/jobs/{job_id}/latex/backups")
 async def list_latex_backups(job_id: str):
-    """List backup versions from S3."""
-    versions = s3_manager.list_versions(job_id)
-    return versions
+    """Proxy a list backups request to the LaTeX service."""
+    return await forward_request("GET", f"/jobs/{job_id}/backups")

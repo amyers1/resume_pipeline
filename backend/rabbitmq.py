@@ -70,6 +70,7 @@ class RabbitMQConfig:
         self.job_queue = "resume_jobs"
         self.status_queue = "resume_status"
         self.progress_queue = "resume_progress"
+        self.latex_compile_queue = "latex_compile"
 
 
 class AsyncRabbitMQClient:
@@ -99,6 +100,9 @@ class AsyncRabbitMQClient:
                 await self.channel.declare_queue(self.config.status_queue, durable=True)
                 await self.channel.declare_queue(
                     self.config.progress_queue, durable=True
+                )
+                await self.channel.declare_queue(
+                    self.config.latex_compile_queue, durable=True
                 )
 
                 logger.info(f"✅ Connected to RabbitMQ at {self.config.host}")
@@ -233,5 +237,29 @@ async def publish_job_request(
             priority,
         )
         await client.publish_job(req)
+    finally:
+        await client.close()
+
+
+async def publish_latex_compile_request(
+    job_id: str, content: str, filename: str, engine: str, create_backup: bool
+):
+    """Async helper to publish a LaTeX compilation request."""
+    client = AsyncRabbitMQClient()
+    try:
+        await client.connect()
+        payload = {
+            "job_id": job_id,
+            "content": content,
+            "filename": filename,
+            "engine": engine,
+            "create_backup": create_backup,
+        }
+        await client._publish(
+            client.config.latex_compile_queue,
+            payload,
+            aio_pika.DeliveryMode.PERSISTENT,
+        )
+        logger.info(f"📨 Published LaTeX Compile Request for Job {job_id}")
     finally:
         await client.close()

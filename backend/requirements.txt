@@ -9,6 +9,9 @@ uvicorn[standard]
 sse-starlette
 aio-pika
 
+# HTTP Client
+httpx
+
 # Database (NEW)
 sqlalchemy>=2.0.0
 psycopg

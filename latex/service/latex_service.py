@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 
 import aio_pika
 import structlog
-
 from compiler import LaTeXCompiler
 from config import settings
 from s3_manager import s3_manager
@@ -22,7 +21,7 @@ from s3_manager import s3_manager
 structlog.configure(
     processors=[
         structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer(),
     ]
 )
 logger = structlog.get_logger()
@@ -49,7 +48,7 @@ class LatexService:
             host=settings.rabbitmq_host,
             port=settings.rabbitmq_port,
             login=settings.rabbitmq_user,
-            password=settings.rabbitmq_pass
+            password=settings.rabbitmq_pass,
         )
 
         self.channel = await self.connection.channel()
@@ -57,7 +56,9 @@ class LatexService:
 
         logger.info("Connected to RabbitMQ")
 
-    async def publish_progress(self, job_id: str, stage: str, percent: int, message: str):
+    async def publish_progress(
+        self, job_id: str, stage: str, percent: int, message: str
+    ):
         """Publish progress update."""
         try:
             payload = {
@@ -66,15 +67,15 @@ class LatexService:
                 "stage": stage,
                 "percent": percent,
                 "message": message,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
             await self.channel.default_exchange.publish(
                 aio_pika.Message(
                     body=json.dumps(payload).encode(),
-                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                 ),
-                routing_key=settings.latex_progress_queue
+                routing_key=settings.latex_progress_queue,
             )
         except Exception as e:
             logger.error(f"Failed to publish progress: {e}")
@@ -87,15 +88,15 @@ class LatexService:
                 "type": "LATEX_COMPLETED" if success else "LATEX_FAILED",
                 "success": success,
                 "result": result,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
             await self.channel.default_exchange.publish(
                 aio_pika.Message(
                     body=json.dumps(payload).encode(),
-                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                 ),
-                routing_key=settings.latex_status_queue
+                routing_key=settings.latex_status_queue,
             )
         except Exception as e:
             logger.error(f"Failed to publish status: {e}")
@@ -132,21 +133,23 @@ class LatexService:
                 # Check rate limit
                 if not self.check_rate_limit(job_id):
                     log.warning("Rate limit exceeded")
-                    await self.publish_status(job_id, False, {
-                        "error": "Rate limit exceeded"
-                    })
+                    await self.publish_status(
+                        job_id, False, {"error": "Rate limit exceeded"}
+                    )
                     return
 
                 # Validate size
                 if len(tex_content) > settings.max_tex_file_size_kb * 1024:
                     log.warning("File too large")
-                    await self.publish_status(job_id, False, {
-                        "error": "File size exceeds limit"
-                    })
+                    await self.publish_status(
+                        job_id, False, {"error": "File size exceeds limit"}
+                    )
                     return
 
                 # Publish progress
-                await self.publish_progress(job_id, "compiling", 10, "Starting compilation")
+                await self.publish_progress(
+                    job_id, "compiling", 10, "Starting compilation"
+                )
 
                 # Compile (blocking - run in executor)
                 loop = asyncio.get_event_loop()
@@ -157,12 +160,14 @@ class LatexService:
                     job_id,
                     filename,
                     engine,
-                    create_backup
+                    create_backup,
                 )
 
                 # Publish result
                 if result["success"]:
-                    await self.publish_progress(job_id, "completed", 100, "Compilation successful")
+                    await self.publish_progress(
+                        job_id, "completed", 100, "Compilation successful"
+                    )
                     await self.publish_status(job_id, True, result)
                 else:
                     await self.publish_status(job_id, False, result)
@@ -172,9 +177,9 @@ class LatexService:
             except Exception as e:
                 logger.error(f"Error processing request: {e}")
                 try:
-                    await self.publish_status(data.get("job_id", "unknown"), False, {
-                        "error": str(e)
-                    })
+                    await self.publish_status(
+                        data.get("job_id", "unknown"), False, {"error": str(e)}
+                    )
                 except:
                     pass
 
@@ -184,8 +189,7 @@ class LatexService:
 
         # Declare queues
         compile_queue = await self.channel.declare_queue(
-            settings.latex_compile_queue,
-            durable=True
+            settings.latex_compile_queue, durable=True
         )
 
         await self.channel.declare_queue(settings.latex_progress_queue, durable=True)
@@ -200,9 +204,9 @@ class LatexService:
         await asyncio.Future()
 
 
-async def main():
-    """Main entry point."""
-    logger.info("LaTeX Compilation Service starting...")
+async def start_consumer():
+    """Main entry point for the RabbitMQ consumer."""
+    logger.info("LaTeX Consumer Service starting...")
     logger.info(f"S3 enabled: {s3_manager.enabled}")
     logger.info(f"Templates: {settings.templates_dir}")
 
@@ -217,7 +221,3 @@ async def main():
     finally:
         if service.connection:
             await service.connection.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

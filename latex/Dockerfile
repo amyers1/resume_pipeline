@@ -50,4 +50,4 @@ RUN chown -R 1001:1001 /service /workspace /tmp/latex-compile
 # Switch to non-root user
 USER 1001
 
-CMD ["python3", "latex_service.py"]
+CMD ["python3", "run.py"]
