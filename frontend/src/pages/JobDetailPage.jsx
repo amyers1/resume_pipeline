@@ -498,12 +498,11 @@ export default function JobDetailPage() {
                         )}
 
                         {/* LaTeX Editor Tab */}
-                        {activeTab === "latex" &&
-                            job.output_backend === "latex" && (
-                                <div className="h-[calc(100vh-16rem)]">
-                                    <LatexEditor jobId={jobId} />
-                                </div>
-                            )}
+                        {activeTab === "latex" && (
+                            <div className="h-[calc(100vh-16rem)]">
+                                <LatexEditor jobId={jobId} />
+                            </div>
+                        )}
 
                         {/* Logs Tab */}
                         {activeTab === "logs" && (
