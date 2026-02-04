@@ -349,7 +349,7 @@ export default function LatexEditor({ jobId }) {
                 </div>
 
                 {/* PDF Preview Pane */}
-                <div className="flex-1 bg-slate-100 dark:bg-background">
+                <div className="flex-1 flex flex-col min-h-0 bg-slate-100 dark:bg-background">
                     <PdfViewer pdfUrl={pdfUrl} isCompiling={isCompiling} />
                 </div>
             </div>

@@ -96,7 +96,7 @@ broadcaster = SSEBroadcaster()
 
 
 async def run_async_consumer():
-    """Background task to consume RabbitMQ messages (Status & Progress only)."""
+    """Background task to consume RabbitMQ messages (Status, Progress, and LaTeX queues)."""
     config = RabbitMQConfig()
     client = AsyncRabbitMQClient(config)
 
@@ -108,6 +108,12 @@ async def run_async_consumer():
         queue = await client.channel.declare_queue(config.status_queue, durable=True)
         progress_queue = await client.channel.declare_queue(
             config.progress_queue, durable=True
+        )
+        latex_progress_queue = await client.channel.declare_queue(
+            config.latex_progress_queue, durable=True
+        )
+        latex_status_queue = await client.channel.declare_queue(
+            config.latex_status_queue, durable=True
         )
 
         # 2. Define the consumption logic
@@ -122,9 +128,12 @@ async def run_async_consumer():
                         except Exception as e:
                             logger.error(f"Broadcast error on {name}: {e}")
 
-        # 3. Run both consumers concurrently
+        # 3. Run all consumers concurrently
         await asyncio.gather(
-            process_queue(queue, "status"), process_queue(progress_queue, "progress")
+            process_queue(queue, "resume_status"),
+            process_queue(progress_queue, "resume_progress"),
+            process_queue(latex_progress_queue, "latex_progress"),
+            process_queue(latex_status_queue, "latex_status"),
         )
 
     except asyncio.CancelledError:

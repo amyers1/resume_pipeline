@@ -171,11 +171,19 @@ services:
             - proxy
         labels:
             - "traefik.enable=true"
+            # Static assets router - NO auth middleware (higher priority)
+            - "traefik.http.routers.resume_pipeline_static.rule=Host(`app.resume-pipeline.myerslab.me`) && (PathPrefix(`/assets`) || PathRegexp(`\\.(js|mjs|css|ico|svg|png|jpg|jpeg|gif|woff|woff2|ttf|eot)$$`))"
+            - "traefik.http.routers.resume_pipeline_static.entrypoints=websecure"
+            - "traefik.http.routers.resume_pipeline_static.tls.certresolver=cloudflare"
+            - "traefik.http.routers.resume_pipeline_static.priority=100"
+            - "traefik.http.routers.resume_pipeline_static.service=resume_pipeline"
+            # Main app router - with auth middleware
             - "traefik.http.routers.resume_pipeline.rule=Host(`app.resume-pipeline.myerslab.me`)"
             - "traefik.http.routers.resume_pipeline.entrypoints=websecure"
             - "traefik.http.routers.resume_pipeline.tls.certresolver=cloudflare"
-            - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
+            - "traefik.http.routers.resume_pipeline.priority=1"
             - "traefik.http.routers.resume_pipeline.middlewares=authentik-external@file"
+            - "traefik.http.services.resume_pipeline.loadbalancer.server.port=80"
             - "traefik.docker.network=proxy"
 
 volumes:

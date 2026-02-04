@@ -71,6 +71,8 @@ class RabbitMQConfig:
         self.status_queue = "resume_status"
         self.progress_queue = "resume_progress"
         self.latex_compile_queue = "latex_compile"
+        self.latex_progress_queue = "latex_progress"
+        self.latex_status_queue = "latex_status"
 
 
 class AsyncRabbitMQClient:

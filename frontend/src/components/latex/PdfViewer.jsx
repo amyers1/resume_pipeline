@@ -3,8 +3,8 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
+// Configure PDF.js worker - use unpkg CDN to avoid auth proxy issues
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function PdfViewer({ pdfUrl, isCompiling }) {
     const [numPages, setNumPages] = useState(null);
@@ -157,25 +157,27 @@ export default function PdfViewer({ pdfUrl, isCompiling }) {
             </div>
 
             {/* PDF Document */}
-            <div className="flex-1 overflow-auto flex items-center justify-center p-4">
-                {loading && (
-                    <div className="text-center text-slate-600 dark:text-slate-400">
-                        Loading PDF...
-                    </div>
-                )}
-                <Document
-                    file={pdfUrl}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    onLoadError={onDocumentLoadError}
-                    loading=""
-                >
-                    <Page
-                        pageNumber={pageNumber}
-                        scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                    />
-                </Document>
+            <div className="flex-1 overflow-auto min-h-0">
+                <div className="flex justify-center p-4">
+                    {loading && (
+                        <div className="text-center text-slate-600 dark:text-slate-400">
+                            Loading PDF...
+                        </div>
+                    )}
+                    <Document
+                        file={pdfUrl}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        onLoadError={onDocumentLoadError}
+                        loading=""
+                    >
+                        <Page
+                            pageNumber={pageNumber}
+                            scale={scale}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={true}
+                        />
+                    </Document>
+                </div>
             </div>
         </div>
     );
