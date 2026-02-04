@@ -10,6 +10,7 @@ import ResubmitModal from "../components/ResubmitModal";
 import CritiqueCard from "../components/CritiqueCard";
 import DomainMatchCard from "../components/DomainMatchCard";
 import CritiqueFeedbackCard from "../components/CritiqueFeedbackCard";
+import LatexEditor from "../components/latex/LatexEditor";
 import { STATUS_COLORS } from "../utils/constants";
 import { formatDate, getStatusIcon } from "../utils/helpers";
 
@@ -28,8 +29,11 @@ export default function JobDetailPage() {
     const [deleting, setDeleting] = useState(false);
     const [resubmitting, setResubmitting] = useState(false);
 
+    // Active tab state
+    const [activeTab, setActiveTab] = useState("overview");
+
     // Viewer State
-    const [viewingFile, setViewingFile] = useState(null); // { name, url, type }
+    const [viewingFile, setViewingFile] = useState(null);
     const [loadingFile, setLoadingFile] = useState(false);
 
     // Fetch job details
@@ -56,7 +60,6 @@ export default function JobDetailPage() {
     const fetchJobFiles = async () => {
         try {
             const response = await apiService.listJobFiles(jobId);
-            // API returns direct array, not { files: [] }
             const fileList = Array.isArray(response.data)
                 ? response.data
                 : response.data.files || [];
@@ -67,22 +70,21 @@ export default function JobDetailPage() {
         }
     };
 
-    // FIX #2: Handle SSE status updates properly
+    // Handle SSE status updates
     const handleStatusUpdate = (payload) => {
         console.log("SSE Update received:", payload);
 
-        // Map backend SSE message fields to frontend state
         const statusUpdate = {
             stage: payload.stage || currentStatus?.stage || "queued",
             progress_percent: payload.progress_percent || payload.percent || 0,
             message: payload.message || "",
-            status: payload.type, // Use payload.type
+            status: payload.type,
             job_id: payload.job_id,
         };
 
         setCurrentStatus(statusUpdate);
 
-        // Add event to log with timestamp
+        // Add event to log
         setEvents((prev) => [
             ...prev,
             {
@@ -90,17 +92,17 @@ export default function JobDetailPage() {
                 stage: statusUpdate.stage,
                 message: statusUpdate.message,
                 progress: statusUpdate.progress_percent,
-                type: payload.type, // Use payload.type
+                type: payload.type,
             },
         ]);
 
-        // When job completes or fails, refetch details to get all final data
+        // Refetch when job completes or fails
         if (payload.type === "JOB_COMPLETED" || payload.type === "JOB_FAILED") {
-            fetchJobDetails(); // Refreshes the whole job object
-            fetchJobFiles(); // Refreshes the file list
+            fetchJobDetails();
+            fetchJobFiles();
         }
 
-        // Update live job status in the main state
+        // Update job status
         if (payload.type === "JOB_COMPLETED") {
             setJob((prev) => ({ ...prev, status: "completed" }));
         } else if (payload.type === "JOB_FAILED") {
@@ -116,28 +118,26 @@ export default function JobDetailPage() {
         }
     };
 
-    // Handle job resubmission with proper error handling
+    // Handle job resubmission
     const handleResubmit = async (config) => {
         try {
             setResubmitting(true);
             const response = await apiService.resubmitJob(jobId, config);
-
-            // Hide modal
             setShowResubmitModal(false);
-
-            // KEY CHANGE: Navigate to the new job ID.
-            // This triggers useEffect -> fetchJobDetails -> resets state/logs automatically.
             const newJobId = response.data.job_id || response.data.id;
             navigate(`/jobs/${newJobId}`);
         } catch (error) {
             console.error("Failed to resubmit job:", error);
-            // ... error handling ...
+            const errorMsg =
+                error.response?.data?.detail ||
+                "Failed to resubmit job. Please try again.";
+            alert(errorMsg);
         } finally {
             setResubmitting(false);
         }
     };
 
-    // Handle job deletion with proper error handling
+    // Handle job deletion
     const handleDelete = async () => {
         try {
             setDeleting(true);
@@ -154,21 +154,17 @@ export default function JobDetailPage() {
         }
     };
 
-    // Handle File Viewing
-    const handleViewFile = async (file) => {
+    // Handle file viewing
+    const handleFileView = async (file) => {
         try {
             setLoadingFile(true);
 
-            // Determine MIME type
             let mimeType = "text/plain";
             if (file.name.endsWith(".pdf")) mimeType = "application/pdf";
             else if (file.name.endsWith(".json")) mimeType = "application/json";
             else if (file.name.endsWith(".html")) mimeType = "text/html";
 
-            // Fetch blob from API
             const response = await apiService.downloadFile(jobId, file.name);
-
-            // Create object URL
             const blob = new Blob([response.data], { type: mimeType });
             const url = window.URL.createObjectURL(blob);
 
@@ -192,26 +188,22 @@ export default function JobDetailPage() {
         setViewingFile(null);
     };
 
-    // Initial fetch on mount or when jobId changes
+    // Initial fetch on mount
     useEffect(() => {
-        // Reset state for the new job ID
         setEvents([]);
         setCurrentStatus(null);
-        setFiles([]); // Clear old files immediately
+        setFiles([]);
+        setViewingFile(null);
+        setActiveTab("overview"); // Reset to overview tab
 
-        // Fetch data for the new job
         fetchJobDetails();
         fetchJobFiles();
-
-        // Optional: Close any open file viewers from the previous job
-        setViewingFile(null);
     }, [jobId]);
 
     // Setup SSE connection
     useEffect(() => {
         let cleanup;
 
-        // Connect SSE for all states to catch updates even if page loads after job starts
         if (job) {
             cleanup = createJobStatusSSE(jobId, {
                 onMessage: handleStatusUpdate,
@@ -235,6 +227,12 @@ export default function JobDetailPage() {
         };
     }, [viewingFile]);
 
+    // Computed values
+    const isProcessing = job?.status === "processing";
+    const isCompleted = job?.status === "completed";
+    const isFailed = job?.status === "failed";
+    const isQueued = job?.status === "queued";
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -245,374 +243,313 @@ export default function JobDetailPage() {
 
     if (!job) {
         return (
-            <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                        Job Not Found
-                    </h1>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">
+                        Job not found
+                    </p>
                     <button
                         onClick={() => navigate("/")}
-                        className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                        className="text-primary-600 hover:text-primary-700"
                     >
-                        Back to Dashboard
+                        Return to Dashboard
                     </button>
                 </div>
             </div>
         );
     }
 
-    const isProcessing = job.status === "processing" || job.status === "queued";
-    const isCompleted = job.status === "completed";
-    const isFailed = job.status === "failed";
-    const formatTime = (dateStr) => {
-        return new Date(dateStr).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-            {/* Header */}
-            <div className="mb-8">
-                <button
-                    onClick={() => navigate("/")}
-                    className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 mb-4 flex items-center gap-2"
-                >
-                    <span>←</span>
-                    <span>Back to Dashboard</span>
-                </button>
-
+        <div className="container mx-auto px-4 py-8">
+            <div className="space-y-6">
+                {/* Header */}
                 <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                                {job.company}
-                            </h1>
-                            <span
-                                className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 ${
-                                    STATUS_COLORS[job.status] ||
-                                    STATUS_COLORS.queued
-                                }`}
-                            >
-                                <span>{getStatusIcon(job.status)}</span>
-                                <span className="capitalize">{job.status}</span>
-                            </span>
-                        </div>
-                        <p className="text-xl text-slate-600 dark:text-slate-400">
-                            {job.job_title}
-                        </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                    <div>
+                        <button
+                            onClick={() => navigate("/")}
+                            className="text-sm text-primary-600 hover:text-primary-700 mb-2 flex items-center gap-1"
+                        >
+                            ← Back to Dashboard
+                        </button>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                            {job.company} - {job.job_title}
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1">
                             Created {formatDate(job.created_at)}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        {(isCompleted || isFailed) && (
-                            <button
-                                onClick={() => setShowResubmitModal(true)}
-                                disabled={resubmitting}
-                                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {resubmitting
-                                    ? "Resubmitting..."
-                                    : "Regenerate"}
-                            </button>
-                        )}
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            disabled={deleting}
-                            className="px-4 py-2 border border-red-600 text-red-600 dark:border-red-400 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    <div className="flex items-center gap-2">
+                        <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[job.status] || STATUS_COLORS.queued}`}
                         >
-                            {deleting ? "Deleting..." : "Delete"}
+                            {getStatusIcon(job.status)} {job.status}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Tab Navigation */}
+                <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="flex border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+                        <button
+                            onClick={() => setActiveTab("overview")}
+                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                activeTab === "overview"
+                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                        >
+                            📊 Overview
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("artifacts")}
+                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                activeTab === "artifacts"
+                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                        >
+                            📁 Files ({files.length})
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("latex")}
+                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                activeTab === "latex"
+                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                        >
+                            📝 LaTeX Editor
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab("logs")}
+                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                activeTab === "logs"
+                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            }`}
+                        >
+                            📋 Logs ({events.length})
                         </button>
                     </div>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Progress Card */}
-                    {(isProcessing || job.status === "queued") && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                                Generation Progress
-                            </h2>
-                            <ProgressBar
-                                percent={currentStatus?.progress_percent || 0}
-                                stage={currentStatus?.stage || "queued"}
-                                message={
-                                    currentStatus?.message ||
-                                    "Waiting to start..."
-                                }
-                            />
-                        </div>
-                    )}
-
-                    {/* Results Card */}
-                    {isCompleted && files.length > 0 && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                                Results
-                            </h2>
-                            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                Generated Files
-                            </h3>
-                            {/* Pass handleViewFile to enable in-page viewing */}
-                            <ArtifactList
-                                jobId={jobId}
-                                files={files}
-                                onFileSelect={handleViewFile}
-                            />
-                        </div>
-                    )}
-
-                    {/* Completion message when no files */}
-                    {isCompleted && files.length === 0 && (
-                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 p-6">
-                            <p className="text-green-700 dark:text-green-300 text-sm">
-                                Job completed successfully. Files may still be
-                                processing.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Error Card */}
-                    {isFailed && (
-                        <div className="bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 p-6">
-                            <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
-                                Generation Failed
-                            </h3>
-                            <p className="text-red-700 dark:text-red-300 text-sm">
-                                {job.error ||
-                                    "An error occurred during resume generation"}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Live Log */}
-                    {events.length > 0 && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                            <LiveLog events={events} />
-                        </div>
-                    )}
-                </div>
-
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    {/* Job History / Versions Card */}
-                    {job && job.history && job.history.length > 0 && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-4">
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">
-                                Version History
-                            </h2>
-                            <div className="space-y-2 max-h-60 overflow-y-auto">
-                                {job.history.map((ver) => {
-                                    const isCurrent = ver.id === job.id;
-                                    return (
-                                        <button
-                                            key={ver.id}
-                                            onClick={() =>
-                                                navigate(`/jobs/${ver.id}`)
-                                            }
-                                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between group ${
-                                                isCurrent
-                                                    ? "bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800"
-                                                    : "hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent"
-                                            }`}
-                                        >
-                                            <div className="flex flex-col">
-                                                <span
-                                                    className={`font-medium ${isCurrent ? "text-primary-700 dark:text-primary-300" : "text-slate-700 dark:text-slate-300"}`}
-                                                >
-                                                    {ver.template ||
-                                                        "Standard Resume"}
-                                                </span>
-                                                <span className="text-xs text-slate-500">
-                                                    {new Date(
-                                                        ver.created_at,
-                                                    ).toLocaleDateString()}{" "}
-                                                    at{" "}
-                                                    {formatTime(ver.created_at)}
-                                                </span>
-                                            </div>
-
-                                            {/* Status Badge Mini */}
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`w-2 h-2 rounded-full ${
-                                                        ver.status ===
-                                                        "completed"
-                                                            ? "bg-green-500"
-                                                            : ver.status ===
-                                                                "failed"
-                                                              ? "bg-red-500"
-                                                              : "bg-blue-500 animate-pulse"
-                                                    }`}
+                    {/* Tab Content */}
+                    <div className={activeTab === "latex" ? "" : "p-6"}>
+                        {/* Overview Tab */}
+                        {activeTab === "overview" && (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Left Column - Main Info */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    {/* Progress Bar */}
+                                    {(isProcessing || isQueued) &&
+                                        currentStatus && (
+                                            <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                                                <ProgressBar
+                                                    stage={currentStatus.stage}
+                                                    progress={
+                                                        currentStatus.progress_percent
+                                                    }
+                                                    message={
+                                                        currentStatus.message
+                                                    }
+                                                    status={job.status}
                                                 />
                                             </div>
-                                        </button>
-                                    );
-                                })}
+                                        )}
+
+                                    {/* Pipeline Stages */}
+                                    {(isProcessing ||
+                                        isQueued ||
+                                        isCompleted) && (
+                                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                                Pipeline Stages
+                                            </h2>
+                                            <StageTimeline
+                                                currentStage={
+                                                    currentStatus?.stage ||
+                                                    (isCompleted
+                                                        ? "completed"
+                                                        : "queued")
+                                                }
+                                                status={job.status}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                            Actions
+                                        </h2>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                onClick={() =>
+                                                    setShowResubmitModal(true)
+                                                }
+                                                disabled={isProcessing}
+                                                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                🔄 Regenerate
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    setShowDeleteConfirm(true)
+                                                }
+                                                disabled={deleting}
+                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                            >
+                                                {deleting
+                                                    ? "Deleting..."
+                                                    : "🗑️ Delete Job"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column - Sidebar */}
+                                <div className="space-y-6">
+                                    {/* Job Details Card */}
+                                    <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
+                                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                            Job Details
+                                        </h2>
+                                        <div className="space-y-3 text-sm">
+                                            <div>
+                                                <p className="text-slate-500 dark:text-slate-400">
+                                                    Job ID
+                                                </p>
+                                                <p className="text-slate-900 dark:text-white font-mono text-xs break-all">
+                                                    {job.id || job.job_id}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-500 dark:text-slate-400">
+                                                    Template
+                                                </p>
+                                                <p className="text-slate-900 dark:text-white">
+                                                    {job.template}
+                                                </p>
+                                            </div>
+                                            {job.output_backend && (
+                                                <div>
+                                                    <p className="text-slate-500 dark:text-slate-400">
+                                                        Output Backend
+                                                    </p>
+                                                    <p className="text-slate-900 dark:text-white capitalize">
+                                                        {job.output_backend}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {job.priority !== undefined && (
+                                                <div>
+                                                    <p className="text-slate-500 dark:text-slate-400">
+                                                        Priority
+                                                    </p>
+                                                    <p className="text-slate-900 dark:text-white">
+                                                        {job.priority}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Critique Score */}
+                                    <CritiqueCard
+                                        critique={job.critique}
+                                        status={job.status}
+                                        fallbackScore={job.final_score}
+                                    />
+
+                                    {/* Domain Match */}
+                                    {job.critique && job.jd_requirements && (
+                                        <DomainMatchCard
+                                            critique={job.critique}
+                                            jdRequirements={job.jd_requirements}
+                                        />
+                                    )}
+
+                                    {/* Critique Feedback */}
+                                    {job.critique && (
+                                        <CritiqueFeedbackCard
+                                            critique={job.critique}
+                                        />
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Critique Score Card */}
-                    <CritiqueCard
-                        critique={job.critique}
-                        status={job.status}
-                        fallbackScore={job.final_score}
-                    />
-
-                    {/* Domain Match Card */}
-                    {job.critique && job.jd_requirements && (
-                        <DomainMatchCard
-                            critique={job.critique}
-                            jdRequirements={job.jd_requirements}
-                        />
-                    )}
-
-                    {/* Critique Feedback Card */}
-                    {job.critique && (
-                        <CritiqueFeedbackCard critique={job.critique} />
-                    )}
-
-                    {/* Pipeline Stages */}
-                    {(isProcessing ||
-                        job.status === "queued" ||
-                        isCompleted) && (
-                        <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                                Pipeline Stages
-                            </h2>
-                            <StageTimeline
-                                currentStage={
-                                    currentStatus?.stage ||
-                                    (isCompleted ? "completed" : "queued")
-                                }
-                                status={job.status}
-                            />
-                        </div>
-                    )}
-
-                    {/* Job Details Card */}
-                    <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                            Job Details
-                        </h2>
-                        <div className="space-y-3 text-sm">
+                        {/* Artifacts Tab */}
+                        {activeTab === "artifacts" && (
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400">
-                                    Job ID
-                                </p>
-                                <p className="text-slate-900 dark:text-white font-mono text-xs">
-                                    {job.id || job.job_id}
-                                </p>
+                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                    Generated Files
+                                </h2>
+                                <ArtifactList
+                                    jobId={jobId}
+                                    files={files}
+                                    onFileSelect={handleFileView}
+                                />
                             </div>
-                            <div>
-                                <p className="text-slate-500 dark:text-slate-400">
-                                    Template
-                                </p>
-                                <p className="text-slate-900 dark:text-white">
-                                    {job.template}
-                                </p>
-                            </div>
-                            {job.output_backend && (
-                                <div>
-                                    <p className="text-slate-500 dark:text-slate-400">
-                                        Output Backend
-                                    </p>
-                                    <p className="text-slate-900 dark:text-white capitalize">
-                                        {job.output_backend}
-                                    </p>
+                        )}
+
+                        {/* LaTeX Editor Tab */}
+                        {activeTab === "latex" &&
+                            job.output_backend === "latex" && (
+                                <div className="h-[calc(100vh-16rem)]">
+                                    <LatexEditor jobId={jobId} />
                                 </div>
                             )}
-                            {job.priority !== undefined && (
-                                <div>
-                                    <p className="text-slate-500 dark:text-slate-400">
-                                        Priority
-                                    </p>
-                                    <p className="text-slate-900 dark:text-white">
-                                        {job.priority}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+
+                        {/* Logs Tab */}
+                        {activeTab === "logs" && (
+                            <div>
+                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                                    Activity Log
+                                </h2>
+                                <LiveLog events={events} />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Document Viewer Modal */}
-            {(viewingFile || loadingFile) && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm p-4 sm:p-6">
-                    <div className="bg-white dark:bg-background rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white truncate">
-                                {loadingFile ? "Loading..." : viewingFile?.name}
-                            </h3>
-                            <button
-                                onClick={closeViewer}
-                                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-                            >
-                                <span className="text-2xl">×</span>
-                            </button>
-                        </div>
-
-                        {/* Modal Content */}
-                        <div className="flex-1 bg-slate-100 dark:bg-background-surface relative">
-                            {loadingFile ? (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-                                        <p className="text-slate-500 dark:text-slate-400">
-                                            Fetching document...
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : viewingFile?.type === "application/pdf" ? (
-                                <iframe
-                                    src={viewingFile.url}
-                                    className="w-full h-full border-0"
-                                    title="PDF Viewer"
-                                />
-                            ) : (
-                                <iframe
-                                    src={viewingFile.url}
-                                    className="w-full h-full border-0 bg-white"
-                                    title="Document Viewer"
-                                />
-                            )}
-                        </div>
-                    </div>
-                </div>
+            {/* Modals */}
+            {showResubmitModal && (
+                <ResubmitModal
+                    job={job}
+                    onClose={() => setShowResubmitModal(false)}
+                    onSubmit={handleResubmit}
+                    isSubmitting={resubmitting}
+                />
             )}
 
-            {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-background-surface rounded-lg p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-background-surface rounded-lg max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                             Delete Job?
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 mb-6">
-                            Are you sure you want to delete this job? This
-                            action cannot be undone.
+                            This will permanently delete this job and all
+                            associated files. This action cannot be undone.
                         </p>
-                        <div className="flex items-center gap-3 justify-end">
+                        <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
                                 disabled={deleting}
-                                className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+                                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDelete}
                                 disabled={deleting}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                             >
                                 {deleting ? "Deleting..." : "Delete"}
                             </button>
@@ -621,14 +558,50 @@ export default function JobDetailPage() {
                 </div>
             )}
 
-            {/* Resubmit Modal */}
-            {showResubmitModal && (
-                <ResubmitModal
-                    job={job}
-                    onClose={() => setShowResubmitModal(false)}
-                    onSubmit={handleResubmit}
-                    isSubmitting={resubmitting}
-                />
+            {/* File Viewer Modal */}
+            {viewingFile && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-background-surface rounded-lg max-w-6xl w-full h-[90vh] flex flex-col">
+                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                                {viewingFile.name}
+                            </h3>
+                            <button
+                                onClick={closeViewer}
+                                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-auto p-4">
+                            {viewingFile.type === "application/pdf" && (
+                                <iframe
+                                    src={viewingFile.url}
+                                    className="w-full h-full"
+                                    title={viewingFile.name}
+                                />
+                            )}
+                            {viewingFile.type === "application/json" && (
+                                <pre className="text-sm bg-slate-100 dark:bg-slate-800 p-4 rounded overflow-auto">
+                                    {JSON.stringify(
+                                        JSON.parse(
+                                            new TextDecoder().decode(
+                                                viewingFile.url,
+                                            ),
+                                        ),
+                                        null,
+                                        2,
+                                    )}
+                                </pre>
+                            )}
+                            {viewingFile.type === "text/plain" && (
+                                <pre className="text-sm bg-slate-100 dark:bg-slate-800 p-4 rounded overflow-auto whitespace-pre-wrap">
+                                    {viewingFile.url}
+                                </pre>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
