@@ -14,11 +14,13 @@ export default function CodeEditor({ value, onChange, language = "latex" }) {
         monaco.languages.setMonarchTokensProvider("latex", {
             tokenizer: {
                 root: [
-                    [/\\[a-zA-Z]+/, "keyword"],
+                    [/\\[%$&#_{}~^]/, "string.escape"], // Escaped special characters
+                    [/\\[a-zA-Z]+/, "keyword"], // LaTeX commands
                     [/\{/, "delimiter.curly"],
                     [/\}/, "delimiter.curly"],
-                    [/%.*$/, "comment"],
-                    [/\$.*?\$/, "string"],
+                    [/(?<!\\)%.*$/, "comment"], // Comments (unescaped % only)
+                    [/\$\$[\s\S]*?\$\$/, "string"], // Display math mode
+                    [/\$[^$]*?\$/, "string"], // Inline math mode
                 ],
             },
         });
@@ -37,6 +39,10 @@ export default function CodeEditor({ value, onChange, language = "latex" }) {
         folding: true,
         lineDecorationsWidth: 10,
         lineNumbersMinChars: 4,
+        unicodeHighlight: {
+            ambiguousCharacters: false,
+            invisibleCharacters: false,
+        },
     };
 
     return (
