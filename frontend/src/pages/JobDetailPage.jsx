@@ -260,28 +260,28 @@ export default function JobDetailPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="space-y-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div className="space-y-4 sm:space-y-6">
                 {/* Header */}
-                <div className="flex items-start justify-between">
-                    <div>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1">
                         <button
                             onClick={() => navigate("/")}
                             className="text-sm text-primary-600 hover:text-primary-700 mb-2 flex items-center gap-1"
                         >
                             ← Back to Dashboard
                         </button>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white break-words">
                             {job.company} - {job.job_title}
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
                             Created {formatDate(job.created_at)}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[job.status] || STATUS_COLORS.queued}`}
+                            className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${STATUS_COLORS[job.status] || STATUS_COLORS.queued}`}
                         >
                             {getStatusIcon(job.status)} {job.status}
                         </span>
@@ -290,57 +290,76 @@ export default function JobDetailPage() {
 
                 {/* Tab Navigation */}
                 <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="flex border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
-                        <button
-                            onClick={() => setActiveTab("overview")}
-                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === "overview"
-                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
-                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                            }`}
-                        >
-                            📊 Overview
-                        </button>
+                    {/* Tab Navigation - Horizontal scrollable on mobile */}
+                    <div className="border-b border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-thin">
+                        <div className="flex min-w-max sm:min-w-0">
+                            <button
+                                onClick={() => setActiveTab("overview")}
+                                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                    activeTab === "overview"
+                                        ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                        : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                }`}
+                            >
+                                <span className="hidden sm:inline">
+                                    📊 Overview
+                                </span>
+                                <span className="sm:hidden">📊</span>
+                            </button>
 
-                        <button
-                            onClick={() => setActiveTab("artifacts")}
-                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === "artifacts"
-                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
-                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                            }`}
-                        >
-                            📁 Files ({files.length})
-                        </button>
+                            <button
+                                onClick={() => setActiveTab("artifacts")}
+                                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                    activeTab === "artifacts"
+                                        ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                        : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                }`}
+                            >
+                                <span className="hidden sm:inline">
+                                    📁 Files ({files.length})
+                                </span>
+                                <span className="sm:hidden">
+                                    📁 {files.length}
+                                </span>
+                            </button>
 
-                        <button
-                            onClick={() => setActiveTab("latex")}
-                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === "latex"
-                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
-                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                            }`}
-                        >
-                            📝 LaTeX Editor
-                        </button>
+                            <button
+                                onClick={() => setActiveTab("latex")}
+                                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                    activeTab === "latex"
+                                        ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                        : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                }`}
+                            >
+                                <span className="hidden sm:inline">
+                                    📝 LaTeX Editor
+                                </span>
+                                <span className="sm:hidden">📝</span>
+                            </button>
 
-                        <button
-                            onClick={() => setActiveTab("logs")}
-                            className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === "logs"
-                                    ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
-                                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                            }`}
-                        >
-                            📋 Logs ({events.length})
-                        </button>
+                            <button
+                                onClick={() => setActiveTab("logs")}
+                                className={`px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm border-b-2 transition-colors whitespace-nowrap ${
+                                    activeTab === "logs"
+                                        ? "border-primary-600 text-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                                        : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                }`}
+                            >
+                                <span className="hidden sm:inline">
+                                    📋 Logs ({events.length})
+                                </span>
+                                <span className="sm:hidden">
+                                    📋 {events.length}
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Tab Content */}
-                    <div className={activeTab === "latex" ? "" : "p-6"}>
+                    <div className={activeTab === "latex" ? "" : "p-4 sm:p-6"}>
                         {/* Overview Tab */}
                         {activeTab === "overview" && (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                                 {/* Left Column - Main Info */}
                                 <div className="lg:col-span-2 space-y-6">
                                     {/* Progress Bar */}
@@ -490,16 +509,15 @@ export default function JobDetailPage() {
                                     Generated Files
                                 </h2>
                                 <ArtifactList
-                                    jobId={jobId}
                                     files={files}
                                     onFileSelect={handleFileView}
                                 />
                             </div>
                         )}
 
-                        {/* LaTeX Editor Tab */}
+                        {/* LaTeX Editor Tab - Full height on mobile */}
                         {activeTab === "latex" && (
-                            <div className="h-[calc(100vh-16rem)]">
+                            <div className="h-[calc(100vh-12rem)] sm:h-[calc(100vh-16rem)]">
                                 <LatexEditor jobId={jobId} />
                             </div>
                         )}
@@ -529,28 +547,28 @@ export default function JobDetailPage() {
 
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-background-surface rounded-lg max-w-md w-full p-6">
+                    <div className="bg-white dark:bg-background-surface rounded-lg max-w-md w-full p-4 sm:p-6 mx-4">
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                             Delete Job?
                         </h3>
-                        <p className="text-slate-600 dark:text-slate-400 mb-6">
+                        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6">
                             This will permanently delete this job and all
                             associated files. This action cannot be undone.
                         </p>
-                        <div className="flex gap-3 justify-end">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
                                 disabled={deleting}
-                                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                                className="w-full sm:w-auto px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 min-h-[44px] touch-manipulation"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDelete}
                                 disabled={deleting}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 min-h-[44px] touch-manipulation"
                             >
-                                {deleting ? "Deleting..." : "Delete"}
+                                {deleting ? "Deleting..." : "Delete Job"}
                             </button>
                         </div>
                     </div>

@@ -8,9 +8,24 @@ import ProfileStep from "../components/wizard/ProfileStep";
 import SettingsStep from "../components/wizard/SettingsStep";
 
 const STEPS = [
-    { id: 1, title: "Job Details", desc: "Define the target role" },
-    { id: 2, title: "Career Profile", desc: "Select your experience" },
-    { id: 3, title: "Configuration", desc: "Tune the pipeline" },
+    {
+        id: 1,
+        title: "Job Details",
+        shortTitle: "Job",
+        desc: "Define the target role",
+    },
+    {
+        id: 2,
+        title: "Career Profile",
+        shortTitle: "Profile",
+        desc: "Select your experience",
+    },
+    {
+        id: 3,
+        title: "Configuration",
+        shortTitle: "Config",
+        desc: "Tune the pipeline",
+    },
 ];
 
 export default function NewJobPage() {
@@ -68,77 +83,78 @@ export default function NewJobPage() {
             headline: "",
             short_summary: "",
             full_text: "",
-            required_experience_years_min: 0,
+            required_experience_years_min: "",
             required_education: "",
             must_have_skills: [], // Array of strings
             nice_to_have_skills: [], // Array of strings
         },
 
-        // Wizard Context
-        profile_id: "",
+        // 4. Career Profile Selection
+        profile_id: null,
+        career_profile_path: "career_profile.json",
 
-        // Settings
+        // 5. Settings
         template: "awesome-cv",
         output_backend: "weasyprint",
         priority: 5,
+
+        // 6. Advanced Settings
         advanced_settings: {
-            base_model: "gpt-4o",
-            strong_model: "gpt-4o",
-            temperature: 0.7,
-            max_critique_loops: 1,
-            min_quality_score: 8.0,
+            use_experimental_parser: false,
             enable_cover_letter: false,
+            max_tokens: 4096,
+            temperature: 0.7,
         },
     });
 
-    // Initial Data Fetch
     useEffect(() => {
-        const fetchJobs = async () => {
+        const fetchExistingJobs = async () => {
             try {
                 const response = await apiService.listJobs({
                     page: 1,
-                    page_size: 100,
+                    pageSize: 5,
                 });
-                setExistingJobs(response.data.items || []);
+                setExistingJobs(response.data.items || response.data || []);
             } catch (error) {
-                console.error("Failed to load jobs", error);
+                console.error("Failed to fetch recent jobs", error);
             }
         };
-        fetchJobs();
+
+        fetchExistingJobs();
     }, []);
 
-    const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
-    const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-
-    const handleDeleteJob = async (id) => {
-        if (!window.confirm("Delete this job listing?")) return;
-        try {
-            await apiService.deleteJob(id);
-            setExistingJobs((prev) =>
-                prev.filter((j) => j.id !== id && j.job_id !== id),
-            );
-        } catch (error) {
-            console.error(error);
-            alert("Failed to delete job");
+    const handleNext = () => {
+        if (currentStep < STEPS.length) {
+            setCurrentStep(currentStep + 1);
+            // Scroll to top on mobile
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
+    };
+
+    const handleBack = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const ensureArray = (value) => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === "string") {
+            return value
+                .split("\n")
+                .map((s) => s.trim())
+                .filter(Boolean);
+        }
+        return [];
     };
 
     const handleSubmit = async () => {
         setLoading(true);
-        try {
-            // Helper to ensure array fields are arrays
-            const ensureArray = (val) => {
-                if (Array.isArray(val)) return val;
-                if (typeof val === "string")
-                    return val
-                        .split("\n")
-                        .map((s) => s.trim())
-                        .filter(Boolean);
-                return [];
-            };
 
+        try {
             const payload = {
-                profile_id: formData.profile_id,
+                career_profile_path: formData.career_profile_path,
                 job_data: {
                     job_details: formData.job_details,
                     benefits: {
@@ -174,48 +190,79 @@ export default function NewJobPage() {
     };
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
+            <div className="mb-6 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">
                     Create New Resume
                 </h1>
-                <div className="flex items-center justify-between relative">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 dark:bg-background-elevated -z-10" />
-                    {STEPS.map((step) => {
-                        const isCompleted = step.id < currentStep;
-                        const isCurrent = step.id === currentStep;
-                        return (
-                            <div
-                                key={step.id}
-                                className="flex flex-col items-center bg-slate-50 dark:bg-background px-4"
-                            >
+
+                {/* Progress Steps - Mobile optimized */}
+                <div className="relative">
+                    {/* Progress Bar Background */}
+                    <div className="absolute left-0 right-0 top-5 h-1 bg-slate-200 dark:bg-background-elevated -z-10 hidden sm:block" />
+
+                    {/* Steps */}
+                    <div className="flex justify-between">
+                        {STEPS.map((step) => {
+                            const isCompleted = step.id < currentStep;
+                            const isCurrent = step.id === currentStep;
+                            return (
                                 <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-2 ${isCompleted ? "bg-green-500 text-white" : isCurrent ? "bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900" : "bg-slate-200 dark:bg-background-elevated text-slate-500"}`}
+                                    key={step.id}
+                                    className="flex flex-col items-center flex-1 bg-slate-50 dark:bg-background px-2 sm:px-4"
                                 >
-                                    {isCompleted ? "✓" : step.id}
+                                    {/* Circle */}
+                                    <div
+                                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-2 ${
+                                            isCompleted
+                                                ? "bg-green-500 text-white"
+                                                : isCurrent
+                                                  ? "bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900"
+                                                  : "bg-slate-200 dark:bg-background-elevated text-slate-500"
+                                        }`}
+                                    >
+                                        {isCompleted ? "✓" : step.id}
+                                    </div>
+
+                                    {/* Title - Responsive */}
+                                    <span
+                                        className={`text-xs sm:text-sm font-medium text-center ${
+                                            isCurrent
+                                                ? "text-primary-600 dark:text-primary-400"
+                                                : "text-slate-600 dark:text-slate-400"
+                                        }`}
+                                    >
+                                        <span className="hidden sm:inline">
+                                            {step.title}
+                                        </span>
+                                        <span className="sm:hidden">
+                                            {step.shortTitle}
+                                        </span>
+                                    </span>
+
+                                    {/* Description - Hidden on mobile */}
+                                    <span className="hidden md:block text-xs text-slate-500 dark:text-slate-500 text-center mt-1">
+                                        {step.desc}
+                                    </span>
                                 </div>
-                                <span
-                                    className={`text-sm font-medium ${isCurrent ? "text-primary-600 dark:text-primary-400" : "text-slate-500"}`}
-                                >
-                                    {step.title}
-                                </span>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-background-surface p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+            {/* Step Content */}
+            <div className="bg-white dark:bg-background-surface rounded-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
                 {currentStep === 1 && (
                     <JobDetailsStep
                         formData={formData}
                         setFormData={setFormData}
                         onNext={handleNext}
                         existingJobs={existingJobs}
-                        onDeleteJob={handleDeleteJob}
                     />
                 )}
+
                 {currentStep === 2 && (
                     <ProfileStep
                         formData={formData}
@@ -224,12 +271,13 @@ export default function NewJobPage() {
                         onBack={handleBack}
                     />
                 )}
+
                 {currentStep === 3 && (
                     <SettingsStep
                         formData={formData}
                         setFormData={setFormData}
-                        onSubmit={handleSubmit}
                         onBack={handleBack}
+                        onSubmit={handleSubmit}
                         loading={loading}
                     />
                 )}

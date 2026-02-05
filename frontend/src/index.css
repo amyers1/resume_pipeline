@@ -42,6 +42,25 @@
     }
 }
 
+@layer utilities {
+    .scrollbar-thin::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.5);
+        border-radius: 2px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.7);
+    }
+}
+
 /* 4. Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
@@ -65,6 +84,48 @@
 /* 5. Focus Ring Overrides */
 *:focus-visible {
     @apply outline-none ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-background;
+}
+
+/* 6. Animation Keyframes */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.2s ease-out;
 }
 
 /* Toast notification styles with dark mode support */

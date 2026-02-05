@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import {
+    Panel,
+    Group as PanelGroup,
+    Separator as PanelResizeHandle,
+} from "react-resizable-panels";
 import { latexApi } from "../../services/latexApi";
 import { createLatexCompilationSSE } from "../../services/latexSSE";
 import { showToast } from "../../utils/toast";
@@ -7,6 +12,9 @@ import PdfViewer from "./PdfViewer";
 import CompilationLog from "./CompilationLog";
 import EditorToolbar from "./EditorToolbar";
 import VersionHistory from "./VersionHistory";
+import MobileActionSheet from "./MobileActionSheet";
+import LayoutToggle from "./LayoutToggle";
+import KeyboardShortcutsModal from "./KeyboardShortcutsModal";
 
 export default function LatexEditor({ jobId }) {
     const [content, setContent] = useState("");
@@ -19,9 +27,29 @@ export default function LatexEditor({ jobId }) {
     const [compilationResult, setCompilationResult] = useState(null);
     const [error, setError] = useState(null);
     const [backups, setBackups] = useState([]);
+
+    // Layout and UI state
+    const [layout, setLayout] = useState("split"); // split, editor, preview
+    const [mobileView, setMobileView] = useState("editor"); // editor, preview
+    const [logCollapsed, setLogCollapsed] = useState(false);
+    const [showActionSheet, setShowActionSheet] = useState(false);
+    const [showShortcuts, setShowShortcuts] = useState(false);
+
     const autoSaveTimer = useRef(null);
     const sseCleanup = useRef(null);
     const compilationToastId = useRef(null);
+
+    // Detect mobile viewport
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
 
     // Load initial content
     useEffect(() => {
@@ -134,6 +162,7 @@ export default function LatexEditor({ jobId }) {
         setCompiling(true);
         setCompilationResult(null);
         setError(null);
+        setLogCollapsed(false); // Expand log when compiling
 
         try {
             // Save first if dirty
@@ -208,6 +237,11 @@ export default function LatexEditor({ jobId }) {
 
                 setCompiling(false);
 
+                // On mobile, switch to preview after successful compilation
+                if (isMobile) {
+                    setMobileView("preview");
+                }
+
                 // Clean up SSE connection
                 if (sseCleanup.current) {
                     sseCleanup.current();
@@ -271,6 +305,15 @@ export default function LatexEditor({ jobId }) {
         }
     };
 
+    const handleDownload = () => {
+        if (pdfUrl) {
+            const link = document.createElement("a");
+            link.href = pdfUrl;
+            link.download = "resume.pdf";
+            link.click();
+        }
+    };
+
     const getSaveIndicator = () => {
         if (isSaving) return "Saving...";
         if (isDirty) return "Unsaved changes";
@@ -305,6 +348,139 @@ export default function LatexEditor({ jobId }) {
         );
     }
 
+    // Mobile Layout
+    if (isMobile) {
+        return (
+            <div className="flex flex-col h-full">
+                {/* Mobile Header */}
+                <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-background-surface border-b border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">
+                            {mobileView === "editor" ? "Editor" : "Preview"}
+                        </span>
+                        {isDirty && (
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full" />
+                        )}
+                    </div>
+                    <button
+                        onClick={() => setShowActionSheet(true)}
+                        className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                    >
+                        <svg
+                            className="w-6 h-6 text-slate-600 dark:text-slate-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Mobile Tab Switcher */}
+                <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-background-elevated">
+                    <button
+                        onClick={() => setMobileView("editor")}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            mobileView === "editor"
+                                ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400 bg-white dark:bg-background-surface"
+                                : "text-slate-600 dark:text-slate-400"
+                        }`}
+                    >
+                        Editor
+                        {isDirty && mobileView !== "editor" && (
+                            <span className="ml-2 w-2 h-2 inline-block bg-yellow-500 rounded-full" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setMobileView("preview")}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            mobileView === "preview"
+                                ? "text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400 bg-white dark:bg-background-surface"
+                                : "text-slate-600 dark:text-slate-400"
+                        }`}
+                    >
+                        Preview
+                    </button>
+                </div>
+
+                {/* Mobile Content */}
+                <div className="flex-1 min-h-0">
+                    {mobileView === "editor" ? (
+                        <div className="flex flex-col h-full">
+                            <div className="flex-1 min-h-0">
+                                <CodeEditor
+                                    value={content}
+                                    onChange={setContent}
+                                    language="latex"
+                                />
+                            </div>
+                            {/* Compilation Log */}
+                            {compilationResult && (
+                                <CompilationLog
+                                    result={compilationResult}
+                                    collapsed={logCollapsed}
+                                    onToggleCollapse={() =>
+                                        setLogCollapsed(!logCollapsed)
+                                    }
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <PdfViewer pdfUrl={pdfUrl} isCompiling={isCompiling} />
+                    )}
+                </div>
+
+                {/* Floating Compile Button */}
+                {mobileView === "editor" && (
+                    <button
+                        onClick={handleCompile}
+                        disabled={isCompiling}
+                        className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center z-30"
+                    >
+                        {isCompiling ? (
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                        ) : (
+                            <span className="text-xl">🔨</span>
+                        )}
+                    </button>
+                )}
+
+                {/* Mobile Action Sheet */}
+                <MobileActionSheet
+                    isOpen={showActionSheet}
+                    onClose={() => setShowActionSheet(false)}
+                    onSave={handleSave}
+                    onCompile={handleCompile}
+                    onDownload={handleDownload}
+                    onToggleView={() =>
+                        setMobileView(
+                            mobileView === "editor" ? "preview" : "editor",
+                        )
+                    }
+                    onShowShortcuts={() => setShowShortcuts(true)}
+                    isSaving={isSaving}
+                    isCompiling={isCompiling}
+                    isDirty={isDirty}
+                    currentView={mobileView}
+                    pdfUrl={pdfUrl}
+                />
+
+                {/* Keyboard Shortcuts Modal */}
+                <KeyboardShortcutsModal
+                    isOpen={showShortcuts}
+                    onClose={() => setShowShortcuts(false)}
+                />
+            </div>
+        );
+    }
+
+    // Desktop Layout
     return (
         <div className="flex flex-col h-full">
             {/* Toolbar */}
@@ -316,6 +492,9 @@ export default function LatexEditor({ jobId }) {
                 isDirty={isDirty}
                 saveIndicator={getSaveIndicator()}
                 pdfUrl={pdfUrl}
+                layout={layout}
+                onLayoutChange={setLayout}
+                onShowShortcuts={() => setShowShortcuts(true)}
             />
 
             {/* Version History Dropdown */}
@@ -329,30 +508,79 @@ export default function LatexEditor({ jobId }) {
             )}
 
             {/* Split Pane: Editor + Preview */}
-            <div className="flex-1 flex min-h-0">
-                {/* Editor Pane */}
-                <div className="flex-1 flex flex-col border-r border-slate-200 dark:border-slate-700">
-                    <div className="flex-1 min-h-0">
-                        <CodeEditor
-                            value={content}
-                            onChange={setContent}
-                            language="latex"
-                        />
-                    </div>
+            <div className="flex-1 min-h-0">
+                {layout === "split" ? (
+                    <PanelGroup orientation="horizontal" className="h-full">
+                        {/* Editor Panel */}
+                        <Panel defaultSize={50} minSize={25}>
+                            <div className="flex flex-col h-full border-r border-slate-200 dark:border-slate-700">
+                                <div className="flex-1 min-h-0">
+                                    <CodeEditor
+                                        value={content}
+                                        onChange={setContent}
+                                        language="latex"
+                                    />
+                                </div>
 
-                    {/* Compilation Log */}
-                    {compilationResult && (
-                        <div className="h-48 border-t border-slate-200 dark:border-slate-700">
-                            <CompilationLog result={compilationResult} />
+                                {/* Compilation Log */}
+                                {compilationResult && (
+                                    <CompilationLog
+                                        result={compilationResult}
+                                        collapsed={logCollapsed}
+                                        onToggleCollapse={() =>
+                                            setLogCollapsed(!logCollapsed)
+                                        }
+                                    />
+                                )}
+                            </div>
+                        </Panel>
+
+                        {/* Resize Handle */}
+                        <PanelResizeHandle className="w-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-primary-500 dark:hover:bg-primary-500 transition-colors cursor-col-resize" />
+
+                        {/* Preview Panel */}
+                        <Panel defaultSize={50} minSize={25}>
+                            <div className="h-full bg-slate-100 dark:bg-background">
+                                <PdfViewer
+                                    pdfUrl={pdfUrl}
+                                    isCompiling={isCompiling}
+                                />
+                            </div>
+                        </Panel>
+                    </PanelGroup>
+                ) : layout === "editor" ? (
+                    <div className="flex flex-col h-full">
+                        <div className="flex-1 min-h-0">
+                            <CodeEditor
+                                value={content}
+                                onChange={setContent}
+                                language="latex"
+                            />
                         </div>
-                    )}
-                </div>
 
-                {/* PDF Preview Pane */}
-                <div className="flex-1 flex flex-col min-h-0 bg-slate-100 dark:bg-background">
-                    <PdfViewer pdfUrl={pdfUrl} isCompiling={isCompiling} />
-                </div>
+                        {/* Compilation Log */}
+                        {compilationResult && (
+                            <CompilationLog
+                                result={compilationResult}
+                                collapsed={logCollapsed}
+                                onToggleCollapse={() =>
+                                    setLogCollapsed(!logCollapsed)
+                                }
+                            />
+                        )}
+                    </div>
+                ) : (
+                    <div className="h-full bg-slate-100 dark:bg-background">
+                        <PdfViewer pdfUrl={pdfUrl} isCompiling={isCompiling} />
+                    </div>
+                )}
             </div>
+
+            {/* Keyboard Shortcuts Modal */}
+            <KeyboardShortcutsModal
+                isOpen={showShortcuts}
+                onClose={() => setShowShortcuts(false)}
+            />
         </div>
     );
 }
